@@ -3,6 +3,9 @@
 # shellcheck disable=SC1090
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../../lib/all.sh"
 
+
+
+
 ppl--mvn() {
   (
     START_MACRO "$1" "$PPL_CONTEXT"
@@ -21,10 +24,10 @@ ppl--mvn() {
         _mvn_exec verify -Powasp-dependency-check
         ;;
       "NEXUS-DEPLOY")
-        _mvn_exec --batch-mode deploy -DskipTests=true -DaltDeploymentRepository=internal-nexus::default::https://nexus-jx.apps.serv.run/repository/ngpl-maven-releases/
+        _mvn_deploy "internal-nexus" "https://nexus-jx.apps.serv.run/repository/ngpl-maven-releases/"
         ;;
       "MAVEN-CENTRAL-DEPLOY")
-        _mvn_exec --batch-mode deploy -DskipTests=true -DaltDeploymentRepository=maven-central::default::https://oss.sonatype.org/service/local/staging/deploy/maven2/
+        _mvn_deploy "maven-central" "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
         ;;
       *)
         _mvn_exec "$@"

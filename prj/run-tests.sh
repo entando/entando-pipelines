@@ -41,7 +41,7 @@ ENTANDO_OPT_REPO_BOM_URL="file://$TEST_WORK_DIR/6017ee92-ba94-40a2-b098-91b2c04f
 ENTANDO_OPT_CLONE_URL_OVERRIDE="file://$TEST_WORK_DIR/6017ee92-ba94-40a2-b098-91b2c04f107b/entando-plugin-jpredis"
 
 test-cleanup() {
-  [ -f "$TEST_WORK_DIR/.effimeral-test-dir" ] && rm -rf "$TEST_WORK_DIR"; 
+  [ -f "$TEST_WORK_DIR/.effimeral-test-dir" ] && rm -rf "$TEST_WORK_DIR";
 }
 trap test-cleanup exit
 
@@ -62,6 +62,7 @@ _itmlst_contains "$EXECUTION_LABELS" "lib" && {
   test_git || _failend
   test_pom || _failend
   test_github_tools || _failend
+  test_get-preview-name || _failend
 }
 
 #~

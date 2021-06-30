@@ -14,7 +14,7 @@ _mvn_exec() {
 
   _log_d "Running mvn.."
   if "$MVN" "$@" &> "$TMPFILE"; then
-    
+
     if _log_on_level TRACE; then
       # shellcheck disable=SC2088
       _log_t "mvn execution was successful; log tail:"
@@ -30,4 +30,15 @@ _mvn_exec() {
     rm "$TMPFILE"
     _FATAL "Error executing mvn"
   fi
+}
+
+
+# Runs a maven deploy over the received environment params
+#
+# Params:
+# $1: repository id
+# $2: repository url
+#
+_mvn_deploy() {
+  _mvn_exec --batch-mode deploy -DskipTests=true -DaltDeploymentRepository=$1::default::$2
 }
