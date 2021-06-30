@@ -1,0 +1,47 @@
+name: Run tests
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+      - release*
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  static-code-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 
+      - name: prepare
+        run: bash -c "sudo apt update && sudo apt install shellcheck"
+      - name: "shellcheck main"
+        run: bash -c "./prj/run-shellcheck.sh"
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 3
+      matrix:
+        target: [ 'linux' ]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 
+      - name: "Set up JDK 11"
+        if: steps.GATE.outputs.ENABLED == 'true'
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: "Cache Maven packages"
+        if: steps.GATE.outputs.ENABLED == 'true'
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: "automatic tests"
+        run: bash -c "./prj/run-tests.sh"
+  
