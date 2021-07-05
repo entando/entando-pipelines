@@ -1,5 +1,5 @@
-FROM ubuntu:21.04
+FROM ubuntu:20.10
 WORKDIR /opt/ppl
+ENV ENTANDO_OPT_SUDO="-"
 ADD . /opt/ppl
-RUN cd /opt/ppl && ls
 CMD prj/run-tests.sh

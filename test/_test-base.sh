@@ -4,7 +4,11 @@
 {
   GIT_USER_NAME="CiCd Bot"
   GIT_USER_EMAIL="cicd@example.com"
-  ENTANDO_OPT_SUDO="${ENTANDO_OPT_SUDO:-"sudo"}"
+  if [ "$ENTANDO_OPT_SUDO" != "-" ]; then
+    ENTANDO_OPT_SUDO="${ENTANDO_OPT_SUDO:-"sudo"}"
+  else
+    ENTANDO_OPT_SUDO=""
+  fi
   ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-DEBUG}"
   ENTANDO_OPT_REPO_BOM_URL="${ENTANDO_OPT_REPO_BOM_URL:-"https://github.com/entando/entando-core-bom.git"}"
 }
