@@ -20,8 +20,8 @@ _git_full_clone() {
     local REPO_URL="$1"
     local DST_DIR="$2"
     local TOKEN="$3"
-    
-    _log_t "Cloning \"$REPO_URL\"" 
+
+    _log_t "Cloning \"$REPO_URL\""
 
     _NONNULL REPO_URL
 
@@ -131,7 +131,7 @@ _git_fetch_all_tags() {
 }
 
 # Add-Commit-Tag-Push
-# 
+#
 # Params:
 # $1 the commit message
 # $2 the tag id  (if not provided tagging is not executed)
@@ -141,7 +141,7 @@ __git_ACTP() {
   __git add .
   __git commit -m "$1"
   [ -n "$2" ] && __git_add_tag "$2"
-  [ -n "$3" ] && { 
+  [ -n "$3" ] && {
     __git push --set-upstream origin "$3"
     [ -n "$2" ] && __git push --tags
   }
@@ -165,7 +165,7 @@ __git_auto_checkout() {
   __git fetch --tag &> /dev/null
 }
 
-# Sets the receiver var with the the current git branch 
+# Sets the receiver var with the the current git branch
 #
 _git_get_current_branch() {
   _set_var "$1" "$(git branch --show-current)"

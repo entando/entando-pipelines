@@ -4,6 +4,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 # shellcheck disable=SC2046
 cd "$SCRIPT_DIR/.." || { echo "Unable to enter the script dir"; exit 99; }
 
+[ "$1" = "--with-docker" ] && {
+  shift
+  docker build -t entando-pipelines . &&  docker run -it --rm entando-pipelines prj/run-tests.sh "$@"
+  exit "$?"
+}
+
 . "./lib/base.sh"     # only for the itmlst functions
 
 ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-DEBUG}"
@@ -38,13 +44,15 @@ GITHUB_ACTIONS=true
 #PPL_CONTEXT="{{test-run}}"
 PPL_CONTEXT="$(cat "$PROJECT_DIR/test/resources/github-context-sample-02.json")"
 ENTANDO_OPT_REPO_BOM_URL="file://$TEST_WORK_DIR/6017ee92-ba94-40a2-b098-91b2c04f107b/entando-core-bom"
+#ENTANDO_CORE_BOM_REPO_URL="${ENTANDO_OPT_REPO_BOM_URL}"
+ENTANDO_OPT_REPO_BOM_MASTER_BRANCH="${ENTANDO_OPT_REPO_BOM_MASTER_BRANCH:-master}"
 
 TEST_APPLY_DEFAULT_OVERRIDES() {
   EE_CLONE_URL="file://$TEST_WORK_DIR/6017ee92-ba94-40a2-b098-91b2c04f107b/entando-portal-ui"
 }
 
 test-cleanup() {
-  [ -f "$TEST_WORK_DIR/.effimeral-test-dir" ] && rm -rf "$TEST_WORK_DIR"; 
+  [ -f "$TEST_WORK_DIR/.effimeral-test-dir" ] && rm -rf "$TEST_WORK_DIR";
 }
 trap test-cleanup exit
 

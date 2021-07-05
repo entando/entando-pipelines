@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.entando</groupId>
     <artifactId>entando-core-bom</artifactId>
@@ -32,7 +31,7 @@
         </repository>
     </repositories>
     <properties>
-        <entando-engine.version>6.4.0</entando-engine.version>
+        <entando-engine.version>6.5.0</entando-engine.version>
         <entando-admin-console.version>6.3.9</entando-admin-console.version>
         <entando-portal-ui.version>6.3.10</entando-portal-ui.version>
         <entando-plugin-jacms.version>6.3.32</entando-plugin-jacms.version>

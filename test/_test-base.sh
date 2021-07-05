@@ -37,7 +37,7 @@ _create-test-git-repo() {
   local dst_dir="$1"
   local branch="$2"
   local tag="$3"
-  
+
   (
     set -e
     rm -rf "$dst_dir" && mkdir "$dst_dir"
@@ -58,14 +58,14 @@ _create-test-git-repo() {
     echo "an-addition" >> "the-file"
     git add .
     git commit -m "TheCommit#2"
-    
+
     if [ -n "$branch" ]; then
       git checkout -q -b "$branch"
       echo "another-addition" >> "the-file"
       git add .
       git commit -m "TheCommit#3"
     fi
-    
+
     if [ -n "$tag" ]; then
       __git_add_tag "$tag"
     fi
@@ -78,18 +78,18 @@ LATEST_TEST_TLOG_COMMAND() {
 
 DBGSHELL() {
   (
-    [ ! -t 0 ] && {
-      _log_w "Refusing to drop shell because this is not an interactive tty session"
-      exit 0
-    }
-    
+    #[ ! -t 0 ] && {
+    #  _log_w "Refusing to drop shell because this is not an interactive tty session"
+    #  exit 0
+    #}
+
     _log_i 'DROPPING THE DEBUG SHELL FROM:' 1>&2
-    _print_callstack 1 5 "" "" "$@" 1>&2
-    
+    _print_callstack 1 5 "" "" "$@" 1>&
+
     # Export the current vars and functions
     {
-      local fn var 
-      
+      local fn var
+
       while read -r fn; do
         # shellcheck disable=SC2163
         export -f "$fn"
@@ -100,7 +100,7 @@ DBGSHELL() {
         export "$var"
       done < <(compgen -v)
     } &> /dev/null
-    
+
     # Create copy of the bashrc
     if [ -f "$HOME/.profile" ]; then
       cp "$HOME/.profile" "$TEST_WORK_DIR/.bashrc"
@@ -115,11 +115,11 @@ DBGSHELL() {
       echo "echo -e '\033[43m\033[1;30m> DEBUG SHELL STARTED$COMMENT\033[0;39m\n' 1>&2"
       echo -e "true"
     } >> "$TEST_WORK_DIR/.bashrc"
-    
+
     # Run the shell
     bash --rcfile "$TEST_WORK_DIR/.bashrc" < /dev/stdin > /dev/tty
 
-  ) || { 
-    [ "$?" = "77" ] && _FATAL "Execution Interrupted: Debug Shell terminated with fatal error" >/dev/tty 
+  ) || {
+    [ "$?" = "77" ] && _FATAL "Execution Interrupted: Debug Shell terminated with fatal error" >/dev/tty
   }
 }

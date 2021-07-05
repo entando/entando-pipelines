@@ -42,6 +42,17 @@ _pom_get_project_property() {
   _pom_get "$1" "$2" "/pom:project/pom:properties" "./pom:$3"
 }
 
+# Sets a property from a pom
+#
+# Params:
+# $1: new value
+# $2: pom file pathname
+# $3: property name
+#
+_pom_set_project_property() {
+  _pom_set "$1" "$2" "/pom:project/pom:properties" "./pom:$3"
+}
+
 # Extacts the version of an artifact dependency of the dependency management section
 #
 # Params:

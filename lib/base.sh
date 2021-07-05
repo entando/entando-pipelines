@@ -5,12 +5,12 @@
 # Params:
 # $1 macro name
 # $2 pipeline context to parse
-# 
+#
 # shellcheck disable=SC2034
 START_MACRO() {
-  
+
   set +e
-  
+
   ${ENTANDO_OPT_STEP_DEBUG:-false} && {
     set -x
   }
@@ -32,7 +32,7 @@ START_MACRO() {
   else
     _log_i "~~ ${comment}${EE_CURRENT_MACRO} invoked"
   fi
-  
+
   TEST_EXECUTION="${TEST_EXECUTION:-false}"
   if [ "$ENTANDO_OPT_SUDO" != "-" ]; then
     ENTANDO_OPT_SUDO="${ENTANDO_OPT_SUDO:-"sudo"}"
@@ -41,9 +41,10 @@ START_MACRO() {
   fi
   ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-INFO}"
   ENTANDO_OPT_REPO_BOM_URL="${ENTANDO_OPT_REPO_BOM_URL}"
-  
+  ENTANDO_OPT_REPO_BOM_MASTER_BRANCH="${ENTANDO_OPT_REPO_BOM_MASTER_BRANCH:-master}"
+
   _ppl-load-context "$2"
-  
+
   #_pp EE_CLONE_URL ENTANDO_OPT_REPO_BOM_URL EE_HEAD_REF
   _ppl-pr-has-label "skip-${1,,}" && {
     if "$NO_SKIP"; then
@@ -115,7 +116,7 @@ _to_nll() {
 
 _to_col() {
   case "$3" in
-    ERROR)  
+    ERROR)
       #_set_var "$1" '\033[41m\033[1;37m'
       _set_var "$1" '\033[41m\033[1;97m'
       _set_var "$2" '\033[0;39m'
@@ -300,7 +301,7 @@ __exist() {
 _tpl_set_var() {
   local _var_="$1"; shift
   local _tmp_="$1"; shift
-  
+
   while true; do
     K=$1
     [ -z "$K" ] && break
@@ -335,6 +336,7 @@ _semver_parse() {
   [ -n "$2" ] && _set_var "$2" "$_tmp2_"
   [ -n "$3" ] && _set_var "$3" "$_tmp3_"
   [ -n "$4" ] && _set_var "$4" "$_tmp4_"
+
 }
 
 # Updates or add a tag to a version string
@@ -353,6 +355,31 @@ _semver_set_tag() {
 }
 
 
+# Compares 2 sem version and return
+# - 1 if the first is > than the second
+# - 0 if they are equals
+# - -1 if the first is < than the second
+#
+# Params:
+# $1 destination var
+# $2 the first var
+# $3 the second version
+#
+_semver_cmp() {
+
+  _semver_parse _maj1_ _min1_ _ptc1_ "" "$2"
+  _semver_parse _maj2_ _min2_ _ptc2_ "" "$3"
+
+  [ "${_maj1_:-0}" -gt "${_maj2_:-0}" ] && { _set_var "$1" 1; return; }
+  [ "${_maj1_:-0}" -lt "${_maj2_:-0}" ] && { _set_var "$1" -1; return; }
+  [ "${_min1_:-0}" -gt "${_min2_:-0}" ] && { _set_var "$1" 1; return; }
+  [ "${_min1_:-0}" -lt "${_min2_:-0}" ] && { _set_var "$1" -1; return; }
+  [ "${_ptc1_:-0}" -gt "${_ptc2_:-0}" ] && { _set_var "$1" 1; return; }
+  [ "${_ptc1_:-0}" -lt "${_ptc2_:-0}" ] && { _set_var "$1" -1; return; }
+  _set_var "$1" 0
+}
+
+
 # Pretty debug prints of variables
 #
 # Params:
@@ -368,7 +395,7 @@ _pp() {
     shuft
     _pp "$@" >"$ENTANDO_DEBUG_TTY"
   fi
- 
+
   if [ "$1" == "-t" ]; then
     local TITLE=" [$2]"
     shift 2
@@ -390,10 +417,10 @@ _pp() {
 #
 _pp_adjust_var() {
   local _tmp_="${!1}"
-  
+
     local B='\033[44m\033[1;37m'
     local A='\033[0;39m'
-  
+
   if [ ${#_tmp_} -gt "$2" ]; then
     _tmp_="${_tmp_:0:$2}${B}[[CUTTED]]${A}"
   fi
@@ -503,7 +530,7 @@ __DEFENSIVE_VERIFY() {
 #
 # Syntax2 - Params:
 # $1: The error messages prefix
-# $2: -v 
+# $2: -v
 # $3: A description of value
 # $4: A value to test
 # $5: Operator
@@ -518,12 +545,12 @@ __VERIFY_EXPRESSION() {
     N="$1"; E="$2"; O=$3; V=$4
     shift 4
   else
-    N="$1"; 
+    N="$1";
     (E="${!N}") || _FATAL "Invalid variable name"
     E="${!N}"; O=$2; V=$3
     shift 4
   fi
-  
+
   case "$O" in
     -eq) O="==";OD="TO:  ";  [[ "$E" -eq "$V" ]];;
     -ne) O="!=";OD="TO:  ";  [[ "$E" -ne "$V" ]];;
@@ -541,11 +568,11 @@ __VERIFY_EXPRESSION() {
   if [ $? != 0 ]; then
     #local ln fn fl
     #read -r ln fn fl < <(caller "1")
-    
+
     echo ""
-    
+
     local MSG MSG2
-    
+
     if ! $CENSOR; then
       _pp_adjust_var E 250
       _pp_adjust_var V 250
@@ -564,7 +591,7 @@ __VERIFY_EXPRESSION() {
         MSG="Validation Failed"
         MSG2="\n${PREFIX}Expected $N $O ${B}[[CENSORED]]${A} but instead I've found ${B}[[CENSORED]]${A}"
     fi
-    
+
     [ -n "$MSG2" ] && echo -e "$MSG2" 1>&2
     _FATAL -S 3 -99 "$MSG" 1>&2
   fi

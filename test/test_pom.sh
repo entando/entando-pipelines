@@ -11,12 +11,12 @@
 #TEST:lib
 test_pom() {
   print_current_function_name "RUNNING TEST> " ".."
-  
+
   _pkg_get "xmlstarlet" -c xmlstarlet
 
   local RES
 
-  local F="$PROJECT_DIR/test/resources/test-pom-do-not-scan.xml"  
+  local F="$PROJECT_DIR/test/resources/test-pom-do-not-scan.xml"
   _pom_get_project_artifact_id RES "$F"
   [ "$RES" = "entando-plugin-jpredis" ] || FAILED
   _pom_get_project_version RES "$F"
@@ -27,14 +27,18 @@ test_pom() {
   local F2="$PROJECT_DIR/test/resources/test-pom-of-bom-do-not-scan.xml"
   _pom_get_project_property RES "$F2" "entando-engine.version"
   [ "$RES" = "6.4.0" ] || FAILED
-  
-  FC="$TEST_WORK_DIR/test-pom-do-not-scan.xml"  
+
+  _pom_set_project_property "6.5.0" "$F2" "entando-engine.version"
+  _pom_get_project_property RES "$F2" "entando-engine.version"
+  [ "$RES" = "6.5.0" ] || FAILED
+
+  FC="$TEST_WORK_DIR/test-pom-do-not-scan.xml"
   cp "$F" "$FC"
   RES=""
   _pom_set_project_version "6.3.1" "$FC" || FAILED
   _pom_get_project_version RES "$FC"
   [ "$RES" = "6.3.1" ] || FAILED "$RES"
-  
+
   true
 }
 
