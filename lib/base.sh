@@ -36,9 +36,10 @@ START_MACRO() {
   TEST_EXECUTION="${TEST_EXECUTION:-false}"
   ENTANDO_OPT_SUDO="${ENTANDO_OPT_SUDO:-"sudo"}"
   ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-INFO}"
-  ENTANDO_OPT_REPO_BOM_URL="${ENTANDO_OPT_REPO_BOM_URL:-"https://github.com/entando/entando-core-bom.git"}"
+  ENTANDO_OPT_REPO_BOM_URL="${ENTANDO_OPT_REPO_BOM_URL}"
   
   _ppl-load-context "$2"
+  
   #_pp EE_CLONE_URL ENTANDO_OPT_REPO_BOM_URL EE_HEAD_REF
   _ppl-pr-has-label "skip-${1,,}" && {
     if "$NO_SKIP"; then
@@ -55,7 +56,7 @@ START_MACRO() {
 # - $1: variable to set
 # - $2: value
 _set_var() {
-  [ -z "$1" ] && _FATAL -t "null var_name provided"
+  [ -z "$1" ] && _FATAL "null var_name provided"
   if [ -z "$2" ]; then
     read -r -d '' "$1" <<< ""
   else
@@ -197,7 +198,8 @@ print_current_function_name() {
 # and optionally prints the callstack
 #
 # Options
-# [-t]  prints the callstack
+# [-s]  simple: omits the stacktrace
+# [-S n] skips n levels of the call stack
 # [-99] uses 99 as exit code, which indicates test assertion
 #
 # Params:
@@ -205,14 +207,15 @@ print_current_function_name() {
 #
 _FATAL() {
   local rv=77
-  if [ "$1" = "-t" ]; then
+  if [ "$1" != "-s" ]; then
+    SKIP=1;[ "$1" = "-S" ] && { SKIP="$2"; shift 2; }
+    [ "$1" = "-99" ] && shift && rv=99
+    LOGGER() { _log_e "$*" 1>&2; }
+    _print_callstack "$SKIP" 5 "" LOGGER "$@" 1>&2
+  else
     shift
     [ "$1" = "-99" ] && shift && rv=99
-    LOGGER() { _log_e "$*"; }
-    _print_callstack 1 5 "" LOGGER "$@" 1>&2
-  else
-    [ "$1" = "-99" ] && shift && rv=99
-    _log_e "$@"
+    _log_e "$@" 1>&2
   fi
 
   exit "$rv"
@@ -234,7 +237,7 @@ _EXIT() {
 _NONNULL() {
   for var_name in "$@"; do
     local var_value="${!var_name}"
-    [ -z "$var_value" ] && _FATAL -t "${FUNCNAME[1]}> Variable \"$var_name\" should not be null"
+    [ -z "$var_value" ] && _FATAL "${FUNCNAME[1]}> Variable \"$var_name\" should not be null"
   done
 }
 
@@ -260,8 +263,8 @@ _url_add_token() {
 __cd() {
   local L="$1"
   [ "${L:0:7}" = "file://" ] && L="${L:7}"
-  [ -z "$L" ] && _FATAL -t "Null directory provided"
-  cd "$L" 1>/dev/null || _FATAL -t "Unable to enter directory $1"
+  [ -z "$L" ] && _FATAL "Null directory provided"
+  cd "$L" 1>/dev/null || _FATAL "Unable to enter directory $1"
   _log_t "Entered directory \"$L\""
 }
 
@@ -313,20 +316,24 @@ _tpl_set_var() {
 # $1  major version receiver var
 # $2  minor version receiver var
 # $3  patch version receiver var
-# $3  update version receiver var
-# $3  semver
+# $4  update version receiver var
+# $5  semver to parse
 #
 _semver_parse() {
-  local _tmp1_ _tmp2_ _tmp3_ _tmp4_
-  IFS='.' read -r _tmp1_ _tmp2_ _tmp3_ _tmp4_ <<< "$1"
+  local _tmp1_ _tmp2_ _tmp3_ _tmp4_ _tmp5_
+
+  _tmp5_="${5/-*/}"  # Removes the version tag
+
+  IFS='.' read -r _tmp1_ _tmp2_ _tmp3_ _tmp4_ <<< "$_tmp5_"
   [ "${_tmp1_:0:1}" = "v" ] && _tmp1_="${_tmp1_:1}"
-  [ -n "$2" ] && _set_var "$2" "$_tmp1_"
-  [ -n "$3" ] && _set_var "$3" "$_tmp2_"
-  [ -n "$4" ] && _set_var "$4" "$_tmp3_"
-  [ -n "$5" ] && _set_var "$5" "$_tmp4_"
+  [ "${_tmp1_:0:1}" = "p" ] && _tmp1_="${_tmp1_:1}"
+  [ -n "$1" ] && _set_var "$1" "$_tmp1_"
+  [ -n "$2" ] && _set_var "$2" "$_tmp2_"
+  [ -n "$3" ] && _set_var "$3" "$_tmp3_"
+  [ -n "$4" ] && _set_var "$4" "$_tmp4_"
 }
 
-# Updates or add a tag to a version
+# Updates or add a tag to a version string
 #
 # Params:
 # $1 the destination var
@@ -454,4 +461,107 @@ _SOE() {
   local R="$?"
   [ -n "$1" ] && _log_e "$1 didn't complete properly"
   [ "$R" != 0 ] && exit "$?"
+}
+
+__jq() {
+  jq "$@" || _FATAL "Error parsing the json input"
+}
+
+# See __VERIFY_EXPRESSION
+#
+__VERIFY() {
+  __VERIFY_EXPRESSION "" "$@"
+}
+
+# A defensive verify is a shield against dangerous bugs and conditions.
+#
+# Developers should never remove a defensive check just because the
+# condition tested can't fail according to the (current) code.
+#
+# For the syntax see __VERIFY_EXPRESSION
+#
+__DEFENSIVE_VERIFY() {
+  __VERIFY_EXPRESSION "DEFENSIVE-CHECK>" "$@"
+}
+
+
+# Verifies a condition
+#
+# Expects a value to match an expected value according with an operator.
+# If the verification fails an error and a callstack are printed.
+# The function assumes to be wrapped so it skips 2 levels of the callstack.
+#
+# Syntax1 - Params:
+# $1: The error messages prefix
+# $2: Name of the variable containing the value to test
+# $3: Operator
+# $4: expected value
+#
+# Syntax2 - Params:
+# $1: The error messages prefix
+# $2: -v 
+# $3: A description of value
+# $4: A value to test
+# $5: Operator
+# $6: expected value
+#
+__VERIFY_EXPRESSION() {
+  local PREFIX="${1:+"$1>" }"; shift
+  local A B C
+  local CENSOR=false;[ "$1" = "--censor" ] && { CENSOR=true; shift; }
+  if [ "$1" = "-v" ]; then
+    shift
+    N="$1"; E="$2"; O=$3; V=$4
+    shift 4
+  else
+    N="$1"; 
+    (E="${!N}") || _FATAL "Invalid variable name"
+    E="${!N}"; O=$2; V=$3
+    shift 4
+  fi
+  
+  case "$O" in
+    -eq) O="==";OD="TO:  ";  [[ "$E" -eq "$V" ]];;
+    -ne) O="!=";OD="TO:  ";  [[ "$E" -ne "$V" ]];;
+    -gt) O=">";OD="THAN:";   [[ "$E" -gt "$V" ]];;
+    -ge) O=">=";OD="THAN:";  [[ "$E" -ge "$V" ]];;
+    -lt) O="<";OD="THAN:";   [[ "$E" -lt "$V" ]];;
+    -le) O="<=";OD="THAN:";  [[ "$E" -le "$V" ]];;
+    =|==) O="=";OD="TO:  ";  [[ "$E" = "$V" ]];;
+    !=) O="!=";OD="TO:  ";  [[ "$E" != "$V" ]];;
+    =~) O="=~";OD="TO:  ";   [[ "$E" =~ $V ]];;
+    starts-with) O="=";OD="TO:  ";  [[ "$E" = "$V"* ]];;
+    *) _FATAL "Unknown operator \"$O\"";;
+  esac
+
+  if [ $? != 0 ]; then
+    #local ln fn fl
+    #read -r ln fn fl < <(caller "1")
+    
+    echo ""
+    
+    local MSG MSG2
+    
+    if ! $CENSOR; then
+      _pp_adjust_var E 250
+      _pp_adjust_var V 250
+
+      if [ "${#E}" -gt 30 ] || [ "${#V}" -gt 30 ]; then
+        MSG="Validation Failed"
+        MSG2="\n${PREFIX}Validation Failed in:\n> EXPECTED:  $N"
+        MSG2+="\n> TO BE:     $O\n> $OD      $V\n\n> BUT WAS FOUND: $E"
+      else
+        MSG="Validation Failed"
+        MSG2="\n${PREFIX}Expected $N $O \"$V\" but instead I've found \"$E\""
+      fi
+    else
+        local B='\033[44m\033[1;37m'
+        local A='\033[0;39m'
+        MSG="Validation Failed"
+        MSG2="\n${PREFIX}Expected $N $O ${B}[[CENSORED]]${A} but instead I've found ${B}[[CENSORED]]${A}"
+    fi
+    
+    [ -n "$MSG2" ] && echo -e "$MSG2" 1>&2
+    _FATAL -S 3 -99 "$MSG" 1>&2
+  fi
 }

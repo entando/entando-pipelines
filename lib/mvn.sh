@@ -7,12 +7,12 @@
 # Params:
 # $@: all params are forwarded to the mvn command
 #
-_mvn_exec() {
+__mvn_exec() {
   local TMPFILE="$(mktemp)"
   local MVN="mvn"
   [ -f "./mvnw" ] && MVN="./mvnw"
 
-  _log_d "Running mvn.."
+  _log_d "Running mvn $1.."
   if "$MVN" "$@" &> "$TMPFILE"; then
     
     if _log_on_level TRACE; then
@@ -30,4 +30,14 @@ _mvn_exec() {
     rm "$TMPFILE"
     _FATAL "Error executing mvn"
   fi
+}
+
+# Runs a maven deploy over the received environment params
+#
+# Params:
+# $1: repository id
+# $2: repository url
+#
+__mvn_deploy() {
+  __mvn_exec --batch-mode deploy -DskipTests=true -DaltDeploymentRepository="$1::default::$2"
 }

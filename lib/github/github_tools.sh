@@ -9,13 +9,12 @@
 # $4: the state description
 #
 # Expected Env:
-# - PPL_TOKEN
-# - EE_PARSED_CONTEXT=true
+# - EE_TOKEN
 #
 _ppl-job-update-status() {
   github-request POST "$EE_STATUSES_URL" \
     "{\"state\":\"$2\", \"description\": \"$3\", \"context\":\"$4\"}" \
-    "/sha" "$1" || true
+    "sha" "$1" || true
 }
 
 
@@ -84,7 +83,7 @@ _ppl-pr-has-label() {
 # $.. $4 and $5 repeated at will
 #
 # Expected Env:
-# - PPL_TOKEN
+# - EE_TOKEN
 #
 github-request() {
   _ppl_must_have_env
@@ -107,7 +106,7 @@ github-request() {
       curl -sL -o "$RESFILE" -w "%{http_code}" "$URL" \
         -X "$VERB" \
         -H "Accept: application/vnd.github.v3+json" \
-        -H "Authorization: token $PPL_TOKEN" \
+        -H "Authorization: token $EE_TOKEN" \
         ${DATA:+-d "$DATA"} \
       ;
     )"
@@ -137,6 +136,7 @@ github-request() {
 # $1: the JSON environment provided by the "github" object
 #
 _ppl-load-context() {
+  NOOVR=false;[ "$1" = "--disable-overrides" ] && shift && NOOVR=true
   local PPL_CONTEXT="$1"
   _NONNULL PPL_CONTEXT
   
@@ -157,26 +157,36 @@ _ppl-load-context() {
   _pkg_get "jq" -c "jq"
 
   local Q="["
+  Q+=".repository,"
+  Q+=".workflow,"
+  Q+=".job,"
+  Q+=".event_name,"
   Q+=".token,"
+  Q+='.ref,'
+  Q+='.sha,'
   Q+='.base_ref,'
   Q+='.head_ref,'
-  Q+='.sha,'
-  Q+=".event.pull_request.base.repo.clone_url,"
+  Q+=".event.repository.clone_url,"
   Q+='.event.repository.statuses_url,'
   Q+='.event.repository.issues_url,'
   Q+='.event.pull_request.number,'
   Q+='.event.pull_request.title'
   Q+="] | @csv"
   local RES
-  RES="$(jq "$Q" -r <<< "$PPL_CONTEXT")"
+  RES="$(__jq "$Q" -r <<< "$PPL_CONTEXT")"
   RES="${RES//\"/}"
   # shellcheck disable=SC2034
   {
     IFS=',' read -r \
-      PPL_TOKEN \
+      EE_REPO \
+      EE_WORKFLOW \
+      EE_JOB \
+      EE_EVENT \
+      EE_TOKEN \
+      EE_REF \
+      EE_COMMIT_ID \
       EE_BASE_REF \
       EE_HEAD_REF \
-      EE_COMMIT_ID \
       EE_CLONE_URL \
       EE_STATUSES_URL \
       EE_ISSUES_URL \
@@ -185,21 +195,25 @@ _ppl-load-context() {
     <<< "$RES"
     _extract_pr_title_prefix EE_PR_TITLE_PREFIX "$EE_PR_TITLE"
     EE_PARSED_CONTEXT="$PPL_CONTEXT"
-    EE_PR_LABELS="$(jq ".event.pull_request.labels | map(.name) | join(\",\")" -r <<< "$PPL_CONTEXT")"
+    EE_PR_LABELS="$(
+      __jq ".event.pull_request.labels | map(.name)? | join(\",\")?" -r <<< "$PPL_CONTEXT" 2> /dev/null
+    )"
     EE_PR_LABELS=",${EE_PR_LABELS//\"/},"   # itmlst format
   }
-  
+
   # TEST_EXECUTION OVERRIDES
-  type TEST_APPLY_DEFAULT_OVERRIDES &>/dev/null && {
-    TEST_APPLY_DEFAULT_OVERRIDES || true
-  }
-  type TEST_APPLY_OVERRIDES &>/dev/null && {
-    TEST_APPLY_OVERRIDES || true
+  ! $NOOVR && {
+    type TEST_APPLY_DEFAULT_OVERRIDES &>/dev/null && {
+      TEST_APPLY_DEFAULT_OVERRIDES || true
+    }
+    type TEST_APPLY_OVERRIDES &>/dev/null && {
+      TEST_APPLY_OVERRIDES || true
+    }
   }
   
   return 0
 }
 
 _ppl_must_have_env() {
-  [ -z "${EE_PARSED_CONTEXT}" ] && _FATAL -t "Please run _ppl-load-context"
+  [ -z "${EE_PARSED_CONTEXT}" ] && _FATAL "Please run _ppl-load-context"
 }

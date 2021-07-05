@@ -34,6 +34,11 @@ for example:
   
  - `EE_PR_TITLE`
  - `EE_PR_NUM`
+ 
+The function used to parse the pipelines context and populate the execution enviroment is called:
+
+- `_ppl-load-context {pipeline context}`
+
 
 # Enviroment Options:
 
