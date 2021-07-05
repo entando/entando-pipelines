@@ -2,10 +2,13 @@
 
 # shellcheck disable=SC1091,SC1090
 {
+  . "$PROJECT_DIR/test/_test-base.sh"
   . "$PROJECT_DIR/lib/base.sh"
+  . "$PROJECT_DIR/lib/pkg.sh"
   . "$PROJECT_DIR/lib/github/github_tools.sh"
 }
 
+#TEST:lib
 test_github_tools() {
   print_current_function_name "RUNNING TEST> "  ".."
   (
@@ -14,10 +17,13 @@ test_github_tools() {
 
     # shellcheck disable=2034
     EE_PARSED_CONTEXT=""
-    _ppl-load-context "$E"
+    _ppl-load-context --disable-overrides "$E"
+    
+    echo "$EE_PARSED_CONTEXT" >  /tmp/t1
+    echo "$E" >  /tmp/t2
 
     ASSERT --censor EE_PARSED_CONTEXT = "$E"
-    ASSERT --censor PPL_TOKEN = "999999999"
+    ASSERT --censor EE_TOKEN = "999999999"
     ASSERT EE_BASE_REF = "develop"
     ASSERT EE_HEAD_REF = "github-actions-pipeline-exp2"
     ASSERT EE_COMMIT_ID = "239d3c0153e609a84747e129c7bfd2f415743551"

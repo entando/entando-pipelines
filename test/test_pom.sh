@@ -2,11 +2,13 @@
 
 # shellcheck disable=SC1091,SC1090
 {
+  . "$PROJECT_DIR/test/_test-base.sh"
   . "$PROJECT_DIR/lib/base.sh"
   . "$PROJECT_DIR/lib/pom.sh"
   . "$PROJECT_DIR/lib/pkg.sh"
 }
 
+#TEST:lib
 test_pom() {
   print_current_function_name "RUNNING TEST> " ".."
   

@@ -11,7 +11,7 @@
 |`lib`| for the libs tests |
 |`macro`| for the macro test |
 
-_please note that "param" is a command delimited list_
+_please note that "param" is a comma-delimited list_
 
 ### For example this way
 
@@ -22,12 +22,12 @@ ENTANDO_OPT_LOG_LEVEL=DEBUG prj/run-tests.sh macro
 ### Insights
 
 The function creates a temporary dir in which the test is executed.
-Furthermore defines environment variable defaults, deploys some fixtures and mock some resources by operating of the enviroment variables.
+Furthermore defines environment variable defaults, deploys some fixtures and mocks some resources by operating on the enviroment variables.
 
 The script provides two mocked repositories that can be addressed through these variables:
 
-- `ENTANDO_OPT_REPO_BOM_URL`: a mock of the BOM repository
-- `EE_CLONE_URL`: a mock of a module repository
+- `ENTANDO_OPT_REPO_BOM_URL`: (local) url of the mock of the BOM repository
+- `EE_CLONE_URL`: (local) url of the mock of an example module repository
 
 ## Functions
 
@@ -40,16 +40,16 @@ Stop the test execution with an error
 ### ASSERT
 
 ```
-ASSERT {VAR-NAME} {OP} {EXPECTED-VALUE}
+ASSERT {VAR} {OP} {EXPECTED-VALUE}
 ```
 
-Expects the `VAR-NAME` content to match the `EXPECTED-VALUE` according with `OP`
+Expects the `VAR` value to match the `EXPECTED-VALUE` according with `OP`
 
 ```
-ASSERT -v {VALUE-DESC} {VAL} {OP} {EXPECTED-VALUE}
+ASSERT -v {VALUE-DESC} {VALUE} {OP} {EXPECTED-VALUE}
 ```
 
-Expects `VAL` to match `EXPECTED-VALUE` according with `OP`.  
+Expects `VALUE` to match `EXPECTED-VALUE` according with `OP`.  
 The `VALUE-DESC` is used instead of `VAR-NAME` in order to compose the error message.
 
 #### Available `OP`s
@@ -67,13 +67,13 @@ Refer to the bash "IF" documentation for details
 ### DBGSHELL
 
 Drops a debug shell.  
-Put it in the middle to a test to drop a shell with all the execution environment available, including the temporary test work dir, variables and functions.
-
-The function used to parse the pipelines context and populate the execution enviroment is called:
-
-- `_ppl-load-context {pipeline context}`
-
+Put it in the middle of a test to drop a shell with all the execution environment available, including the temporary test work dir, variables and functions.
 
 ### TEST_APPLY_OVERRIDES
 
-Define a function `TEST_APPLY_OVERRIDES` before the a macro invocation in order to define the overrides to apply when the macro is being executed.
+Define this function in order to override the execution enviroment variables.
+
+Example:
+```
+TEST_APPLY_OVERRIDES() { EE_PR_TITLE="A-MOCKED- PR-TITLE"; }
+```

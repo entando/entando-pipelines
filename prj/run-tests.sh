@@ -36,12 +36,11 @@ TEST_TECHNICAL_LOG_FILE="$TEST_WORK_DIR/ttlog"
 echo "[REM] STARTED AT $(date +'%Y-%m-%d %H-%M-%S')" > "$TEST_TECHNICAL_LOG_FILE"
 GITHUB_ACTIONS=true
 #PPL_CONTEXT="{{test-run}}"
-PPL_CONTEXT="$(cat "$PROJECT_DIR/test/resources/github-context-sample-01.json")"
+PPL_CONTEXT="$(cat "$PROJECT_DIR/test/resources/github-context-sample-02.json")"
 ENTANDO_OPT_REPO_BOM_URL="file://$TEST_WORK_DIR/6017ee92-ba94-40a2-b098-91b2c04f107b/entando-core-bom"
 
 TEST_APPLY_DEFAULT_OVERRIDES() {
-  EE_ORIGINAL_CLONE_URL="EE_CLONE_URL"
-  EE_CLONE_URL="file://$TEST_WORK_DIR/6017ee92-ba94-40a2-b098-91b2c04f107b/entando-plugin-jpredis"
+  EE_CLONE_URL="file://$TEST_WORK_DIR/6017ee92-ba94-40a2-b098-91b2c04f107b/entando-portal-ui"
 }
 
 test-cleanup() {
@@ -50,23 +49,21 @@ test-cleanup() {
 trap test-cleanup exit
 
 #~
-#~ RUNS THE LIB TESTS
+#~ RUNS THE TESTS
 #~
+for label in ${EXECUTION_LABELS//,/ }; do
+  while read -r file; do
+    (
+      . "$file"
 
-_itmlst_contains "$EXECUTION_LABELS" "lib" && {
-  # shellcheck disable=SC1091
-  {
-    . "$PROJECT_DIR/test/test_base.sh"
-    . "$PROJECT_DIR/test/test_git.sh"
-    . "$PROJECT_DIR/test/test_pom.sh"
-    . "$PROJECT_DIR/test/github/test_github_tools.sh"
-  }
-
-  test_base || _failend
-  test_git || _failend
-  test_pom || _failend
-  test_github_tools || _failend
-}
+      while read -r fn; do
+        echo '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        echo 'TEST> TEST FILE "'"$fn"'"'
+        ($fn) || exit "$?"
+      done < <(grep  -A 1 "#TEST:$label" "$file" | tail -1 | sed 's/().*//')
+    ) || _failend
+  done  < <(grep -lr "#TEST:$label" "$PROJECT_DIR/test")
+done
 
 #~
 #~ GOODBYE

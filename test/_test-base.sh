@@ -10,61 +10,16 @@
 }
 
 FAILED() {
-  [ "$?" -eq 99 ] && exit "$?"
-  local ln fn fl
-  read -r ln fn fl < <(caller "0")
-  _FATAL -99 "Test failed in $fl on line $ln ($fn)${1:+ [COMMENT: $1]}"
+  [ "$?" = "99" ] && exit 99
+
+  #local ln fn fl
+  #read -r ln fn fl < <(caller "0")
+  #_FATAL -S 3 -99 "Test failed in $fl on line $ln ($fn)${1:+ [COMMENT: $1]}"
+  _FATAL -S 2 -99 "Test failed${1:+ (COMMENT: $1)}"
 }
 
 ASSERT() {
-  local A B C
-  local CENSOR=false;[ "$1" = "--censor" ] && { CENSOR=true; shift; }
-  if [ "$1" = "-v" ]; then
-    shift
-    N="$1"; E="$2"; O=$3; V=$4
-    shift 4
-  else
-    N="$1"; E="${!N}"; O=$2; V=$3
-    shift 4
-  fi
-  
-  case "$O" in
-    -eq) O="==";OD="TO:  ";  [[ "$E" -eq "$V" ]];;
-    -ne) O="!=";OD="TO:  ";  [[ "$E" -ne "$V" ]];;
-    -gt) O=">";OD="THAN:";   [[ "$E" -gt "$V" ]];;
-    -ge) O=">=";OD="THAN:";  [[ "$E" -ge "$V" ]];;
-    -lt) O="<";OD="THAN:";   [[ "$E" -lt "$V" ]];;
-    -le) O="<=";OD="THAN:";  [[ "$E" -le "$V" ]];;
-    =|==) O="=";OD="TO:  ";  [[ "$E" = "$V" ]];;
-    !=) O="!=";OD="TO:  ";  [[ "$E" != "$V" ]];;
-    =~) O="=~";OD="TO:  ";   [[ "$E" =~ $V ]];;
-    *) O="??"; _FATAL -t "Unknown operator \"$O\"";;
-  esac
-
-  if [ $? != 0 ]; then
-    local ln fn fl
-    read -r ln fn fl < <(caller "0")
-    
-    _log_e "Assertion failed in $fl on line $ln ($fn)"
-    
-    if ! $CENSOR; then
-      _pp_adjust_var E 250
-      _pp_adjust_var V 250
-
-      if [ "${#E}" -gt 30 ] || [ "${#V}" -gt 30 ]; then
-        MSG="\nTEST> Asserted:\n> EXPECTED:  $N"
-        MSG+="\n> TO BE:     $O\n> $OD      $V\n\n> BUT WAS FOUND: $E\n" 1>&2
-        echo -e "$MSG"
-      else
-        echo -e "\nTEST> Expected $N $O \"$V\" but instead I've found \"$E\"\n" 1>&2
-      fi
-    else
-        local B='\033[44m\033[1;37m'
-        local A='\033[0;39m'
-        echo -e "\nTEST> Expected $N $O ${B}[[CENSORED]]${A} but instead I've found ${B}[[CENSORED]]${A}\n" 1>&2
-    fi
-    _FATAL -99 "TEST FAILED."
-  fi
+  __VERIFY_EXPRESSION "TEST" "$@"
 }
 
 # Creates a test git repository
@@ -87,8 +42,8 @@ _create-test-git-repo() {
 
     git init
     _git_set_commit_config "the-user-name" "the-user-email@example.com"
-    [ "$(git config "user.name")" = "the-user-name" ] || _FATAL -t "Test git repo preparation failed"
-    [ "$(git config "user.email")" = "the-user-email@example.com" ] || _FATAL -t "Test git repo preparation failed"
+    [ "$(git config "user.name")" = "the-user-name" ] || _FATAL "Test git repo preparation failed"
+    [ "$(git config "user.email")" = "the-user-email@example.com" ] || _FATAL "Test git repo preparation failed"
 
     git checkout -q -b master
     echo "the-file-body" > "the-file"
@@ -108,7 +63,7 @@ _create-test-git-repo() {
     fi
     
     if [ -n "$tag" ]; then
-      git tag "$tag"
+      __git_add_tag "$tag"
     fi
   ) 1>/dev/null || _FATAL "Test git repo preparation failed"
 }
@@ -119,9 +74,15 @@ LATEST_TEST_TLOG_COMMAND() {
 
 DBGSHELL() {
   (
-    echo -e '\033[43m\033[1;30m> DROPPING THE DEBUG SHELL..\033[0;39m' > /dev/tty
+    [ ! -t 0 ] && {
+      _log_w "Refusing to drop shell because this is not an interactive tty session"
+      exit 0
+    }
     
-    # Exporting the current vars and functions
+    _log_i 'DROPPING THE DEBUG SHELL FROM:' 1>&2
+    _print_callstack 1 5 "" "" "$@" 1>&2
+    
+    # Export the current vars and functions
     {
       local fn var 
       
@@ -129,13 +90,32 @@ DBGSHELL() {
         # shellcheck disable=SC2163
         export -f "$fn"
       done < <(compgen -A function)
-      
       while read -r var; do
+        [ "$var" = "SHELLOPTS" ] && continue
         # shellcheck disable=SC2163
         export "$var"
       done < <(compgen -v)
     } &> /dev/null
     
-    bash < /dev/stdin > /dev/tty
-  ) 
+    # Create copy of the bashrc
+    if [ -f "$HOME/.profile" ]; then
+      cp "$HOME/.profile" "$TEST_WORK_DIR/.bashrc"
+    else
+      [ -f "$HOME/.bashrc" ] && cp "$HOME/.bashrc" "$TEST_WORK_DIR/.bashrc"
+    fi
+
+    {
+      echo -e "\n#\n#\n#\n"
+      COMMENT="";[ -n "$1" ] && COMMENT=" with comment: \"$1\""
+      # shellcheck disable=SC2028
+      echo "echo -e '\033[43m\033[1;30m> DEBUG SHELL STARTED$COMMENT\033[0;39m\n' 1>&2"
+      echo -e "true"
+    } >> "$TEST_WORK_DIR/.bashrc"
+    
+    # Run the shell
+    bash --rcfile "$TEST_WORK_DIR/.bashrc" < /dev/stdin > /dev/tty
+
+  ) || { 
+    [ "$?" = "77" ] && _FATAL "Execution Interrupted: Debug Shell terminated with fatal error" >/dev/tty 
+  }
 }
