@@ -35,7 +35,7 @@ _failend() { EC="$?"; echo -e "\nTEST> TEST FAILURE DETECTED (EXITCODE: $EC)\n";
   TEST__WORK_DIR="$(mktemp -d)"
   cd "$TEST__WORK_DIR"
   touch "$TEST__WORK_DIR/.effimeral-test-dir"
-  tar xfz "$PROJECT_DIR/test/resources/6017ee92-ba94-40a2-b098-91b2c04f107b.tgz" "6017ee92-ba94-40a2-b098-91b2c04f107b"
+  tar xfz "$PROJECT_DIR/test/resources/repo-mocks.tgz" "repo-mocks"
   cp -ra "$PROJECT_DIR/test/resources/" "./resources"
 }
 
@@ -55,7 +55,7 @@ type TEST__BEFORE_RUN &>/dev/null && TEST__BEFORE_RUN
 {
   ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-DEBUG}"
   [ -z "$ENTANDO_OPT_REPO_BOM_URL" ] && \
-    ENTANDO_OPT_REPO_BOM_URL="file://$TEST__WORK_DIR/6017ee92-ba94-40a2-b098-91b2c04f107b/entando-core-bom"
+    ENTANDO_OPT_REPO_BOM_URL="file://$TEST__WORK_DIR/repo-mocks/entando-core-bom"
 
   ENTANDO_OPT_REPO_BOM_MAIN_BRANCH="${ENTANDO_OPT_REPO_BOM_MAIN_BRANCH:-develop}"
 
@@ -68,7 +68,7 @@ type TEST__BEFORE_RUN &>/dev/null && TEST__BEFORE_RUN
 
 
 TEST__APPLY_DEFAULT_OVERRIDES() {
-  EE_CLONE_URL="file://$TEST__WORK_DIR/6017ee92-ba94-40a2-b098-91b2c04f107b/entando-portal-ui"
+  EE_CLONE_URL="file://$TEST__WORK_DIR/repo-mocks/entando-portal-ui"
 }
 
 test-cleanup() {
