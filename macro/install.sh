@@ -9,12 +9,9 @@
   cd - 1>/dev/null || { echo "Error $LINENO"; exit 1; }
   cd "$HOME/.entando/ppl/entando-pipelines" || { echo "Error $LINENO"; exit 1; }
   git checkout -B "$BRANCH" "$BRANCH" &>/dev/null
-  echo "source \"$HOME/.entando/ppl/entando-pipelines/macro/ppl-run.sh\" \"\$@\"" > "$HOME/ppl-run"
+  echo -e "#!/bin/bash\nsource \"$HOME/.entando/ppl/entando-pipelines/macro/ppl-run.sh\" \"\$@\"" > "$HOME/ppl-run"
   chmod +x "$HOME/ppl-run"
   cd - 1>/dev/null || { echo "Error $LINENO"; exit 1; }
-) && {
-      # shellcheck disable=SC1090
-  . "$HOME/ppl-run" --activate
-}
+)
 
 #echo "PIPELINE TOOLS INITIALIZED"

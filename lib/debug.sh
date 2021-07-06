@@ -101,7 +101,7 @@ _print_callstack() {
     "$cmd" "$@"
   else
     ! $NOFRAME && {
-      echo "▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁"
+      echo -e "▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁"
       [ -n "$title" ] && echo " ▕ $title ▏"
     }
   fi
@@ -208,7 +208,7 @@ _NONNULL() {
 #
 __VERIFY_EXPRESSION() {
   local PREFIX="${1:+"$1>" }"; shift
-  local A B C
+  local A B
   local CENSOR=false;[ "$1" = "--censor" ] && { CENSOR=true; shift; }
   if [ "$1" = "-v" ]; then
     shift
@@ -282,4 +282,61 @@ __VERIFY() {
 #
 __DEFENSIVE_VERIFY() {
   __VERIFY_EXPRESSION "DEFENSIVE-CHECK>" "$@"
+}
+
+# Drops a shell that inherits the caller environment
+#
+DBGSHELL() {
+  SKIP=0;[ "$1" = "-S" ] && { SKIP="$2"; shift 2; }
+  (
+    $IN_TTY && {
+     _log_w "Refusing to drop shell because this is not an interactive tty session"
+     exit 0
+    }
+
+    _log_i 'DROPPING THE DEBUG SHELL FROM:' 1>&2
+    _print_callstack "$SKIP" 5 "" "" "$@" 1>&2
+    
+    (
+      read -r ln fn fl < <(caller "$SKIP")
+      sed -n "$((ln-4))"',$p' "$fl" | head -5
+    )
+    echo -e "\n▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    
+    # Export the current vars and functions
+    {
+      local fn var
+
+      while read -r fn; do
+        # shellcheck disable=SC2163
+        export -f "$fn"
+      done < <(compgen -A function)
+      while read -r var; do
+        [ "$var" = "SHELLOPTS" ] && continue
+        # shellcheck disable=SC2163
+        export "$var"
+      done < <(compgen -v)
+    } &> /dev/null
+
+    # Create copy of the bashrc
+    if [ -f "$HOME/.profile" ]; then
+      cp "$HOME/.profile" "$TEST__WORK_DIR/.bashrc"
+    else
+      [ -f "$HOME/.bashrc" ] && cp "$HOME/.bashrc" "$TEST__WORK_DIR/.bashrc"
+    fi
+
+    {
+      echo -e "\n#\n#\n#\n"
+      COMMENT="";[ -n "$1" ] && COMMENT=" with comment: \"$1\""
+      # shellcheck disable=SC2028
+      echo "echo -e '\033[43m\033[1;30m> DEBUG SHELL STARTED$COMMENT\033[0;39m\n' 1>&2"
+      echo -e "true"
+    } >> "$TEST__WORK_DIR/.bashrc"
+
+    # Run the shell
+    bash --rcfile "$TEST__WORK_DIR/.bashrc" < /dev/tty > /dev/tty
+
+  ) || {
+    [ "$?" = "77" ] && _FATAL "Execution Interrupted: Debug Shell terminated with fatal error" >/dev/tty
+  }
 }

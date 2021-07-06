@@ -6,6 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 {
   # Base
   . "$SCRIPT_DIR/../lib/base.sh"
+  . "$SCRIPT_DIR/../lib/debug.sh"
+  . "$SCRIPT_DIR/../lib/misc.sh"
   
   # Specialized
   . "$SCRIPT_DIR/../lib/git.sh"

@@ -33,7 +33,7 @@ START_MACRO() {
     _log_i "~~ ${comment}${EE_CURRENT_MACRO} invoked"
   fi
 
-  TEST_EXECUTION="${TEST_EXECUTION:-false}"
+  TEST__EXECUTION="${TEST__EXECUTION:-false}"
   if [ "$ENTANDO_OPT_SUDO" != "-" ]; then
     ENTANDO_OPT_SUDO="${ENTANDO_OPT_SUDO:-"sudo"}"
   else
@@ -41,7 +41,7 @@ START_MACRO() {
   fi
   ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-INFO}"
   ENTANDO_OPT_REPO_BOM_URL="${ENTANDO_OPT_REPO_BOM_URL}"
-  ENTANDO_OPT_REPO_BOM_MASTER_BRANCH="${ENTANDO_OPT_REPO_BOM_MASTER_BRANCH:-master}"
+  ENTANDO_OPT_REPO_BOM_MAIN_BRANCH="${ENTANDO_OPT_REPO_BOM_MAIN_BRANCH:-develop}"
 
   _ppl-load-context "$2"
 
@@ -97,7 +97,7 @@ _FATAL() {
 _SOE() {
   local R="$?"
   [ -n "$1" ] && _log_e "$1 didn't complete properly"
-  [ "$R" != 0 ] && exit "$?"
+  [ "$R" != 0 ] && exit "$R"
 }
 
 # Sets a variable

@@ -37,7 +37,7 @@ ppl--release-app-engine-module() {
 
   # clone entando-core-bom
   mkdir "bom-tmp" && cd "bom-tmp" \
-     && _git_full_clone "$ENTANDO_OPT_REPO_BOM_URL" "$GIT_TOKEN"
+     && _git_full_clone "$ENTANDO_OPT_REPO_BOM_URL" "" "" "$GIT_TOKEN"
 
   # get the current artifact version in the entando-core-bom pom.xml file
   _pom_get_artifact_version artifactVersionInBom "pom.xml" "$artifactId"

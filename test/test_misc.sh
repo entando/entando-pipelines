@@ -49,24 +49,24 @@ test_pr_utils() {
 
 test_semver_utils() {
   # ~ PARSE
-  local maj min ptc upd
+  local maj min ptc tag
   print_current_function_name "RUNNING TEST> "  ".."
-  _semver_parse maj min ptc upd "1.2.3"
-  ASSERT -v RES "$maj.$min.$ptc.$upd" = "1.2.3."
-  _semver_parse maj min ptc upd "1.2.3.4"
-  ASSERT -v RES "$maj.$min.$ptc.$upd" = "1.2.3.4"
-  _semver_parse maj min ptc upd "1"
-  ASSERT -v RES "$maj.$min.$ptc.$upd" = "1..."
-  _semver_parse maj min ptc upd ""
-  ASSERT -v RES "$maj.$min.$ptc.$upd" = "..."
-  _semver_parse maj "" ptc "" "1.2.3.4"
-  ASSERT -v RES "$maj.$min.$ptc.$upd" = "1..3."
-  _semver_parse maj min ptc upd "v1.2.3"
-  ASSERT -v RES "$maj.$min.$ptc.$upd" = "1.2.3."
-  _semver_parse maj min ptc upd "v.2.3"
-  ASSERT -v RES "$maj.$min.$ptc.$upd" = ".2.3."
-  _semver_parse maj min ptc upd "1.2.3-SNAPSHOT"
-  ASSERT -v RES "$maj.$min.$ptc.$upd" = "1.2.3."
+  _semver_parse maj min ptc tag "1.2.3"
+  ASSERT -v RES "$maj.$min.$ptc-$tag" = "1.2.3-"
+  _semver_parse maj min ptc tag "1.2.3-SNAPSHOT"
+  ASSERT -v RES "$maj.$min.$ptc-$tag" = "1.2.3-SNAPSHOT"
+  _semver_parse maj min ptc tag "1"
+  ASSERT -v RES "$maj.$min.$ptc-$tag" = "1..-"
+  _semver_parse maj min ptc tag ""
+  ASSERT -v RES "$maj.$min.$ptc-$tag" = "..-"
+  _semver_parse maj "" ptc "" "1.2.3-4"
+  ASSERT -v RES "$maj.$min.$ptc-$tag" = "1..3-"
+  _semver_parse maj min ptc tag "v1.2.3"
+  ASSERT -v RES "$maj.$min.$ptc-$tag" = "1.2.3-"
+  _semver_parse maj min ptc tag "v.2.3"
+  ASSERT -v RES "$maj.$min.$ptc-$tag" = ".2.3-"
+  _semver_parse maj min ptc tag "1.2.3-SNAPSHOT"
+  ASSERT -v RES "$maj.$min.$ptc-$tag" = "1.2.3-SNAPSHOT"
 
   # ~ SET TAG
   _semver_set_tag RES "1.2.3" "SNAPSHOT"
@@ -75,6 +75,14 @@ test_semver_utils() {
   ASSERT RES = "1.2.3-PREVIEW-01"
   _semver_set_tag RES "1.2.3-PREVIEW-01" "PREVIEW-02"
   ASSERT RES = "1.2.3-PREVIEW-02"
+  
+  # ~ ADD
+  _semver_add RES "1.2.3" 0 0 1
+  ASSERT RES = "1.2.4"
+  _semver_add RES "1.2.3" 1 2 3
+  ASSERT RES = "2.4.6"
+  _semver_add RES "1.2.3-SNAPSHOT" 1 2 3
+  ASSERT RES = "2.4.6-SNAPSHOT"
 }
 
 test_itmlst_utils() {

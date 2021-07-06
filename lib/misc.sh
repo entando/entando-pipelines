@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Adds a token or replaces a tocken to/in a URL
 #
 # Params:
@@ -135,18 +137,33 @@ _itmlst_empty() {
 # $5  semver to parse
 #
 _semver_parse() {
-  local _tmp1_ _tmp2_ _tmp3_ _tmp4_ _tmp5_
+  local _tmpV_ _tmpT_ _tmp1_ _tmp2_ _tmp3_
 
-  _tmp5_="${5/-*/}"  # Removes the version tag
-
-  IFS='.' read -r _tmp1_ _tmp2_ _tmp3_ _tmp4_ <<< "$_tmp5_"
+  IFS='-' read -r _tmpV_ _tmpT_ <<< "$5"
+  IFS='.' read -r _tmp1_ _tmp2_ _tmp3_ <<< "$_tmpV_"
   [ "${_tmp1_:0:1}" = "v" ] && _tmp1_="${_tmp1_:1}"
   [ "${_tmp1_:0:1}" = "p" ] && _tmp1_="${_tmp1_:1}"
   [ -n "$1" ] && _set_var "$1" "$_tmp1_"
   [ -n "$2" ] && _set_var "$2" "$_tmp2_"
   [ -n "$3" ] && _set_var "$3" "$_tmp3_"
-  [ -n "$4" ] && _set_var "$4" "$_tmp4_"
+  [ -n "$4" ] && _set_var "$4" "$_tmpT_"
+  
+  true
+}
 
+# increments a semver
+#
+# Params:
+# $1  receiver var
+# $2  base semver
+# $3  major increment
+# $4  minor increment
+# $5  patch increment
+#
+_semver_add() {
+  local _maj_ _min_ _ptc_ _tag_
+  _semver_parse _maj_ _min_ _ptc_ _tag_ "$2"
+  _set_var "$1" "$((_maj_+$3)).$((_min_+$4)).$((_ptc_+$5))${_tag_:+-$_tag_}"
 }
 
 # Updates or add a tag to a version string
@@ -211,4 +228,11 @@ __exist() {
     "-d") [ ! -d "$2" ] && _FATAL "Unable to find the dir \"$2\"";;
     *) _FATAL "Invalid mode \"$1\"";;
   esac
+}
+
+# Executes a jq command
+# FATALS on error
+# 
+__jq() {
+  jq "$@" || _FATAL "Error parsing the json input"
 }
