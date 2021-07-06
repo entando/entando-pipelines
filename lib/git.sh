@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # Runs an arbitrary git command and FATALS if it fails
 #
 __git() {
@@ -117,14 +116,16 @@ _git_get_current_commit_id() {
 #
 #
 _git_determine_highest_version() {
-  local maj min ptc __tmp__
+  local __tmp__
   __tmp__="$(
-  while read -r v; do
-    if [ "${v:0:1}" = "v" ]; then
-      _semver_parse maj min ptc "" "$v"
-      printf "X%04dX%04dX%04d\n" "$maj" "$min" "$ptc"
-    fi
-  done < <(git tag -l) | sort | tail -1 | sed -E "s/X0+/./g"
+    local maj min ptc
+    
+    while read -r v; do
+      if [ "${v:0:1}" = "v" ]; then
+        _semver_parse maj min ptc "" "$v"
+        printf "X%04dX%04dX%04d\n" "$maj" "$min" "$ptc"
+      fi
+    done < <(git tag -l) | sort | tail -1 | sed -E "s/X0+/./g"
   )"
   _set_var "$1" "${__tmp__:1}"
 }

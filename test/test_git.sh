@@ -4,6 +4,7 @@
 {
   . "$PROJECT_DIR/test/_test-base.sh"
   . "$PROJECT_DIR/lib/base.sh"
+  . "$PROJECT_DIR/lib/semver.sh"
   . "$PROJECT_DIR/lib/git.sh"
 }
 

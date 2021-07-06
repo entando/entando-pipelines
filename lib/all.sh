@@ -8,8 +8,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
   . "$SCRIPT_DIR/../lib/base.sh"
   . "$SCRIPT_DIR/../lib/debug.sh"
   . "$SCRIPT_DIR/../lib/misc.sh"
+  . "$SCRIPT_DIR/../lib/semver.sh"
   
-  # Specialized
+  # Tools
   . "$SCRIPT_DIR/../lib/git.sh"
   . "$SCRIPT_DIR/../lib/pkg.sh"
   . "$SCRIPT_DIR/../lib/pom.sh"
