@@ -124,30 +124,42 @@ _itmlst_empty() {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Program Arguments Parser
 
+ARGS_FLAGS=()
 ARGS_POSITIONAL=()
 declare -A ARGS_OPTION
 PARSE_ARGS() {
-  local key
+  local K
   local eoo=false
   
+  for K in "${ARGS_FLAGS[@]}";do
+    ARGS_OPTION["$K"]=false
+  done
+  
   while [[ $# -gt 0 ]]; do
-    key="$1"
+    K="$1"
 
     if ! $eoo; then
-      case "$key" in
+      case "$K" in
         --)
           eoo=true
+          shift
           continue
           ;;
         --*|-*)
-          ARG_OPTION["$key"]=$2
-          shift 2
+          if [[ " ${ARGS_FLAGS[@]} " =~ " ${K} " ]]; then
+            ARGS_OPTION["$K"]=true
+            shift 1
+          else
+            ARGS_OPTION["$K"]="$2"
+            shift 2
+          fi
           continue
           ;;
       esac
     fi
     
     ARGS_POSITIONAL+=("$1")
+    shift
   done
 }
 

@@ -15,6 +15,9 @@ START_MACRO() {
     set -x
   }
 
+  ARGS_FLAGS=(--no-skip)
+  PARSE_ARGS "$@"
+  
   NO_SKIP=false;[ "$1" = "--no-skip" ] && { NO_SKIP=true; shift; }
 
   EE_CURRENT_MACRO="$1"

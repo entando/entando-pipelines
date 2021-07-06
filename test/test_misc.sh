@@ -14,7 +14,8 @@ test_misc() {
   test_pr_utils
   test_itmlst_utils
   test_semver_cmp
-
+  test_args
+  
   true
 }
 
@@ -76,6 +77,26 @@ test_semver_cmp() {
   ASSERT RES = 0
   _semver_cmp RES "6" "6.0.0"
   ASSERT RES = 0
+}
+
+test_args() {
+  print_current_function_name "RUNNING TEST> "  ".."
+  ARGS_FLAGS=(--temp --splat)
+  PARSE_ARGS --temp 1 55 --set 2 --with calm 101 -a "103" -- -b 999 --raise --splat
+  ASSERT -v NUM_POS "${#ARGS_POSITIONAL[@]}" = 7
+  ASSERT -v NUM_OPT "${#ARGS_OPTION[@]}" = 5
+  ASSERT "ARGS_POSITIONAL[0]" = 1
+  ASSERT "ARGS_POSITIONAL[1]" = 55
+  ASSERT "ARGS_POSITIONAL[2]" = 101
+  ASSERT "ARGS_POSITIONAL[3]" = "-b"
+  ASSERT "ARGS_POSITIONAL[4]" = 999
+  ASSERT "ARGS_POSITIONAL[5]" = "--raise"
+  ASSERT "ARGS_POSITIONAL[6]" = "--splat"
+  ASSERT "ARGS_OPTION[--set]" = "2"
+  ASSERT "ARGS_OPTION[--with]" = "calm"
+  ASSERT "ARGS_OPTION[-a]" = "103"
+  ASSERT "ARGS_OPTION[--temp]" = true
+  ASSERT "ARGS_OPTION[--splat]" = false
 }
 
 true
