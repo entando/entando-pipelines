@@ -26,6 +26,8 @@ test_github_tools() {
     ASSERT --censor EE_TOKEN = "999999999"
     ASSERT EE_BASE_REF = "develop"
     ASSERT EE_HEAD_REF = "github-actions-pipeline-exp2"
+    ASSERT EE_REF = "refs/pull/154/merge"
+    ASSERT EE_REF_NAME = "merge"
     ASSERT EE_COMMIT_ID = "239d3c0153e609a84747e129c7bfd2f415743551"
     ASSERT EE_CLONE_URL = "https://github.com/entando/entando-engine.git"
     ASSERT EE_STATUSES_URL = "https://api.github.com/repos/entando/entando-engine/statuses/{sha}"

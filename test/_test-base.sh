@@ -1,13 +1,20 @@
 #!/bin/bash
 
-# shellcheck disable=2034
+# shellcheck disable=SC1091,SC1090
 {
+. "$PROJECT_DIR/lib/base.sh"
+. "$PROJECT_DIR/lib/misc.sh"
+. "$PROJECT_DIR/lib/debug.sh"
+}
+
+# shellcheck disable=2034
+TEST__BEFORE_RUN() {
   GIT_USER_NAME="CiCd Bot"
   GIT_USER_EMAIL="cicd@example.com"
-  ENTANDO_OPT_SUDO="${ENTANDO_OPT_SUDO:-"sudo"}"
-  ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-DEBUG}"
-  ENTANDO_OPT_REPO_BOM_URL="${ENTANDO_OPT_REPO_BOM_URL:-"https://github.com/entando/entando-core-bom.git"}"
+  PPL_CONTEXT="$(cat "$PROJECT_DIR/test/resources/github-context-sample-02.json")"
+  ENTANDO_CORE_BOM_REPO_URL="${ENTANDO_OPT_REPO_BOM_URL:-$TEST__ENTANDO_OPT_REPO_BOM_URL}"
 }
+
 
 FAILED() {
   [ "$?" = "99" ] && exit 99
@@ -19,7 +26,13 @@ FAILED() {
 }
 
 ASSERT() {
-  __VERIFY_EXPRESSION "TEST" "$@"
+  (
+    __VERIFY_EXPRESSION "TEST" "$@"
+  ) || {
+    local rv="$?"
+    $ENTANDO_OPT_SHELL_ON_TEST_ASSERT && DBGSHELL -S 1
+    exit "$rv"
+  }
 }
 
 # Creates a test git repository
@@ -33,7 +46,7 @@ _create-test-git-repo() {
   local dst_dir="$1"
   local branch="$2"
   local tag="$3"
-  
+
   (
     set -e
     rm -rf "$dst_dir" && mkdir "$dst_dir"
@@ -54,68 +67,20 @@ _create-test-git-repo() {
     echo "an-addition" >> "the-file"
     git add .
     git commit -m "TheCommit#2"
-    
+
     if [ -n "$branch" ]; then
       git checkout -q -b "$branch"
       echo "another-addition" >> "the-file"
       git add .
       git commit -m "TheCommit#3"
     fi
-    
+
     if [ -n "$tag" ]; then
       __git_add_tag "$tag"
     fi
   ) 1>/dev/null || _FATAL "Test git repo preparation failed"
 }
 
-LATEST_TEST_TLOG_COMMAND() {
-  _set_var "$1" "$(tail -n 1 "$TEST_TECHNICAL_LOG_FILE")"
-}
-
-DBGSHELL() {
-  (
-    [ ! -t 0 ] && {
-      _log_w "Refusing to drop shell because this is not an interactive tty session"
-      exit 0
-    }
-    
-    _log_i 'DROPPING THE DEBUG SHELL FROM:' 1>&2
-    _print_callstack 1 5 "" "" "$@" 1>&2
-    
-    # Export the current vars and functions
-    {
-      local fn var 
-      
-      while read -r fn; do
-        # shellcheck disable=SC2163
-        export -f "$fn"
-      done < <(compgen -A function)
-      while read -r var; do
-        [ "$var" = "SHELLOPTS" ] && continue
-        # shellcheck disable=SC2163
-        export "$var"
-      done < <(compgen -v)
-    } &> /dev/null
-    
-    # Create copy of the bashrc
-    if [ -f "$HOME/.profile" ]; then
-      cp "$HOME/.profile" "$TEST_WORK_DIR/.bashrc"
-    else
-      [ -f "$HOME/.bashrc" ] && cp "$HOME/.bashrc" "$TEST_WORK_DIR/.bashrc"
-    fi
-
-    {
-      echo -e "\n#\n#\n#\n"
-      COMMENT="";[ -n "$1" ] && COMMENT=" with comment: \"$1\""
-      # shellcheck disable=SC2028
-      echo "echo -e '\033[43m\033[1;30m> DEBUG SHELL STARTED$COMMENT\033[0;39m\n' 1>&2"
-      echo -e "true"
-    } >> "$TEST_WORK_DIR/.bashrc"
-    
-    # Run the shell
-    bash --rcfile "$TEST_WORK_DIR/.bashrc" < /dev/stdin > /dev/tty
-
-  ) || { 
-    [ "$?" = "77" ] && _FATAL "Execution Interrupted: Debug Shell terminated with fatal error" >/dev/tty 
-  }
+LATEST__TEST__TLOG_COMMAND() {
+  _set_var "$1" "$(tail -n 1 "$TEST__TECHNICAL_LOG_FILE")"
 }

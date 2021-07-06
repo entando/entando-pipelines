@@ -13,7 +13,7 @@ source <(curl -qsL "https://raw.githubusercontent.com/entando/entando-pipelines/
 ## Run a macro
 
 A macro is high level function that implementes a full pipeline job or step.  
-Macro needs to always have "IDs", either explicit or implicit, which identifies them.
+Macros need to always have "IDs", either explicit or implicit, which identifies them.
 
 ```
 ~/ppl-run {macro-name} {params}

@@ -13,12 +13,12 @@
 #
 ppl--release-app-engine-module() {
   set +e
-  
+
   local CURRENT_GIT_REF="$1"
-  local ENTANDO_CORE_BOM_REPO_URL="$2"
+  local ENTANDO_OPT_REPO_BOM_URL="$2"
 
   _log_i "RELEASE-APP-ENGINE-MODULE"
-  _NONNULL GIT_TOKEN GIT_USER_EMAIL GIT_USER_NAME ENTANDO_CORE_BOM_REPO_URL
+  _NONNULL GIT_TOKEN GIT_USER_EMAIL GIT_USER_NAME ENTANDO_OPT_REPO_BOM_URL
   _pkg_get "xmlstarlet" -c xmlstarlet
 
   # ~
@@ -31,13 +31,13 @@ ppl--release-app-engine-module() {
   # current tagValue
   _git_ref_to_tag tagValue "${CURRENT_GIT_REF}"
   _log_i DEBUG "Currently on tag: \"$tagValue\""
-  
+
   # BOM get the current artifact version
   _pom_get_artifact_id artifactId "pom.xml"
 
   # clone entando-core-bom
   mkdir "bom-tmp" && cd "bom-tmp" \
-     && _git_full_clone "$ENTANDO_CORE_BOM_REPO_URL" "$GIT_TOKEN"
+     && _git_full_clone "$ENTANDO_OPT_REPO_BOM_URL" "" "" "$GIT_TOKEN"
 
   # get the current artifact version in the entando-core-bom pom.xml file
   _pom_get_artifact_version artifactVersionInBom "pom.xml" "$artifactId"

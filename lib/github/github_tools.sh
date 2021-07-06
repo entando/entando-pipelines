@@ -95,7 +95,7 @@ github-request() {
   
   CMD="\"$VERB\" to \"$URL\" with \"${DATA:+-d "$DATA"}\""
   
-  if [ "$TEST_EXECUTION" != "true" ] || [ "$VERB" = "GET" ]; then
+  if [ "$TEST__EXECUTION" != "true" ] || [ "$VERB" = "GET" ]; then
     _log_t "Sending $CMD"
     
     
@@ -122,8 +122,8 @@ github-request() {
       return 1
     fi
   else
-    echo "[HTS] $CMD" >> "$TEST_TECHNICAL_LOG_FILE"
-    _log_t "Suppessed unsafe call due to TEST_EXECUTION: $CMD"
+    echo "[HTS] $CMD" >> "$TEST__TECHNICAL_LOG_FILE"
+    _log_t "Suppessed unsafe call due to TEST__EXECUTION: $CMD"
     true
   fi
 }
@@ -143,12 +143,12 @@ _ppl-load-context() {
   #~
   #~ CONTEXT JSON
   #~
-  
+
   [ "$PPL_CONTEXT" = "{{test-run}}" ] && {
     _log_t "Pipeline context was already loaded by test script"
     return 0
   }
-  
+
   [ "$EE_PARSED_CONTEXT" = "$PPL_CONTEXT" ] && [ -n "$PPL_CONTEXT" ] && {
     _log_t "Pipeline context was already loaded"
     return 0
@@ -199,15 +199,16 @@ _ppl-load-context() {
       __jq ".event.pull_request.labels | map(.name)? | join(\",\")?" -r <<< "$PPL_CONTEXT" 2> /dev/null
     )"
     EE_PR_LABELS=",${EE_PR_LABELS//\"/},"   # itmlst format
+    EE_REF_NAME="${EE_REF##*/}"
   }
 
-  # TEST_EXECUTION OVERRIDES
+  # TEST__EXECUTION OVERRIDES
   ! $NOOVR && {
-    type TEST_APPLY_DEFAULT_OVERRIDES &>/dev/null && {
-      TEST_APPLY_DEFAULT_OVERRIDES || true
+    type TEST__APPLY_DEFAULT_OVERRIDES &>/dev/null && {
+      TEST__APPLY_DEFAULT_OVERRIDES || true
     }
-    type TEST_APPLY_OVERRIDES &>/dev/null && {
-      TEST_APPLY_OVERRIDES || true
+    type TEST__APPLY_OVERRIDES &>/dev/null && {
+      TEST__APPLY_OVERRIDES || true
     }
   }
   

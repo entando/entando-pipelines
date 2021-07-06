@@ -6,9 +6,10 @@
 ppl--mvn() {
   (
     START_MACRO "$1" "$PPL_CONTEXT"
-    shift
-    
-    case "${EE_CURRENT_MACRO_PREFIX}${EE_CURRENT_MACRO}" in
+
+    __cd "$2"
+
+    case "$3" in
       "SONAR")
         _NONNULL SONAR_TOKEN
         __mvn_exec -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
@@ -22,15 +23,24 @@ ppl--mvn() {
       "OWASP")
         __mvn_exec verify -Powasp-dependency-check
         ;;
-      "INTERNAL-PUBLICATON")
-        _NONNULL ENTANDO_OPT_MAVEN_REPO_DEVL
-        __mvn_deploy "internal-nexus" "$ENTANDO_OPT_MAVEN_REPO_PROD"
-        ;;
-      "GENERAL-PUBLICATON")
-        _NONNULL ENTANDO_OPT_MAVEN_REPO_PROD
-        __mvn_deploy "maven-central" "$ENTANDO_OPT_MAVEN_REPO_PROD"
+      "PUBLISH")
+        case "$EE_REF_NAME" in
+          v*)
+            _NONNULL ENTANDO_OPT_MAVEN_REPO_PROD
+            __mvn_deploy "internal-nexus" "$ENTANDO_OPT_MAVEN_REPO_PROD"
+            ;;
+          p*)
+            _NONNULL ENTANDO_OPT_MAVEN_REPO_DEVL
+            __mvn_deploy "internal-nexus" "$ENTANDO_OPT_MAVEN_REPO_DEVL"
+            ;;
+          *)
+            _log_d "update-bom skipped"
+            return 1
+            ;;
+        esac
         ;;
       *)
+        shift 2
         __mvn_exec "$@"
         ;;
     esac

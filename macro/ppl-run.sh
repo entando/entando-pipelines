@@ -21,6 +21,8 @@ else
 fi
 
 (
+  # shellcheck disable=SC2034
+  [ -t 0 ] && IN_TTY=false || IN_TTY=trye
   CMD=()
   IE=false  # ignore command error
   ELEM="${1:-}"

@@ -27,7 +27,7 @@ ppl--checkout-branch() {
     esac
 
     _NONNULL destFolder EE_CLONE_URL branchToCheckout
-    _git_full_clone "$EE_CLONE_URL" "$destFolder" "${forceToken:-$EE_TOKEN}"
+    _git_full_clone "$EE_CLONE_URL" "$destFolder" "" "${forceToken:-$EE_TOKEN}"
     
     # CHECKOUT    
     __cd "$destFolder"

@@ -26,7 +26,7 @@ _pkg_get() {
     
     _log_t "Installing packet \"$P\".."
     
-    if "$ENTANDO_OPT_SUDO" apt-get install -y "$P" 1> /dev/null; then
+    if ${ENTANDO_OPT_SUDO:+"$ENTANDO_OPT_SUDO"} apt-get install -y "$P" 1> /dev/null; then
       if [ -n "$chk" ]; then
         if ! command -v "$chk" >/dev/null; then
           FATAL "Installation of packet \"$P\" failed"
