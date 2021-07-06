@@ -12,39 +12,54 @@ __git() {
 # Params:
 # $1: repository url
 # $2: optional dest dir or ""
-# $3: optional token
+# $3: optional branch to checkout or ""
+# $4: optional token
 #
 _git_full_clone() {
+  local WORK_AREA=false; [ "$1" = "--as-work-area" ] && { WORK_AREA=true; shift; }
+  local SHALLOW_OPT=""; [ "$1" = "--shallow" ] && { SHALLOW_OPT="--depth 1"; shift; }
+  local REPO_URL="$1"
+  local DST_DIR="$2"
+  local BRANCH="$3"
+  local TOKEN="$4"
+  
+  _NONNULL REPO_URL
+  [ "${REPO_URL:${#REPO_URL}-1:1}" = "/" ] && REPO_URL="${REPO_URL:0:${#REPO_URL}-1}"
+  [ -z "$DST_DIR" ] && DST_DIR="${REPO_URL##*/}"
+  
   (
-    local SHALLOW_OPT=""; [ "$1" = "--shallow" ] && { SHALLOW_OPT="--depth 1"; shift; }
-    local REPO_URL="$1"
-    local DST_DIR="$2"
-    local TOKEN="$3"
-
     _log_t "Cloning \"$REPO_URL\""
 
-    _NONNULL REPO_URL
-
-    if [ -z "$DST_DIR" ]; then
-      DST_DIR="${REPO_URL##*/}"
-    fi
     _url_add_token REPO_URL "$REPO_URL" "$TOKEN"
+    
+    local FULL_DST_DIR="$DST_DIR"
+
+    if $WORK_AREA; then
+      mkdir -p "$HOME/work-area-1b00ddf8"
+      FULL_DST_DIR="$HOME/work-area-1b00ddf8/$DST_DIR"
+      rm -rf "$FULL_DST_DIR"
+    else
+      FULL_DST_DIR="$DST_DIR"
+    fi
+    
     # shellcheck disable=2086
-    git clone -q $SHALLOW_OPT "$REPO_URL" "$DST_DIR"
+    __git clone -q $SHALLOW_OPT "$REPO_URL" "$FULL_DST_DIR"
 
     if [ "$?" = 0 ]; then
-      (
-        set -e
-        cd "$DST_DIR"
-        git fetch -q --tag 1>/dev/null
-      )
+      __cd "$FULL_DST_DIR"
+      [ -n "$BRANCH" ] && __git checkout "$BRANCH"
+      __git fetch -q --tag 1>/dev/null
       _log_t "Repo \"$REPO_URL\" cloned"
     else
       local TC=" (with no token)"
       [ -n "$TOKEN" ] && TC=" (with token)"
       _FATAL "Unable to clone repo \"$REPO_URL\"${TC}"
     fi
-  )
+  ) || exit "$?"
+  
+  $WORK_AREA && {
+    __cd "$HOME/work-area-1b00ddf8/$DST_DIR"
+  }
 }
 
 # Sets the git commit config
@@ -135,16 +150,20 @@ _git_fetch_all_tags() {
 # Params:
 # $1 the commit message
 # $2 the tag id  (if not provided tagging is not executed)
-# $3 the remote branch (if not provided pushis not executed)
+# $3 the remote branch (if not provided push is not executed, if "-" a push with no params is executed)
 #
 __git_ACTP() {
   __git add .
   __git commit -m "$1"
   [ -n "$2" ] && __git_add_tag "$2"
-  [ -n "$3" ] && {
+  if [ "$3" = "-" ]; then
+    __git push
+    [ -n "$2" ] && __git push --tags
+  elif [ -n "$3" ]; then
     __git push --set-upstream origin "$3"
     [ -n "$2" ] && __git push --tags
-  }
+  fi
+  true
 }
 
 # Checkouts a branch

@@ -79,7 +79,7 @@ ppl--release() {
         __git_force_merge_of_A_into_B "$currentBranch" "$releaseBranch"
         #~ UPDATES the version on the POM and REBUILDS the module
         _pom_set_project_version "$versionToSet" "./pom.xml"
-        __git_ACTP "Generated version $versionToSet"  "$TAG" "$releaseBranch"
+        __git_ACTP "Generate version $versionToSet"  "$TAG" "$releaseBranch"
         ;;
       prepare-preview-release)
         git push --delete origin "$TAG" 2>/dev/null

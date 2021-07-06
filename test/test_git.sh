@@ -19,7 +19,7 @@ test_git() {
   
   # CONFIG AND CLONING
   (
-    __cd "$TEST_WORK_DIR"
+    __cd "$TEST__WORK_DIR"
     
     _create-test-git-repo "git-repo-0bba91d9" "the-feature-branch" "v999.88.77"
     __cd "git-repo-0bba91d9"
@@ -34,10 +34,14 @@ test_git() {
     ASSERT TMP = "66.66.66"
     _git_determine_highest_version TMP
     ASSERT TMP = "999.88.77"
-  )
+    __cd -
+     
+    _git_full_clone --as-work-area "./git-repo-0bba91d9"
+    ASSERT -v "$CURRENT_DIR" "${PWD##*/}" = "git-repo-0bba91d9"
+  ) || _SOE
   
-  rm -rf "$TEST_WORK_DIR/git-repo-0bba91d9"
-  rm -rf "$TEST_WORK_DIR/clone-of-git-repo-0bba91d9"
+  rm -rf "$TEST__WORK_DIR/git-repo-0bba91d9"
+  rm -rf "$TEST__WORK_DIR/clone-of-git-repo-0bba91d9"
   
   true
 }

@@ -10,7 +10,7 @@ _ppl_query_latest_bom_version() {
   local TMPDIR
   TMPDIR="$(mktemp -d)"
   local TMP
-  _git_full_clone --shallow "$2" "$TMPDIR"
+  _git_full_clone --shallow "$2" "$TMPDIR" ""
   __cd "$TMPDIR"
   _git_determine_latest_version TMP
   __cd -

@@ -9,6 +9,7 @@
 # $1: the ID of the macro
 # $2: action to apply
 # $3: directory of the project
+# $4: optional token for the external repos
 #
 ppl--bom() {
   (
@@ -16,51 +17,62 @@ ppl--bom() {
 
     _pkg_get "xmlstarlet" -c "xmlstarlet"
 
-    local currentArtifactVersionInBom newArtifactVersion artifactId tmp
-
     case "$2" in
       update-bom)
-        local currentBranch="${EE_REF##*/}"
-
-        case "${currentBranch}" in
-          release-*) ;;
-          p) _log_d "Skipped"; return 0;;
-        esac
-
-        bomFolder="entando-core-bom-folder"
-
-        __cd "$3"
-        __exist -f "pom.xml"
-        _pom_get_project_artifact_id artifactId "pom.xml"
-        _pom_get_project_version newArtifactVersion "pom.xml"
-
-        _NONNULL artifactId newArtifactVersion ENTANDO_OPT_REPO_BOM_URL
-
-        # clone entando-core-bom
-        mkdir "bom-tmp" && cd "bom-tmp" \
-           && _git_full_clone "$ENTANDO_OPT_REPO_BOM_URL" "$bomFolder" "$GIT_TOKEN"
-        __cd "$bomFolder"
+        local projectArtifactId projectVersion projectDir="$3" token="$4"
         
-        __git switch "$ENTANDO_OPT_REPO_BOM_MASTER_BRANCH"
-
-        # update the current artifact version in the entando-core-bom pom.xml file
-        _pom_get_project_property currentArtifactVersionInBom "pom.xml" "${artifactId}.version"
-        _NONNULL currentArtifactVersionInBom
-        _semver_cmp tmp "$currentArtifactVersionInBom" "$newArtifactVersion"
-        if [ "$tmp" -ge 0 ]; then
-          _EXIT "Current artifact version in the BOM is >= the artifact version to set"
-        fi
-
-        _pom_set_project_property "$newArtifactVersion" "pom.xml" "${artifactId}.version"
-        
-        _git_auto_setup_commit_config
-
-        __git_ACTP "Generated version $newArtifactVersion"
-        __git push
+        ppl--bom.update-bom.SHOULD_RUN || return 0
+        ppl--bom.EXTRACT_PROJECT_INFORMATION "$projectDir" projectArtifactId projectVersion
+        ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM "$projectArtifactId" "$projectVersion" "$token"
         ;;
       *)
         _FATAL "Illegal bom action \"$1\""
         ;;
     esac
   )
+}
+
+ppl--bom.update-bom.SHOULD_RUN() {
+  case "${EE_REF_NAME}" in
+    v*) return 0;;
+    *) _log_d "update-bom skipped"; return 1;;
+  esac
+}
+
+ppl--bom.EXTRACT_PROJECT_INFORMATION() {
+  __cd "$1"
+  __exist -f "pom.xml"
+  _pom_get_project_artifact_id "$2" "pom.xml"
+  _pom_get_project_version "$3" "pom.xml"
+}
+
+ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM() {
+  local projectArtifactId="$1" projectVersion="$2" token="$3"
+  _NONNULL projectArtifactId projectVersion
+  
+  _git_full_clone --as-work-area "$ENTANDO_OPT_REPO_BOM_URL" "" "$ENTANDO_OPT_REPO_BOM_MAIN_BRANCH" "$token"
+
+  # get current BOM version
+  local currentBomVersion
+  _pom_get_project_version currentBomVersion "pom.xml" "${projectArtifactId}.version"
+  _NONNULL currentBomVersion
+
+  # get the currently project version referenced in BOM
+  local currentArtifactVersionInBom
+  _pom_get_project_property currentArtifactVersionInBom "pom.xml" "${projectArtifactId}.version"
+  _NONNULL currentArtifactVersionInBom
+
+  # proceed only if the version to set is higher than the current version
+  local tmp
+  _semver_cmp tmp "$currentArtifactVersionInBom" "$projectVersion"
+  [ "$tmp" -ge 0 ] && _EXIT "Bom update skipped: Current artifact version in the BOM ($currentArtifactVersionInBom) >= the artifact version to set ($projectVersion)"
+
+  # set the new version
+  _semver_add currentBomVersion "$currentBomVersion" 0 0 1
+  _log_i "Setting $projectArtifactId => $projectVersion for new BOM $currentBomVersion"
+  _pom_set_project_version "$currentBomVersion" "pom.xml"
+  _pom_set_project_property "$projectVersion" "pom.xml" "${projectArtifactId}.version"
+  _git_auto_setup_commit_config
+
+  __git_ACTP "Generate version $projectVersion" "" "-"
 }
