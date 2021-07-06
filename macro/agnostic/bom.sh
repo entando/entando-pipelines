@@ -53,9 +53,9 @@ ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM() {
   _git_full_clone --as-work-area "$ENTANDO_OPT_REPO_BOM_URL" "" "$ENTANDO_OPT_REPO_BOM_MAIN_BRANCH" "$token"
 
   # get current BOM version
-  local currentBomVersion
-  _pom_get_project_version currentBomVersion "pom.xml" "${projectArtifactId}.version"
-  _NONNULL currentBomVersion
+  #local currentBomVersion
+  #_pom_get_project_version currentBomVersion "pom.xml" "${projectArtifactId}.version"
+  #_NONNULL currentBomVersion
 
   # get the currently project version referenced in BOM
   local currentArtifactVersionInBom
@@ -68,11 +68,10 @@ ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM() {
   [ "$tmp" -ge 0 ] && _EXIT "Bom update skipped: Current artifact version in the BOM ($currentArtifactVersionInBom) >= the artifact version to set ($projectVersion)"
 
   # set the new version
-  _semver_add currentBomVersion "$currentBomVersion" 0 0 1
-  _log_i "Setting $projectArtifactId => $projectVersion for new BOM $currentBomVersion"
-  _pom_set_project_version "$currentBomVersion" "pom.xml"
+  #_semver_add currentBomVersion "$currentBomVersion" 0 0 1
+  _log_i "Setting $projectArtifactId => $projectVersion"
+  #_pom_set_project_version "$currentBomVersion" "pom.xml"
   _pom_set_project_property "$projectVersion" "pom.xml" "${projectArtifactId}.version"
   _git_auto_setup_commit_config
-
   __git_ACTP "Generate version $projectVersion" "" "-"
 }
