@@ -24,12 +24,19 @@ bash <(curl -qsL "https://raw.githubusercontent.com/entando/entando-pipelines/{t
 A macro is high level function that implementes a full pipeline job or step.  
 
 ```
-~/ppl-run {macro-name} {params}
+~/ppl-run {macro-name} {args}
 ```
+
+Which has 3 standardized options:
+
+ - `--id`    the identifier of the macro execution, for messages and skip labels
+ - `--lcd`   the local directly the remote project repository is or was cloned
+ - `--token` a token to use insted of the one provided by the context
+ 
 ## Run a sequence of macros
 
 ```
-~/ppl-run {macro-name} {params} --AND {macro-name} {params} ..
+~/ppl-run {macro-name} {args} .. {macro-name} {args} [etc..]
 ```
 
 # Execution Environment:

@@ -24,20 +24,20 @@ test_github_full_pipeline() {
   #~ CHECKOUT
   #~
   (
-    ppl--checkout-branch "PR-CHECKOUT" pr "local-checkout"
+    ppl--checkout-branch pr --id "PR-CHECKOUT" --lcd "local-checkout" || _SOE
 
     __cd "local-checkout"
     __exist -f "pom.xml"
     _pom_get_project_artifact_id RES "pom.xml" "artifactId"
     ASSERT RES == "entando-portal-ui"
-  )
+  ) || FAILED
 
   #~
   #~ LABELS MANIPULATION
   #~
   (
     local TMP
-    ppl--pr-labels "TEST" remove "test"
+    ppl--pr-labels --id "TEST" remove "test" || _SOE
 
     ASSERT -v RES $? -eq 0
     LATEST__TEST__TLOG_COMMAND TMP
@@ -48,7 +48,7 @@ test_github_full_pipeline() {
   #~ GATE
   #~
   (
-    TMP="$(ppl--gate-check TEST | tail -1)"
+    TMP="$(ppl--gate-check --id TEST | grep "set-output")"
     ASSERT TMP = "::set-output name=ENABLED::true"
   ) || FAILED
 
@@ -57,7 +57,7 @@ test_github_full_pipeline() {
       EE_PR_LABELS+="skip-test,"
     }
 
-    TMP="$(ppl--gate-check TEST |  tail -1)"
+    TMP="$(ppl--gate-check --id TEST | grep "set-output")"
     ASSERT TMP = "::set-output name=ENABLED::false"
   ) || FAILED
 
@@ -65,13 +65,13 @@ test_github_full_pipeline() {
   #~ CHECK PR BOM STATE
   #~
   (
-    ppl--check-pr-bom-state "local-checkout"
+    ppl--check-pr-bom-state --lcd "local-checkout"
     ASSERT -v "BOM_CHECK_RESULT" "$?" = 0
     __cd "$ENTANDO_OPT_REPO_BOM_URL"
     echo "something-new" > something-new
     __git_ACTP "something-new" "v9.9.9"
     __cd -
-    ppl--check-pr-bom-state "local-checkout"
+    ppl--check-pr-bom-state --lcd "local-checkout"
     ASSERT -v "BOM_CHECK_RESULT" "$?" = 77
     __cd -
     __git tag -d "v9.9.9"
@@ -81,29 +81,29 @@ test_github_full_pipeline() {
   #~ CHECK PR FORMAT RULES
   #~
   (
-    ppl--check-pr-format "local-checkout"
+    ppl--check-pr-format --lcd "local-checkout"
   ) || FAILED
 
   (
     TEST__APPLY_OVERRIDES() { EE_PR_TITLE="ENG-999-Hey There!"; }
-    ppl--check-pr-format "local-checkout"
+    ppl--check-pr-format --lcd "local-checkout"
   ) && FAILED "I was expecting an error, but I've got success"
 
   (
     TEST__APPLY_OVERRIDES() { EE_PR_TITLE="ENG-999 Hey There!"; }
-    ppl--check-pr-format "local-checkout"
+    ppl--check-pr-format --lcd "local-checkout"
   ) || FAILED
 
   (
     TEST__APPLY_OVERRIDES() { EE_PR_TITLE="ENG-100/ENG-999 Hey There!"; }
-    ppl--check-pr-format "local-checkout"
+    ppl--check-pr-format --lcd "local-checkout"
   ) || FAILED
 
   #~
   #~ GENERATE PREVIEW VERSION
   #~
   (
-    ppl--release "PREVIEW-RELEASE" prepare-preview-release "local-checkout"
+    ppl--release prepare-preview-release --id "PREVIEW-RELEASE" --lcd "local-checkout"
 
     _ppl-load-context "$PPL_CONTEXT"
     __cd "$EE_CLONE_URL"
@@ -111,7 +111,7 @@ test_github_full_pipeline() {
     _pom_get_project_version RES "pom.xml"
     ASSERT RES = "6.3.0-SNAPSHOT"
     _git_determine_latest_version --include-previews RES
-    ASSERT RES = "p6.3.0-ENG-2471-PR-154-SNAPSHORT"
+    ASSERT RES = "p6.3.0-ENG-2471-PR-154-SNAPSHOT"
     __git checkout "_tmp_"
   ) || FAILED
 
@@ -125,7 +125,7 @@ test_github_full_pipeline() {
   #~ POST-MERGE CHECKOUT
   #~
   (
-    ppl--checkout-branch "AFTER-MERGE-CHECKOUT" base "local-checkout"
+    ppl--checkout-branch base --id "AFTER-MERGE-CHECKOUT" --lcd "local-checkout"
 
     _ppl-load-context "$PPL_CONTEXT"
     __cd "local-checkout"
@@ -137,7 +137,7 @@ test_github_full_pipeline() {
   #~ GENERATE TAG-RELEASE
   #~
   (
-    ppl--release "TAG-RELEASE" prepare-tag-release "local-checkout"
+    ppl--release prepare-tag-release --id "TAG-RELEASE" --lcd "local-checkout" || _SOE
 
     _ppl-load-context "$PPL_CONTEXT"
     __cd "$EE_CLONE_URL"
@@ -157,7 +157,7 @@ test_github_full_pipeline() {
   #~ BOM UPDATE
   #~
   (
-    ppl--bom "TEST-BOM-UPDATE" update-bom "local-checkout"
+    ppl--bom update-bom --id "TEST-BOM-UPDATE" --lcd "local-checkout"
 
     _ppl-load-context "$PPL_CONTEXT"
     __cd "$ENTANDO_OPT_REPO_BOM_URL"

@@ -12,22 +12,23 @@
 #
 ppl--release() {
   (
-    START_MACRO "$1" "$PPL_CONTEXT"
-    shift
+    START_MACRO "RELEASE" "$@"
 
     _pkg_get "xmlstarlet" -c "xmlstarlet"
 
-    [ -n "$2" ] && __cd "$2"
+    __ppl_enter_local_clone_dir
     __exist -f "pom.xml"
 
-    local versionToSet TAG pomVersionToSet
+    local action versionToSet TAG pomVersionToSet
     local currentBranch="${EE_REF##*/}"
+    
+    _get_arg action 1
 
     #~ 
     #~ ANALYSIS of the current repo/branch
     #~ READY-ONLY
     #~
-    case "$1" in
+    case "$action" in
       prepare-tag-release)
         #~ determine the next module version from the current git repo tags
         local highestModuleVersion maj min ptc
@@ -44,7 +45,8 @@ ppl--release() {
         _NONNULL EE_PR_NUM EE_PR_TITLE_PREFIX
         _pom_get_project_version snapshotVersion "./pom.xml"
         EE_PR_TITLE_PREFIX="${EE_PR_TITLE_PREFIX/\//-}"
-        _semver_set_tag versionToSet "$snapshotVersion" "$EE_PR_TITLE_PREFIX-PR-$EE_PR_NUM-SNAPSHORT"
+        _semver_set_tag versionToSet "$snapshotVersion" "$EE_PR_TITLE_PREFIX-PR-$EE_PR_NUM-SNAPSHOT"
+        _NONNULL versionToSet
         TAG="p$versionToSet"
         __git checkout "$EE_HEAD_REF"
         ;;
@@ -62,7 +64,7 @@ ppl--release() {
         esac
         ;;
       *)
-        _FATAL "Illegal versioning strategy provided"
+        _FATAL "Illegal action \"$action\" provided"
         ;;
     esac
     
@@ -70,16 +72,16 @@ ppl--release() {
     #~ UPDATE OF THE RELEASE BRANCH
     #~ READY-WRITE
     #~ 
-    case "$1" in
+    case "$action" in
       prepare-tag-release)
         _ppl_determine_release_branch releaseBranch "$versionToSet"
         # shellcheck disable=SC2154
         __git_auto_checkout "$releaseBranch"
         _NONNULL currentBranch
-        __git_force_merge_of_A_into_B "$currentBranch" "$releaseBranch"
+        __git_force_merge_branch "$currentBranch"
         #~ UPDATES the version on the POM and REBUILDS the module
         _pom_set_project_version "$versionToSet" "./pom.xml"
-        __git_ACTP "Generate version $versionToSet"  "$TAG" "$releaseBranch"
+        __git_ACTP "Release of version $versionToSet"  "$TAG" "$releaseBranch"
         ;;
       prepare-preview-release)
         git push --delete origin "$TAG" 2>/dev/null
@@ -92,7 +94,7 @@ ppl--release() {
         #__mvn_exec package -Dmaven.test.skip=true
         ;;
       *)
-        _FATAL "Illegal release operation \"$1\""
+        _FATAL "Illegal action \"$action\""
         ;;
     esac
   )
