@@ -125,19 +125,23 @@ _itmlst_empty() {
 # Program Arguments Parser
 
 ARGS_FLAGS=()
-ARGS_POSITIONAL=()
-declare -A ARGS_OPTION
+ARGS_POS=("")
+declare -A ARGS_OPT
 PARSE_ARGS() {
   local K
   local eoo=false
-  
+
+  ARGS_POS=("")
+  unset ARGS_OPT
+  declare -A -g ARGS_OPT
+
   for K in "${ARGS_FLAGS[@]}";do
-    ARGS_OPTION["$K"]=false
+    ARGS_OPT["$K"]=false
   done
   
   while [[ $# -gt 0 ]]; do
     K="$1"
-
+    
     if ! $eoo; then
       case "$K" in
         --)
@@ -146,22 +150,42 @@ PARSE_ARGS() {
           continue
           ;;
         --*|-*)
-          if [[ " ${ARGS_FLAGS[@]} " =~ " ${K} " ]]; then
-            ARGS_OPTION["$K"]=true
+          if [[ " ${ARGS_FLAGS[*]} " == *" ${K} "* ]]; then
+            ARGS_OPT["$K"]=true
             shift 1
           else
-            ARGS_OPTION["$K"]="$2"
-            shift 2
+            ARGS_OPT["$K"]="$2"
+            shift;shift
           fi
           continue
           ;;
       esac
     fi
     
-    ARGS_POSITIONAL+=("$1")
+    ARGS_POS+=("$1")
     shift
   done
 }
+
+# Extracts a positional or optional Arguments
+#
+# Params:
+# $1 the receiver var
+# $2 the option name or the positional index
+#
+# Examples:
+# _get_arg arg1 1
+# _get_arg mode --mode
+#
+_get_arg() {
+  local _tmp_
+  case "$2" in
+    ''|*[!0-9]*) _tmp_="${ARGS_OPT[$2]}";;
+    *) _tmp_="${ARGS_POS[$2]}";;
+  esac
+  _set_var "$1" "${_tmp_:-$3}"
+}
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Successfully changes dir or fatals
@@ -170,7 +194,7 @@ __cd() {
   local L="$1"
   [ "${L:0:7}" = "file://" ] && L="${L:7}"
   [ -z "$L" ] && _FATAL "Null directory provided"
-  cd "$L" 1>/dev/null || _FATAL "Unable to enter directory $1"
+  cd "$L" 1>/dev/null || _FATAL "Unable to enter directory \"$1\""
   _log_t "Entered directory \"$L\""
 }
 
@@ -182,8 +206,8 @@ __cd() {
 #
 __exist() {
   case "$1" in
-    "-f") [ ! -f "$2" ] && _FATAL "Unable to find the file \"$2\"";;
-    "-d") [ ! -d "$2" ] && _FATAL "Unable to find the dir \"$2\"";;
+    "-f") [ ! -f "$2" ] && _FATAL "Unable to find the file \"$2\" in directory \"$PWD\"";;
+    "-d") [ ! -d "$2" ] && _FATAL "Unable to find the dir \"$2\" under dir \"$PWD\"";;
     *) _FATAL "Invalid mode \"$1\"";;
   esac
 }

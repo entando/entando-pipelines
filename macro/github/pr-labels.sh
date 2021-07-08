@@ -9,16 +9,16 @@
 # - The PR title must match the given format rules
 #
 # Params:
-# $1: the specific id of the macro
-# $2: the action to perform (add,remove)
-# $3: the label to add or delete
+# $1: the action to perform (add,remove)
+# $2: the label to add or delete
 #
 ppl--pr-labels() {
   (
-    START_MACRO "$1" "$PPL_CONTEXT"
+    START_MACRO "PR-LABELS" "$@"
     
-    local action="$2"
-    local labelName="$3"
+    local action labelName
+    _get_arg action 1
+    _get_arg labelName 2
     
     _NONNULL action labelName
 

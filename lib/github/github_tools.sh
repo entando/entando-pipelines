@@ -166,6 +166,7 @@ _ppl-load-context() {
   Q+='.sha,'
   Q+='.base_ref,'
   Q+='.head_ref,'
+  Q+=".event.repository.name,"
   Q+=".event.repository.clone_url,"
   Q+='.event.repository.statuses_url,'
   Q+='.event.repository.issues_url,'
@@ -187,6 +188,7 @@ _ppl-load-context() {
       EE_COMMIT_ID \
       EE_BASE_REF \
       EE_HEAD_REF \
+      EE_REPO_NAME \
       EE_CLONE_URL \
       EE_STATUSES_URL \
       EE_ISSUES_URL \

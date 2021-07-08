@@ -28,12 +28,19 @@ Macros need to always have "IDs", either explicit or implicit, which identifies 
 >>>>>>> fa7e3e0... General testing reorg
 
 ```
-~/ppl-run {macro-name} {params}
+~/ppl-run {macro-name} {args}
 ```
+
+Which has 3 standardized options:
+
+ - `--id`    the identifier of the macro execution, for messages and skip labels
+ - `--lcd`   the local directly the remote project repository is or was cloned
+ - `--token` a token to use insted of the one provided by the context
+ 
 ## Run a sequence of macros
 
 ```
-~/ppl-run {macro-name} {params} --AND {macro-name} {params} ..
+~/ppl-run {macro-name} {args} .. {macro-name} {args} [etc..]
 ```
 
 # Execution Environment:
