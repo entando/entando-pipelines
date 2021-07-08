@@ -28,6 +28,7 @@ __mvn_exec() {
   else
     grep -v "Progress.* kB" "$TMPFILE"
     rm "$TMPFILE"
+    sleep 0.3
     _FATAL "Error executing mvn"
   fi
 }

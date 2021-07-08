@@ -4,6 +4,7 @@
 {
   . "$PROJECT_DIR/test/_test-base.sh"
   . "$PROJECT_DIR/lib/misc.sh"
+  . "$PROJECT_DIR/lib/semver.sh"
 }
 
 #TEST:lib
@@ -11,10 +12,10 @@ test_misc() {
   test_url_utils
   test_tpl_utils
   test_pr_utils
-  test_semver_utils
   test_itmlst_utils
   test_semver_cmp
-
+  test_args
+  
   true
 }
 
@@ -47,44 +48,6 @@ test_pr_utils() {
   ASSERT RES = "ENG-101/ENG-102"
 }
 
-test_semver_utils() {
-  # ~ PARSE
-  local maj min ptc tag
-  print_current_function_name "RUNNING TEST> "  ".."
-  _semver_parse maj min ptc tag "1.2.3"
-  ASSERT -v RES "$maj.$min.$ptc-$tag" = "1.2.3-"
-  _semver_parse maj min ptc tag "1.2.3-SNAPSHOT"
-  ASSERT -v RES "$maj.$min.$ptc-$tag" = "1.2.3-SNAPSHOT"
-  _semver_parse maj min ptc tag "1"
-  ASSERT -v RES "$maj.$min.$ptc-$tag" = "1..-"
-  _semver_parse maj min ptc tag ""
-  ASSERT -v RES "$maj.$min.$ptc-$tag" = "..-"
-  _semver_parse maj "" ptc "" "1.2.3-4"
-  ASSERT -v RES "$maj.$min.$ptc-$tag" = "1..3-"
-  _semver_parse maj min ptc tag "v1.2.3"
-  ASSERT -v RES "$maj.$min.$ptc-$tag" = "1.2.3-"
-  _semver_parse maj min ptc tag "v.2.3"
-  ASSERT -v RES "$maj.$min.$ptc-$tag" = ".2.3-"
-  _semver_parse maj min ptc tag "1.2.3-SNAPSHOT"
-  ASSERT -v RES "$maj.$min.$ptc-$tag" = "1.2.3-SNAPSHOT"
-
-  # ~ SET TAG
-  _semver_set_tag RES "1.2.3" "SNAPSHOT"
-  ASSERT RES = "1.2.3-SNAPSHOT"
-  _semver_set_tag RES "1.2.3-SNAPSHOT" "PREVIEW-01"
-  ASSERT RES = "1.2.3-PREVIEW-01"
-  _semver_set_tag RES "1.2.3-PREVIEW-01" "PREVIEW-02"
-  ASSERT RES = "1.2.3-PREVIEW-02"
-  
-  # ~ ADD
-  _semver_add RES "1.2.3" 0 0 1
-  ASSERT RES = "1.2.4"
-  _semver_add RES "1.2.3" 1 2 3
-  ASSERT RES = "2.4.6"
-  _semver_add RES "1.2.3-SNAPSHOT" 1 2 3
-  ASSERT RES = "2.4.6-SNAPSHOT"
-}
-
 test_itmlst_utils() {
   local itmlst
   _itmlst_fill itmlst "red" "green" "blue"
@@ -114,6 +77,36 @@ test_semver_cmp() {
   ASSERT RES = 0
   _semver_cmp RES "6" "6.0.0"
   ASSERT RES = 0
+}
+
+test_args() {
+  print_current_function_name "RUNNING TEST> "  ".."
+  # shellcheck disable=SC2034
+  ARGS_FLAGS=(--temp --splat)
+  PARSE_ARGS --temp 1 55 --set 2 --with calm 101 -a "103" -- -b 999 --raise --splat
+  ASSERT -v NUM_ARGS_POS "${#ARGS_POS[@]}" = 8
+  ASSERT -v NUM_ARGS_OPT "${#ARGS_OPT[@]}" = 5
+  ASSERT "ARGS_POS[0]" = ""
+  ASSERT "ARGS_POS[1]" = 1
+  ASSERT "ARGS_POS[2]" = 55
+  ASSERT "ARGS_POS[3]" = 101
+  ASSERT "ARGS_POS[4]" = "-b"
+  ASSERT "ARGS_POS[5]" = 999
+  ASSERT "ARGS_POS[6]" = "--raise"
+  ASSERT "ARGS_POS[7]" = "--splat"
+  ASSERT "ARGS_OPT[--set]" = "2"
+  ASSERT "ARGS_OPT[--with]" = "calm"
+  ASSERT "ARGS_OPT[-a]" = "103"
+  ASSERT "ARGS_OPT[--temp]" = true
+  ASSERT "ARGS_OPT[--splat]" = false
+  
+  local RES
+  _get_arg RES --with
+  ASSERT RES = "calm"
+  _get_arg RES 3
+  ASSERT RES = 101
+  _get_arg RES unexistent a-fallback
+  ASSERT RES = a-fallback
 }
 
 true

@@ -13,13 +13,12 @@
 #
 ppl--check-pr-bom-state() {
   (
-    START_MACRO "CHECK-PR-BOM" "$PPL_CONTEXT"
+    START_MACRO "CHECK-PR-BOM" "$@"
 
     _pkg_get "xmlstarlet" -c "xmlstarlet"
 
-    local repoFolder="$1"
-    
-    __cd "$repoFolder"
+
+    __ppl_enter_local_clone_dir
     __exist -f "pom.xml"
 
     # ~

@@ -6,27 +6,28 @@
 # MACRO OPERATIONS RELATED TO THE BOM
 #
 # Params:
-# $1: the ID of the macro
-# $2: action to apply
-# $3: directory of the project
-# $4: optional token for the external repos
+# $1: action to apply
 #
 ppl--bom() {
   (
-    START_MACRO "$1" "$PPL_CONTEXT"
+    START_MACRO "BOM" "$@"
 
     _pkg_get "xmlstarlet" -c "xmlstarlet"
+    
+    local action
+    _get_arg action 1
 
-    case "$2" in
+
+    case "$action" in
       update-bom)
-        local projectArtifactId projectVersion projectDir="$3" token="$4"
+        local projectArtifactId projectVersion
         
         ppl--bom.update-bom.SHOULD_RUN || return 0
-        ppl--bom.EXTRACT_PROJECT_INFORMATION "$projectDir" projectArtifactId projectVersion
-        ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM "$projectArtifactId" "$projectVersion" "$token"
+        ppl--bom.EXTRACT_PROJECT_INFORMATION "$EE_LOCAL_CLONE_DIR" projectArtifactId projectVersion
+        ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM "$projectArtifactId" "$projectVersion" "$EE_TOKEN_OVERRIDE"
         ;;
       *)
-        _FATAL "Illegal bom action \"$1\""
+        _FATAL "Illegal bom action \"$action\""
         ;;
     esac
   )
@@ -53,9 +54,9 @@ ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM() {
   _git_full_clone --as-work-area "$ENTANDO_OPT_REPO_BOM_URL" "" "$ENTANDO_OPT_REPO_BOM_MAIN_BRANCH" "$token"
 
   # get current BOM version
-  local currentBomVersion
-  _pom_get_project_version currentBomVersion "pom.xml" "${projectArtifactId}.version"
-  _NONNULL currentBomVersion
+  #local currentBomVersion
+  #_pom_get_project_version currentBomVersion "pom.xml" "${projectArtifactId}.version"
+  #_NONNULL currentBomVersion
 
   # get the currently project version referenced in BOM
   local currentArtifactVersionInBom
@@ -68,11 +69,10 @@ ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM() {
   [ "$tmp" -ge 0 ] && _EXIT "Bom update skipped: Current artifact version in the BOM ($currentArtifactVersionInBom) >= the artifact version to set ($projectVersion)"
 
   # set the new version
-  _semver_add currentBomVersion "$currentBomVersion" 0 0 1
-  _log_i "Setting $projectArtifactId => $projectVersion for new BOM $currentBomVersion"
-  _pom_set_project_version "$currentBomVersion" "pom.xml"
+  #_semver_add currentBomVersion "$currentBomVersion" 0 0 1
+  _log_i "Setting $projectArtifactId => $projectVersion"
+  #_pom_set_project_version "$currentBomVersion" "pom.xml"
   _pom_set_project_property "$projectVersion" "pom.xml" "${projectArtifactId}.version"
   _git_auto_setup_commit_config
-
-  __git_ACTP "Generate version $projectVersion" "" "-"
+  __git_ACTP "Update the reference to \"${projectArtifactId}\" to version ${projectVersion}" "" "-"
 }

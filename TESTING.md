@@ -109,7 +109,11 @@ TEST__APPLY_OVERRIDES() { EE_PR_TITLE="A-MOCKED-PR-TITLE"; }
 
 ### ENTANDO_OPT_SHELL_ON_TEST_ASSERT
 
+<<<<<<< HEAD
 if set to true the a DBGSHELL is dropped when a test asserts
+=======
+if set to true a DBGSHELL is dropped when a test asserts
+>>>>>>> fa7e3e0... General testing reorg
 
 Examples:
 ```

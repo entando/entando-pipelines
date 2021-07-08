@@ -8,7 +8,7 @@
 ppl--status-report() {
   # shellcheck disable=SC2034
   (
-    START_MACRO "STATUS-REPORT" "$PPL_CONTEXT"
+    START_MACRO "STATUS-REPORT" "$@"
     
     IN="$EE_REPO: $EE_WORKFLOW/$EE_JOB ($EE_EVENT)"
     PR_MERGE_TARGET_BRANCH="$EE_BASE_REF"

@@ -122,97 +122,79 @@ _itmlst_empty() {
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# SEMVER
+# Program Arguments Parser
 
+ARGS_FLAGS=()
+ARGS_POS=("")
+declare -A ARGS_OPT
+PARSE_ARGS() {
+  local K
+  local eoo=false
 
-# Parses a semver into its complonent digits
-# - "v" prefix is suppored and stripped
-# - all params are optional and accept ""
-#
-# Params:
-# $1  major version receiver var
-# $2  minor version receiver var
-# $3  patch version receiver var
-# $4  update version receiver var
-# $5  semver to parse
-#
-_semver_parse() {
-  local _tmpV_ _tmpT_ _tmp1_ _tmp2_ _tmp3_
+  ARGS_POS=("")
+  unset ARGS_OPT
+  declare -A -g ARGS_OPT
 
-  IFS='-' read -r _tmpV_ _tmpT_ <<< "$5"
-  IFS='.' read -r _tmp1_ _tmp2_ _tmp3_ <<< "$_tmpV_"
-  [ "${_tmp1_:0:1}" = "v" ] && _tmp1_="${_tmp1_:1}"
-  [ "${_tmp1_:0:1}" = "p" ] && _tmp1_="${_tmp1_:1}"
-  [ -n "$1" ] && _set_var "$1" "$_tmp1_"
-  [ -n "$2" ] && _set_var "$2" "$_tmp2_"
-  [ -n "$3" ] && _set_var "$3" "$_tmp3_"
-  [ -n "$4" ] && _set_var "$4" "$_tmpT_"
+  for K in "${ARGS_FLAGS[@]}";do
+    ARGS_OPT["$K"]=false
+  done
   
-  true
+  while [[ $# -gt 0 ]]; do
+    K="$1"
+    
+    if ! $eoo; then
+      case "$K" in
+        --)
+          eoo=true
+          shift
+          continue
+          ;;
+        --*|-*)
+          if [[ " ${ARGS_FLAGS[*]} " == *" ${K} "* ]]; then
+            ARGS_OPT["$K"]=true
+            shift 1
+          else
+            ARGS_OPT["$K"]="$2"
+            shift;shift
+          fi
+          continue
+          ;;
+      esac
+    fi
+    
+    ARGS_POS+=("$1")
+    shift
+  done
 }
 
-# increments a semver
+# Extracts a positional or optional Arguments
 #
 # Params:
-# $1  receiver var
-# $2  base semver
-# $3  major increment
-# $4  minor increment
-# $5  patch increment
+# $1 the receiver var
+# $2 the option name or the positional index
 #
-_semver_add() {
-  local _maj_ _min_ _ptc_ _tag_
-  _semver_parse _maj_ _min_ _ptc_ _tag_ "$2"
-  _set_var "$1" "$((_maj_+$3)).$((_min_+$4)).$((_ptc_+$5))${_tag_:+-$_tag_}"
-}
-
-# Updates or add a tag to a version string
+# Examples:
+# _get_arg arg1 1
+# _get_arg mode --mode
 #
-# Params:
-# $1 the destination var
-# $2 the source version
-# $3 the new tag to set
-#
-_semver_set_tag() {
-  if [[ "$2" = *"-"* ]]; then
-    _set_var "$1" "${2//-*/-$3}"
-  else
-    _set_var "$1" "$2-$3"
-  fi
+_get_arg() {
+  local _tmp_
+  case "$2" in
+    ''|*[!0-9]*) _tmp_="${ARGS_OPT[$2]}";;
+    *) _tmp_="${ARGS_POS[$2]}";;
+  esac
+  _set_var "$1" "${_tmp_:-$3}"
 }
 
 
-# Compares 2 sem version and return
-# - 1 if the first is > than the second
-# - 0 if they are equals
-# - -1 if the first is < than the second
-#
-# Params:
-# $1 destination var
-# $2 the first var
-# $3 the second version
-#
-_semver_cmp() {
-
-  _semver_parse _maj1_ _min1_ _ptc1_ "" "$2"
-  _semver_parse _maj2_ _min2_ _ptc2_ "" "$3"
-
-  [ "${_maj1_:-0}" -gt "${_maj2_:-0}" ] && { _set_var "$1" 1; return; }
-  [ "${_maj1_:-0}" -lt "${_maj2_:-0}" ] && { _set_var "$1" -1; return; }
-  [ "${_min1_:-0}" -gt "${_min2_:-0}" ] && { _set_var "$1" 1; return; }
-  [ "${_min1_:-0}" -lt "${_min2_:-0}" ] && { _set_var "$1" -1; return; }
-  [ "${_ptc1_:-0}" -gt "${_ptc2_:-0}" ] && { _set_var "$1" 1; return; }
-  [ "${_ptc1_:-0}" -lt "${_ptc2_:-0}" ] && { _set_var "$1" -1; return; }
-  _set_var "$1" 0
-}
-
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Successfully changes dir or fatals
 #
 __cd() {
   local L="$1"
   [ "${L:0:7}" = "file://" ] && L="${L:7}"
   [ -z "$L" ] && _FATAL "Null directory provided"
-  cd "$L" 1>/dev/null || _FATAL "Unable to enter directory $1"
+  cd "$L" 1>/dev/null || _FATAL "Unable to enter directory \"$1\""
   _log_t "Entered directory \"$L\""
 }
 
@@ -224,8 +206,8 @@ __cd() {
 #
 __exist() {
   case "$1" in
-    "-f") [ ! -f "$2" ] && _FATAL "Unable to find the file \"$2\"";;
-    "-d") [ ! -d "$2" ] && _FATAL "Unable to find the dir \"$2\"";;
+    "-f") [ ! -f "$2" ] && _FATAL "Unable to find the file \"$2\" in directory \"$PWD\"";;
+    "-d") [ ! -d "$2" ] && _FATAL "Unable to find the dir \"$2\" under dir \"$PWD\"";;
     *) _FATAL "Invalid mode \"$1\"";;
   esac
 }

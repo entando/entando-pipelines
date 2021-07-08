@@ -28,7 +28,8 @@ fi
   ELEM="${1:-}"
   shift
 
-  while [ -n "$ELEM" ]; do
+  LOOP=true; [ $# -le 0 ] && LOOP=false
+  while $LOOP; do
     if [ "${#CMD[@]}" = 0 ]; then
       if [ "${ELEM:0:1}" = "@" ]; then
         IE=true
@@ -41,10 +42,11 @@ fi
       CMD+=("$ELEM")
     fi
     
+    [ $# -le 0 ] && LOOP=false
     ELEM="${1:-}"
     shift
-
-    if [ "$ELEM" = "--AND" ] || [ -z "$ELEM" ]; then
+    
+    if [ "$ELEM" = "--AND" ] || [ "$ELEM" = ".." ] || ! $LOOP; then
       "${CMD[@]}" || $IE || exit $?
       CMD=()
       ELEM="${1:-}"

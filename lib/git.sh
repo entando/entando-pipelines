@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # Runs an arbitrary git command and FATALS if it fails
 #
 __git() {
@@ -117,14 +116,16 @@ _git_get_current_commit_id() {
 #
 #
 _git_determine_highest_version() {
-  local maj min ptc __tmp__
+  local __tmp__
   __tmp__="$(
-  while read -r v; do
-    if [ "${v:0:1}" = "v" ]; then
-      _semver_parse maj min ptc "" "$v"
-      printf "X%04dX%04dX%04d\n" "$maj" "$min" "$ptc"
-    fi
-  done < <(git tag -l) | sort | tail -1 | sed -E "s/X0+/./g"
+    local maj min ptc
+    
+    while read -r v; do
+      if [ "${v:0:1}" = "v" ]; then
+        _semver_parse maj min ptc "" "$v"
+        printf "X%04dX%04dX%04d\n" "$maj" "$min" "$ptc"
+      fi
+    done < <(git tag -l) | sort | tail -1 | sed -E "s/X0+/./g"
   )"
   _set_var "$1" "${__tmp__:1}"
 }
@@ -170,18 +171,13 @@ __git_ACTP() {
 # If the release branch doesn't exists it creet
 #
 # Params:
-# $1: the receiver var of the designated release branch
-# $2: the reference version
+# $1: the branch to checkout
 #
-# The business rule is simple:
-# - Versions X.Y.Z are released under the branch "release/X.Y.0"
 #
 __git_auto_checkout() {
   git switch "$1" 2>/dev/null \
    || git switch -c "$1" \
    || _FATAL "Unable to checkout the branch \"$1\""
-
-  __git fetch --tag &> /dev/null
 }
 
 # Sets the receiver var with the the current git branch
@@ -190,24 +186,44 @@ _git_get_current_branch() {
   _set_var "$1" "$(git branch --show-current)"
 }
 
-# No-conflict-merge where the contents from the A branch are always preferred
+# Merges current branch into the target one, by overriding the target.
+# At the end of the operation the current branch and the target branch will be identical
 #
 # Params:
-# $1: the A branch
-# $2: the B branch
+# $1: the target branch
 #
-__git_force_merge_of_A_into_B() {
-  {
-    git checkout "$2"
-    git merge --no-ff "$1"
-    if git merge --abort; then
-      # Fall-forward to a forced merge
-      git checkout "$1" \
-      && git merge -s ours "$2" \
-      && git checkout "$2" \
-      && git merge "$1"
+__git_force_merge_branch() {
+  local sourceBranch="$1"
+  local targetBranch="$(__git branch --show-current)"
+  
+  _log_d "Force-Merging the branch \"$sourceBranch\" into the branch \"$targetBranch\""
+  
+  git log --graph --pretty=oneline --abbrev-commit --all | head -n 15
+  
+  _NONNULL sourceBranch targetBranch
+  (
+    git fetch origin "$sourceBranch" 2> /dev/null 
+
+    #_log_on_level TRACE || exec 1>/dev/null
+
+    DIFF="$(git diff --name-only "$sourceBranch")"
+    if [ -n "$DIFF" ]; then
+      git diff --name-status "$sourceBranch" | head -n 10
+      git merge --no-commit --no-ff "$sourceBranch"
+      echo "$DIFF" | xargs -L 1 rm -f
+      __git checkout "$sourceBranch" ./ 2>&1
+      __git clean -fdx
+      __git add -A
+      GIT_EDITOR=/bin/true __git merge --continue
+    else
+      git merge --no-ff "$sourceBranch"
     fi
-  } || _FATAL "Error while merging the branch \"$1\" into the branch \"$2\""
+    true
+  )
+  local rv="$?"
+  git merge --abort &>/dev/null
+  [ "$rv" -ne 0 ] && _FATAL "Error while merging the branch \"$sourceBranch\" into the branch \"$targetBranch\""
+  true
 }
 
 # tag generation

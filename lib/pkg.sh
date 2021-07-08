@@ -4,7 +4,9 @@
 # Options
 # Params:
 # $1: name of the packet
-# $2: optional installation check (ok if command present)
+#
+# Options:
+# -c command: installation check based on command presence
 #
 _pkg_get() {
   local chk

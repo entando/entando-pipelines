@@ -35,3 +35,9 @@ _ppl_determine_release_branch() {
   _releaseBranch_="release/$maj.$min.0"
   _set_var "$1" "$_releaseBranch_"
 }
+
+
+__ppl_enter_local_clone_dir() {
+  [ -n "$EE_LOCAL_CLONE_DIR" ] && __cd "$EE_LOCAL_CLONE_DIR"
+  true
+}
