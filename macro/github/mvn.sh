@@ -62,6 +62,9 @@ ppl--mvn() {
             ;;
         esac
         ;;
+      "GA-PUBLISH")
+        _mvn_deploy "maven-central" "$ENTANDO_OPT_MAVEN_REPO_GA"
+        ;;
       *)
         shift 3
         __mvn_exec "$@"
