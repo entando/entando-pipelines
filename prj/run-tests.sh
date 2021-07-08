@@ -64,6 +64,9 @@ type TEST__BEFORE_RUN &>/dev/null && TEST__BEFORE_RUN
   else
     ENTANDO_OPT_SUDO=""
   fi
+
+  [ -z "$DOCKER_USERNAME" ] && DOCKER_USERNAME="dockeruser"
+  [ -z "$DOCKER_PASSWORD" ] && DOCKER_PASSWORD="dockerpwd"
 }
 
 

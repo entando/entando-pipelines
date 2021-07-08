@@ -12,6 +12,7 @@
   . "$PROJECT_DIR/macro/github/mvn.sh"
   . "$PROJECT_DIR/macro/agnostic/release.sh"
   . "$PROJECT_DIR/macro/agnostic/bom.sh"
+  . "$PROJECT_DIR/macro/agnostic/docker.sh"
 }
 
 # shellcheck disable=SC2034
@@ -130,9 +131,9 @@ test_github_full_pipeline() {
     _ppl-load-context "$PPL_CONTEXT"
     __cd "local-checkout"
     ASSERT -v LOCAL_BRANCH "$(git branch --show-current)" = "develop"
-    rm -rf "local-checkout"  
+    rm -rf "local-checkout"
   ) || FAILED
-  
+
   #~
   #~ GENERATE TAG-RELEASE
   #~
@@ -147,12 +148,20 @@ test_github_full_pipeline() {
 
     __git checkout "_tmp_"
   ) || FAILED
-  
+
   # ~
   # ~ SIMULATES THE TAG EVENT
   # ~
   ASSUME_CONTEXT_OF_EVENT_ADD_RELEASE_TAG
-  
+
+  #~
+  #~ DOCKER PUBLICATION
+  #~
+  (
+    ppl--docker publish --id "TEST-DOCKER-PUBLICATION" --lcd "local-checkout"
+    true
+  ) || FAILED
+
   #~
   #~ BOM UPDATE
   #~
@@ -167,6 +176,7 @@ test_github_full_pipeline() {
 
     __git checkout "_tmp_"
   ) || FAILED
+
 }
 
 SIMULATE_PR_MERGE() {

@@ -21,11 +21,7 @@ bash <(curl -qsL "https://raw.githubusercontent.com/entando/entando-pipelines/{t
 
 ## Run a macro
 
-A macro is high level function that implementes a full pipeline job or step.  
-<<<<<<< HEAD
-Macros need to always have "IDs", either explicit or implicit, which identifies them.
-=======
->>>>>>> fa7e3e0... General testing reorg
+A macro is high level function that implementes a full pipeline job or step.
 
 ```
 ~/ppl-run {macro-name} {args}
@@ -60,6 +56,7 @@ for example:
 | - | - | - |
 | `ENTANDO_OPT_LOG_LEVEL`  | The log trace level |`TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR` |
 | `ENTANDO_OPT_PR_TITLE_FORMAT` | the title format to enforce | **[M]** `SINGLE`,`HIERARCHICAL`,`ANY` |
+| `ENTANDO_OPT_DOCKER_FILE_LIST` | the list of the Dockerfile to process during docker publication | **[M]** `Dockerfile`, `Dockerfile.eap`, `Dockerfile.wildfly`, etc. |
 | `ENTANDO_OPT_REPO_BOM_URL`  | the URL of the entando core bom | |
 | `ENTANDO_OPT_SUDO` | sudo command to use | |
 | `ENTANDO_OPT_NO_COL` | toggles the color ascii codes | `true`,`false` |
