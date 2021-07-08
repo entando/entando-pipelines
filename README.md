@@ -66,6 +66,7 @@ for example:
 | - | - | - |
 | `ENTANDO_OPT_LOG_LEVEL`  | The log trace level |`TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR` |
 | `ENTANDO_OPT_PR_TITLE_FORMAT` | the PR title format to enforce | **[M]** `SINGLE`,`HIERARCHICAL`,`ANY` |
+| `ENTANDO_OPT_DOCKER_FILE_LIST` | the list of the Dockerfile to process during docker publication | **[M]** `Dockerfile`, `Dockerfile.eap`, `Dockerfile.wildfly`, etc. |
 | `ENTANDO_OPT_REPO_BOM_URL`  | the URL of the entando core bom | |
 | `ENTANDO_OPT_SUDO` | sudo command to use | |
 | `ENTANDO_OPT_NO_COL` | toggles the color ascii codes | `true`,`false` |

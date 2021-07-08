@@ -95,3 +95,17 @@ _pom_set() {
     -v "$1" "$2"
   _log_t "> POM: $3/$4 <= \"$1\""
 }
+
+# Extracts artifact id and artifact version from the pom.xml of the received dir and sets 2 relative vars
+#
+# Params:
+# $1 the directory containing the pom.xml file
+# $2 the name of the variable in which set the artifact id
+# $3 the name of the variable in which set the artifact version
+#
+_extract_project_information_from_pom() {
+  __cd "$1"
+  __exist -f "pom.xml"
+  _pom_get_project_artifact_id "$2" "pom.xml"
+  _pom_get_project_version "$3" "pom.xml"
+}

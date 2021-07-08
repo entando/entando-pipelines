@@ -146,9 +146,9 @@ test_flow_pr_check() {
     _ppl-load-context "$PPL_CONTEXT"
     __cd "local-checkout"
     ASSERT -v LOCAL_BRANCH "$(git branch --show-current)" = "develop"
-    rm -rf "local-checkout"  
+    rm -rf "local-checkout"
   ) || FAILED
-  
+
   #~
   #~ GENERATE TAG-RELEASE
   #~
@@ -163,12 +163,20 @@ test_flow_pr_check() {
 
     __git checkout "_tmp_"
   ) || FAILED
-  
+
   # ~
   # ~ SIMULATES THE TAG EVENT
   # ~
   ASSUME_CONTEXT_OF_EVENT_ADD_RELEASE_TAG
-  
+
+  #~
+  #~ DOCKER PUBLICATION
+  #~
+  (
+    ppl--docker publish --id "TEST-DOCKER-PUBLICATION" --lcd "local-checkout"
+    true
+  ) || FAILED
+
   #~
   #~ BOM UPDATE
   #~
@@ -183,6 +191,7 @@ test_flow_pr_check() {
 
     __git checkout "_tmp_"
   ) || FAILED
+
 }
 
 SIMULATE_PR_MERGE() {
