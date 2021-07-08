@@ -81,22 +81,32 @@ test_semver_cmp() {
 
 test_args() {
   print_current_function_name "RUNNING TEST> "  ".."
+  # shellcheck disable=SC2034
   ARGS_FLAGS=(--temp --splat)
   PARSE_ARGS --temp 1 55 --set 2 --with calm 101 -a "103" -- -b 999 --raise --splat
-  ASSERT -v NUM_POS "${#ARGS_POSITIONAL[@]}" = 7
-  ASSERT -v NUM_OPT "${#ARGS_OPTION[@]}" = 5
-  ASSERT "ARGS_POSITIONAL[0]" = 1
-  ASSERT "ARGS_POSITIONAL[1]" = 55
-  ASSERT "ARGS_POSITIONAL[2]" = 101
-  ASSERT "ARGS_POSITIONAL[3]" = "-b"
-  ASSERT "ARGS_POSITIONAL[4]" = 999
-  ASSERT "ARGS_POSITIONAL[5]" = "--raise"
-  ASSERT "ARGS_POSITIONAL[6]" = "--splat"
-  ASSERT "ARGS_OPTION[--set]" = "2"
-  ASSERT "ARGS_OPTION[--with]" = "calm"
-  ASSERT "ARGS_OPTION[-a]" = "103"
-  ASSERT "ARGS_OPTION[--temp]" = true
-  ASSERT "ARGS_OPTION[--splat]" = false
+  ASSERT -v NUM_ARGS_POS "${#ARGS_POS[@]}" = 8
+  ASSERT -v NUM_ARGS_OPT "${#ARGS_OPT[@]}" = 5
+  ASSERT "ARGS_POS[0]" = ""
+  ASSERT "ARGS_POS[1]" = 1
+  ASSERT "ARGS_POS[2]" = 55
+  ASSERT "ARGS_POS[3]" = 101
+  ASSERT "ARGS_POS[4]" = "-b"
+  ASSERT "ARGS_POS[5]" = 999
+  ASSERT "ARGS_POS[6]" = "--raise"
+  ASSERT "ARGS_POS[7]" = "--splat"
+  ASSERT "ARGS_OPT[--set]" = "2"
+  ASSERT "ARGS_OPT[--with]" = "calm"
+  ASSERT "ARGS_OPT[-a]" = "103"
+  ASSERT "ARGS_OPT[--temp]" = true
+  ASSERT "ARGS_OPT[--splat]" = false
+  
+  local RES
+  _get_arg RES --with
+  ASSERT RES = "calm"
+  _get_arg RES 3
+  ASSERT RES = 101
+  _get_arg RES unexistent a-fallback
+  ASSERT RES = a-fallback
 }
 
 true

@@ -6,31 +6,27 @@
 # EXECUTES THE CHECKOUT OF A GIVEN REPO AND BRANCH
 # 
 # Params:
-# $1: the id of execution
-# $2: the type checkout (pr, base)
-# $3: the destination folder
-# $4: optional git token to use instead of the one provided by the environment
+# $1: the type checkout (pr, base)
 #
 ppl--checkout-branch() {
   (
-    START_MACRO "$1" "$PPL_CONTEXT"
+    START_MACRO "CHECKOUT-BRANCH" "$@"
 
-    local destFolder="$3"
-    local forceToken="$4"
     local branchToCheckout
-
+    _get_arg action 1
+    
     # CLONE
-    case "$2" in
-      pr) branchToCheckout="$EE_HEAD_REF";;
-      base) branchToCheckout="${EE_REF##*/}";;
-      *) _FATAL "Illegal checkout type provided";;
-    esac
+    if [ -n "$EE_HEAD_REF" ]; then
+      branchToCheckout="$EE_HEAD_REF"
+    else
+      branchToCheckout="${EE_REF##*/}"
+    fi
 
-    _NONNULL destFolder EE_CLONE_URL branchToCheckout
-    _git_full_clone "$EE_CLONE_URL" "$destFolder" "" "${forceToken:-$EE_TOKEN}"
+    _NONNULL EE_LOCAL_CLONE_DIR EE_CLONE_URL branchToCheckout
+    _git_full_clone "$EE_CLONE_URL" "$EE_LOCAL_CLONE_DIR" "" "${EE_TOKEN_OVERRIDE:-$EE_TOKEN}"
     
     # CHECKOUT    
-    __cd "$destFolder"
+    __cd "$EE_LOCAL_CLONE_DIR"
     _git_auto_setup_commit_config
     
     (

@@ -9,18 +9,17 @@
 # - The PR title must match the given format rules
 #
 # Params:
-# $1: the id of execution
-# $2: the label to check
+# $1: the label to check
 #
 ppl--gate-check() {
   (
-    START_MACRO --no-skip "$1" "$PPL_CONTEXT"
-    
-    if [ "$?" -eq 99 ]; then
-      echo "::set-output name=ENABLED::false"
-      _EXIT "$1 will be skipped due to skip-label: \"skip-${1,,}\"" 1>&2
+    START_MACRO "GATE-CHECK" --no-skip "$@"
+
+    if [ "$?" -eq 101 ]; then
+      _ppl-set-persistent-var ENABLED false
+      _EXIT "$EE_CURRENT_MACRO will be skipped due to skip-label: \"skip-${1,,}\"" 1>&2
     else
-      echo "::set-output name=ENABLED::true"
+      _ppl-set-persistent-var ENABLED true
     fi
   )
 }

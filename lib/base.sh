@@ -8,20 +8,24 @@
 #
 # shellcheck disable=SC2034
 START_MACRO() {
-
+  local defaultMacroName="$1"; shift
   set +e
 
   ${ENTANDO_OPT_STEP_DEBUG:-false} && {
     set -x
   }
-
+  
   ARGS_FLAGS=(--no-skip)
   PARSE_ARGS "$@"
   
-  NO_SKIP=false;[ "$1" = "--no-skip" ] && { NO_SKIP=true; shift; }
-
-  EE_CURRENT_MACRO="$1"
-
+  local noSkip
+  _get_arg noSkip --no-skip
+  
+  EE_CURRENT_MACRO="${ARGS_OPT[--id]}"
+  [ -z "$EE_CURRENT_MACRO" ] && EE_CURRENT_MACRO="$defaultMacroName"
+  EE_LOCAL_CLONE_DIR="${ARGS_OPT[--lcd]}"
+  EE_TOKEN_OVERRIDE="${ARGS_OPT[--token]}"
+  
   if [ "${EE_CURRENT_MACRO:0:1}" = "@" ]; then
     EE_CURRENT_MACRO_PREFIX="@"
     EE_CURRENT_MACRO="${EE_CURRENT_MACRO:1}"
@@ -45,15 +49,15 @@ START_MACRO() {
   ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-INFO}"
   ENTANDO_OPT_REPO_BOM_URL="${ENTANDO_OPT_REPO_BOM_URL}"
   ENTANDO_OPT_REPO_BOM_MAIN_BRANCH="${ENTANDO_OPT_REPO_BOM_MAIN_BRANCH:-develop}"
-
-  _ppl-load-context "$2"
+  ENTANDO_OPT_LOG_LEVEL=TRACE
+  _ppl-load-context "$PPL_CONTEXT"
 
   #_pp EE_CLONE_URL ENTANDO_OPT_REPO_BOM_URL EE_HEAD_REF
-  _ppl-pr-has-label "skip-${1,,}" && {
-    if "$NO_SKIP"; then
-      return 99
+  _ppl-pr-has-label "skip-${EE_CURRENT_MACRO,,}" && {
+    if "$noSkip"; then
+      return 101
     else
-      _EXIT "$1 skipped due to skip-label: \"skip-${1,,}\""
+      _EXIT "$EE_CURRENT_MACRO skipped due to skip-label: \"skip-${EE_CURRENT_MACRO,,}\""
     fi
   }
 }
