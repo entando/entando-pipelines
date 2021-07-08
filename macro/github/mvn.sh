@@ -12,11 +12,11 @@
 ppl--mvn() {
   (
     START_MACRO "MVN" "$@"
-    
+
     local action arg2
     _get_arg action 1
     _get_arg arg2 2
-    
+
     __ppl_enter_local_clone_dir
     __exist -f "pom.xml"
 
@@ -48,9 +48,9 @@ ppl--mvn() {
           p*)
             _log_i "Publishing to the internal snapshots repo"
             _NONNULL ENTANDO_OPT_MAVEN_REPO_DEVL
-            
+
             _pkg_get "xmlstarlet" -c "xmlstarlet"
-            
+
             #~ UPDATES the version on the POM and REBUILDS the module
             local versionToSet="${EE_REF_NAME:1}"
             _pom_set_project_version "$versionToSet" "./pom.xml"
@@ -61,6 +61,10 @@ ppl--mvn() {
             return 1
             ;;
         esac
+        ;;
+      "GA-PUBLICATION")
+        _NONNULL ENTANDO_OPT_MAVEN_REPO_GA
+        __mvn_deploy "maven-central" "$ENTANDO_OPT_MAVEN_REPO_GA"
         ;;
       *)
         shift 3
