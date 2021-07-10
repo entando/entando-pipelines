@@ -167,15 +167,15 @@ PARSE_ARGS() {
   done
 }
 
-# Extracts a positional or optional Arguments
+# Extracts a positional or optional argument
 #
 # Params:
 # $1 the receiver var
 # $2 the option name or the positional index
 #
 # Examples:
-# _get_arg arg1 1
-# _get_arg mode --mode
+# _get_arg arg1 1         # sets the var "arg1" with the first positional argument
+# _get_arg mode --mode    # sets the var "mode" with optional argument "--mode"
 #
 _get_arg() {
   local _tmp_

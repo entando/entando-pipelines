@@ -1,5 +1,32 @@
 #!/bin/bash
 
+# Query informations about the current PR
+# $1  the PR value to get
+# $2  the receiver var of the value
+# $.. $1 & $2 repeated at will
+#
+_ppl-query-pr-info() {
+  if ! $TEST__EXECUTION; then
+    github-request --set RES GET "$EE_PR_URL" "" "number" "$EE_PR_NUM"
+    Q="["; for ((i=2;i<=$#;i+=2)); do Q+=".${!i}"; done; Q+="] | @csv"
+    i=1
+    while IFS= read -r var; do
+      _set_var "${!i}" "${var:1:${#var}-2}"
+    done < <(__jq "$Q" -r <<< "$RES" | tr ',' $'\n')  
+  else
+    TEST__EXECUTION._ppl-query-pr-info "$@"
+  fi
+}
+
+TEST__EXECUTION._ppl-query-pr-info() {
+  for ((i=2;i<=$#;i+=2)); do 
+    if [ "${!i}" = "title" ]; then
+      ((i--))
+      _set_var "${!i}" "$EE_PR_TITLE"
+    fi
+  done
+}
+
 # Updates the state of the current pipeline job
 #
 # Params:
@@ -86,6 +113,8 @@ _ppl-pr-has-label() {
 # - EE_TOKEN
 #
 github-request() {
+  local TOKEN="$EE_TOKEN";[ "$1" = "--no-auth" ] && { TOKEN=""; shift; }
+  local SET=false,VAR;[ "$1" = "--set" ] && { SET=true; shift; VAR="$1"; shift; }
   _ppl_must_have_env
   local VERB="$1"; shift
   local URL="$1"; shift
@@ -98,7 +127,6 @@ github-request() {
   if [ "$TEST__EXECUTION" != "true" ] || [ "$VERB" = "GET" ]; then
     _log_t "Sending $CMD"
     
-    
     local RESFILE STATUS
     RESFILE="$(mktemp)"
     
@@ -106,12 +134,14 @@ github-request() {
       curl -sL -o "$RESFILE" -w "%{http_code}" "$URL" \
         -X "$VERB" \
         -H "Accept: application/vnd.github.v3+json" \
-        -H "Authorization: token $EE_TOKEN" \
+        ${TOKEN:+-H "Authorization: token $TOKEN"} \
         ${DATA:+-d "$DATA"} \
       ;
     )"
     
     _log_on_level TRACE && cat "$RESFILE"
+    
+    $SET && _set_var "$VAR" "$(cat "$RESFILE")"
     rm "$RESFILE"
     
     if [ "${STATUS:0:1}" = "2" ]; then
@@ -170,6 +200,7 @@ _ppl-load-context() {
   Q+=".event.repository.clone_url,"
   Q+='.event.repository.statuses_url,'
   Q+='.event.repository.issues_url,'
+  Q+='.event.repository.pulls_url,'
   Q+='.event.pull_request.number,'
   Q+='.event.pull_request.title'
   Q+="] | @csv"
@@ -192,6 +223,7 @@ _ppl-load-context() {
       EE_CLONE_URL \
       EE_STATUSES_URL \
       EE_ISSUES_URL \
+      EE_PR_URL \
       EE_PR_NUM \
       EE_PR_TITLE \
     <<< "$RES"
