@@ -2,24 +2,26 @@
 
 # shellcheck disable=SC1091,SC1090
 {
-  . "$PROJECT_DIR/test/_test-base.sh"
-  . "$PROJECT_DIR/lib/base.sh"
-  . "$PROJECT_DIR/macro/github/checkout-branch.sh"
-  . "$PROJECT_DIR/macro/github/check-pr-bom-state.sh"
-  . "$PROJECT_DIR/macro/github/check-pr-format.sh"
-  . "$PROJECT_DIR/macro/github/pr-labels.sh"
-  . "$PROJECT_DIR/macro/github/gate-check.sh"
-  . "$PROJECT_DIR/macro/github/mvn.sh"
-  . "$PROJECT_DIR/macro/agnostic/release.sh"
-  . "$PROJECT_DIR/macro/agnostic/bom.sh"
+  # shellcheck disable=SC1090
+  if [ -n "$GITHUB_ACTIONS" ]; then
+    # shellcheck disable=SC1090
+    while read -r fn; do
+      source "$fn"
+    done < <(find "$PROJECT_DIR/macro" -mindepth 2 -type f -iname "*.sh")
+    [ "$1" = "--activate" ] && return 0
+  else
+    echo "Unsupported Pipeline implementation" 1>&2
+    [ "$1" = "--activate" ] && return 77
+    exit 77
+  fi
 }
 
 # shellcheck disable=SC2034
 #TEST:macro
-test_github_full_pipeline() {
+test_flow_pr_check() {
   print_current_function_name "RUNNING TEST> "  ".."
   # shellcheck disable=SC2034
-
+  
   #~
   #~ CHECKOUT
   #~
@@ -66,7 +68,7 @@ test_github_full_pipeline() {
   #~
   (
     ppl--check-pr-bom-state --lcd "local-checkout"
-    ASSERT -v "BOM_CHECK_RESULT" "$?" = 0
+    ASSERT -v "BOM_CHECK_RESULfile:///home/wrt/work/prj/entando/main/tools/entando-pipelines/test/github/test_github_full_pipeline.shT" "$?" = 0
     __cd "$ENTANDO_OPT_REPO_BOM_URL"
     echo "something-new" > something-new
     __git_ACTP "something-new" "v9.9.9"
@@ -81,8 +83,19 @@ test_github_full_pipeline() {
   #~ CHECK PR FORMAT RULES
   #~
   (
+    ENTANDO_OPT_MAINLINE=""
     ppl--check-pr-format --lcd "local-checkout"
   ) || FAILED
+  
+  (
+    ENTANDO_OPT_MAINLINE="6.3"
+    ppl--check-pr-format --lcd "local-checkout"
+  ) || FAILED
+  
+  (
+    ENTANDO_OPT_MAINLINE="99.99"
+    ppl--check-pr-format --lcd "local-checkout"
+  ) && FAILED
 
   (
     TEST__APPLY_OVERRIDES() { EE_PR_TITLE="ENG-999-Hey There!"; }
@@ -103,7 +116,10 @@ test_github_full_pipeline() {
   #~ GENERATE PREVIEW VERSION
   #~
   (
+    export PS4='$LINENO: '
+    set -x
     ppl--release prepare-preview-release --id "PREVIEW-RELEASE" --lcd "local-checkout"
+    set +x
 
     _ppl-load-context "$PPL_CONTEXT"
     __cd "$EE_CLONE_URL"

@@ -29,7 +29,7 @@ A test label is a comment like this
 #TEST:lib
 ```
 
-placed just before the function to run a part of the test
+placed just before the function to run as part of the test
 
 ### Insights
 
@@ -41,6 +41,14 @@ The script provides two mocked repositories that can be referenced through these
 - `ENTANDO_OPT_REPO_BOM_URL`: (local) url of the mock of the BOM repository
 - `EE_CLONE_URL`: (local) url of the mock of an example module repository
 
+
+### Test Environment Vars
+
+| var | description |
+|-|-|
+|`TEST__EXECUTION`| set to true during the test runs |
+|`PROJECT_DIR`| the path of the project from which the test was run |
+|`TEST__WORK_DIR`| the (temporary) working directory of the current test run |
 
 
 ## Functions
@@ -109,11 +117,7 @@ TEST__APPLY_OVERRIDES() { EE_PR_TITLE="A-MOCKED-PR-TITLE"; }
 
 ### ENTANDO_OPT_SHELL_ON_TEST_ASSERT
 
-<<<<<<< HEAD
-if set to true the a DBGSHELL is dropped when a test asserts
-=======
 if set to true a DBGSHELL is dropped when a test asserts
->>>>>>> fa7e3e0... General testing reorg
 
 Examples:
 ```

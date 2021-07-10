@@ -14,21 +14,42 @@
 ppl--check-pr-format() {
   (
     START_MACRO "CHECK-PR-FORMAT" "$@"
+    _pkg_get "xmlstarlet" -c "xmlstarlet"
     
     __ppl_enter_local_clone_dir
     __exist -f "pom.xml"
     
+    local projectVersion
+    _pom_get_project_version projectVersion "pom.xml"
+    
     ppl--check-pr-format.CHECK_TITLE_FORMAT
-    ppl--check-pr-format.CHECK_PROJECT_VERSION_FORMAT
+    ppl--check-pr-format.CHECK_MAINLINE "$projectVersion"
+    ppl--check-pr-format.CHECK_PROJECT_VERSION_FORMAT "$projectVersion"
   )
 }
 
-ppl--check-pr-format.CHECK_PROJECT_VERSION_FORMAT() {
-  _pkg_get "xmlstarlet" -c "xmlstarlet"
+ppl--check-pr-format.CHECK_MAINLINE() {
+  if [ -z "${ENTANDO_OPT_MAINLINE}" ]; then
+    _leg_d "Mainline check is not enabled"
+    return 0
+  fi
+  
+  local projectVersion="$1" mMaj mMin maj min
+  _semver_parse mMaj mMin "" "" "${ENTANDO_OPT_MAINLINE}"
+  _semver_parse maj min "" "" "${projectVersion}"
+  
+  _pp projectVersion mMaj mMin maj min
+  
+  if [ "$mMaj" != "$maj" ] || [ "$mMin" != "$min" ]; then
+    if [ "${EE_REF_NAME:0:8}" != "release/" ]; then
+      _ppl-job-update-status "$EE_COMMIT_ID" "failure" "Failed" "Invalid project version (incompatible with mainline)"
+      _FATAL "In non-release branches the project version (\"$projectVersion\") must be compatible with the current mainline: \"${ENTANDO_OPT_MAINLINE}\""
+    fi
+  fi
+}
 
-  # shellcheck disable=SC2034
-  local projectVersion
-  _pom_get_project_version projectVersion "pom.xml"
+ppl--check-pr-format.CHECK_PROJECT_VERSION_FORMAT() {
+  local projectVersion="$1" 
   
   if [[ "$projectVersion" =~ .*-SNAPSHOT ]]; then
     _log_i "Project version number is a snapshot as request"
@@ -53,18 +74,22 @@ ppl--check-pr-format.CHECK_TITLE_FORMAT() {
   _itmlst_contains "$olFormatRules" "ANY" && {
       prTitleIsValid=true
   }
+  
+  local currentPrTitle
+  _ppl-query-pr-info currentPrTitle title
+  
   _itmlst_contains "$olFormatRules" "SINGLE" && {
-      [[ "$EE_PR_TITLE" =~ $REGEX_S ]] && prTitleIsValid=true
+      [[ "$currentPrTitle" =~ $REGEX_S ]] && prTitleIsValid=true
   }
   _itmlst_contains "$olFormatRules" "HIERARCHICAL" && {
-      [[ "$EE_PR_TITLE" =~ $REGEX_H ]] && prTitleIsValid=true
+      [[ "$currentPrTitle" =~ $REGEX_H ]] && prTitleIsValid=true
   }
 
   if $prTitleIsValid; then
-    _log_i "Pull Request title \"$EE_PR_TITLE\" is valid"
+    _log_i "Pull Request title \"$currentPrTitle\" is valid"
     true
   else
     _ppl-job-update-status "$EE_COMMIT_ID" "failure" "Failed" "Ill-formatted PR title"
-    _FATAL "The Pull Request title \"$EE_PR_TITLE\" violates the required format ($formatRules)"
+    _FATAL "The Pull Request title \"$currentPrTitle\" violates the required format ($formatRules)"
   fi
 }
