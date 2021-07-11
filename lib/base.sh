@@ -23,6 +23,14 @@ START_MACRO() {
   
   EE_CURRENT_MACRO="${ARGS_OPT[--id]}"
   [ -z "$EE_CURRENT_MACRO" ] && EE_CURRENT_MACRO="$defaultMacroName"
+  
+  _itmlst_from_string ENTANDO_OPT_FEATURES "${ENTANDO_OPT_FEATURES:-*}"
+  _ppl_is_feature_enabled "$EE_CURRENT_MACRO" || {
+    _EXIT "Macro of id \"$EE_CURRENT_MACRO\" is not enabled"
+  }
+
+  ENTANDO_OPT_REPO_BOM_MAIN_BRANCH="${ENTANDO_OPT_REPO_BOM_MAIN_BRANCH:-develop}"
+
   EE_LOCAL_CLONE_DIR="${ARGS_OPT[--lcd]}"
   EE_TOKEN_OVERRIDE="${ARGS_OPT[--token]}"
   
@@ -48,8 +56,7 @@ START_MACRO() {
   fi
   ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-INFO}"
   ENTANDO_OPT_REPO_BOM_URL="${ENTANDO_OPT_REPO_BOM_URL}"
-  ENTANDO_OPT_REPO_BOM_MAIN_BRANCH="${ENTANDO_OPT_REPO_BOM_MAIN_BRANCH:-develop}"
-  ENTANDO_OPT_LOG_LEVEL=TRACE
+  
   _ppl-load-context "$PPL_CONTEXT"
 
   #_pp EE_CLONE_URL ENTANDO_OPT_REPO_BOM_URL EE_HEAD_REF
@@ -62,13 +69,21 @@ START_MACRO() {
   }
 }
 
-# Stops the execution with success result and a message
+# Stops the execution with a success result and an info message
 #
 # Params:
 # $1  message
 #
+# Options:
+# -d logs using _log_d instead of _log_i
+#
 _EXIT() {
-  _log_i "$@"
+  if [ "$1" = "-d" ]; then
+    shift
+    _log_d "$@"
+  else
+    _log_i "$@"
+  fi
   exit 0
 }
 
@@ -86,7 +101,7 @@ _EXIT() {
 _FATAL() {
   local rv=77
   if [ "$1" != "-s" ]; then
-    SKIP=1;[ "$1" = "-S" ] && { SKIP="$2"; shift 2; }
+    SKIP=1;[ "$1" = "-S" ] && { SKIP="$((SKIP+$2))"; shift 2; }
     [ "$1" = "-99" ] && shift && rv=99
     LOGGER() { _log_e "$*" 1>&2; }
     _print_callstack "$SKIP" 5 "" LOGGER "$@" 1>&2
