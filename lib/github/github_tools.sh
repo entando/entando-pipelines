@@ -7,7 +7,7 @@
 #
 _ppl-query-pr-info() {
   if ! $TEST__EXECUTION; then
-    github-request --set RES GET "$EE_PR_URL" "" "number" "$EE_PR_NUM"
+    github-request --set RES GET "$EE_PULLS_URL" "" "number" "$EE_PR_NUM"
     Q="["; for ((i=2;i<=$#;i+=2)); do Q+=".${!i}"; done; Q+="] | @csv"
     i=1
     while IFS= read -r var; do
@@ -188,6 +188,7 @@ _ppl-load-context() {
 
   local Q="["
   Q+=".repository,"
+  Q+=".repositoryUrl,"
   Q+=".workflow,"
   Q+=".job,"
   Q+=".event_name,"
@@ -201,8 +202,10 @@ _ppl-load-context() {
   Q+='.event.repository.statuses_url,'
   Q+='.event.repository.issues_url,'
   Q+='.event.repository.pulls_url,'
+  Q+=".event.pull_request.html_url",
   Q+='.event.pull_request.number,'
-  Q+='.event.pull_request.title'
+  Q+='.event.pull_request.title,'
+  Q+='.event.pull_request.head.sha'
   Q+="] | @csv"
   local RES
   RES="$(__jq "$Q" -r <<< "$PPL_CONTEXT")"
@@ -211,30 +214,35 @@ _ppl-load-context() {
   {
     IFS=',' read -r \
       EE_REPO \
+      EE_REPO_GIT_URL \
       EE_WORKFLOW \
       EE_JOB \
       EE_EVENT \
       EE_TOKEN \
       EE_REF \
-      EE_COMMIT_ID \
+      sEE_SHA \
       EE_BASE_REF \
       EE_HEAD_REF \
       EE_REPO_NAME \
       EE_CLONE_URL \
       EE_STATUSES_URL \
       EE_ISSUES_URL \
-      EE_PR_URL \
+      EE_PULLS_URL \
+      EE_PR_HTML_URL \
       EE_PR_NUM \
       EE_PR_TITLE \
+      EE_PR_SHA \
     <<< "$RES"
     _extract_pr_title_prefix EE_PR_TITLE_PREFIX "$EE_PR_TITLE"
     EE_PARSED_CONTEXT="$PPL_CONTEXT"
     EE_PR_LABELS="$(
       __jq ".event.pull_request.labels | map(.name)? | join(\",\")?" -r <<< "$PPL_CONTEXT" 2> /dev/null
     )"
-    EE_PR_LABELS=",${EE_PR_LABELS//\"/},"   # itmlst format
+    EE_PR_LABELS="${EE_PR_LABELS//\"/}"
     EE_REF_NAME="${EE_REF##*/}"
   }
+  
+  EE_COMMIT_ID="${EE_PR_SHA:-$EE_SHA}"
 
   # TEST__EXECUTION OVERRIDES
   ! $NOOVR && {
@@ -251,4 +259,28 @@ _ppl-load-context() {
 
 _ppl_must_have_env() {
   [ -z "${EE_PARSED_CONTEXT}" ] && _FATAL "Please run _ppl-load-context"
+}
+
+# Submits to the current PR/commit a review with a request for change
+#
+# Params:
+# $1  the request message
+#
+# ref:
+# - https://docs.github.com/en/rest/reference/pulls#create-a-review-comment-for-a-pull-request
+# - https://docs.github.com/en/rest/reference/pulls#submit-a-review-for-a-pull-request
+#
+_ppl-pr-request-change() {
+  if ! $TEST__EXECUTION; then
+    local data="{"
+    data+="\"commit_id\":\"$EE_COMMIT_ID\","
+    data+="\"body\":$(_str_quote "$1")"
+    data+="}"
+    
+    github-request --set RES POST "$EE_PULLS_URL/reviews" "$data" "number" "$EE_PR_NUM"
+      
+    local review_id=$(echo "$RES" | jq '.id' -r)
+    local data="{\"event\":\"REQUEST_CHANGES\"}"
+    github-request --set RES POST "$EE_PULLS_URL/reviews/$review_id/events" "$data" "number" "$EE_PR_NUM"
+  fi  
 }

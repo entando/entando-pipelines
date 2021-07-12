@@ -28,11 +28,14 @@ ppl--mvn() {
         ;;
       "BUILD-AND-TEST")
         _log_i "Building and testing with group \"$arg2\""
-        __mvn_exec -B test -Dgroups="$arg2"
+        #__mvn_exec -B test -Dgroups="$arg2"
+        #mvn clean package -DskipPostDeploymentTests=false -DskipPreDeploymentTests=false
+        __mvn_exec clean test -Ppre-deployment-verification
         ;;
       "BUILD")
       _log_i "Building with group \"$arg2\""
-        __mvn_exec package -Dmaven.test.skip=true -Dgroups="$arg2"
+        #__mvn_exec package -Dmaven.test.skip=true -Dgroups="$arg2"
+        __mvn_exec clean package -DskipPostDeploymentTests=true -DskipPreDeploymentTests=true -Dmaven.test.skip=true
         ;;
       "OWASP")
       _log_i "Starting the owasp analysis"
