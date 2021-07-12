@@ -7,7 +7,7 @@
   . "$PROJECT_DIR/lib/semver.sh"
 }
 
-#TEST:lib
+#TEST:libx
 test_misc() {
   test_url_utils
   test_tpl_utils
@@ -15,6 +15,7 @@ test_misc() {
   test_itmlst_utils
   test_semver_cmp
   test_args
+  test_str
   
   true
 }
@@ -55,6 +56,33 @@ test_itmlst_utils() {
   _itmlst_contains "$itmlst" "green" || FAILED
   _itmlst_contains "$itmlst" "blue"  || FAILED
   _itmlst_contains "$itmlst" "blu" && FAILED
+  
+  _itmlst_from_string itmlst ""
+  _itmlst_is_item_enabled "$itmlst" "red" && FAILED
+  
+  _itmlst_from_string itmlst "red,green|blue"$'\n'"yellow"
+  _itmlst_is_item_enabled "$itmlst" "red" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "green" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "blue" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "yellow" || FAILED
+  
+  _itmlst_from_string itmlst "*"
+  _itmlst_is_item_enabled "$itmlst" "red" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "green" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "blue" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "yellow" || FAILED
+
+  _itmlst_from_string itmlst "*,-blue"
+  _itmlst_is_item_enabled "$itmlst" "red" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "green" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "blue" && FAILED
+  _itmlst_is_item_enabled "$itmlst" "yellow" || FAILED
+  
+  _itmlst_from_string itmlst "red,green|blue"$'\n'"yellow|-*|blue"
+  _itmlst_is_item_enabled "$itmlst" "red" && FAILED
+  _itmlst_is_item_enabled "$itmlst" "green" && FAILED
+  _itmlst_is_item_enabled "$itmlst" "blue" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "yellow" && FAILED
 }
 
 test_semver_cmp() {
@@ -108,5 +136,16 @@ test_args() {
   _get_arg RES unexistent a-fallback
   ASSERT RES = a-fallback
 }
+
+test_str() {
+  print_current_function_name "RUNNING TEST> "  ".."
+  
+  local RES
+  _str_last_pos RES ",10,11,12,11,13" "11"
+  ASSERT RES = 4
+  _str_last_pos RES ",10,11,12,*,13" "*"
+  ASSERT RES = 4
+}
+
 
 true

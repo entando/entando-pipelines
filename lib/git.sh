@@ -3,7 +3,7 @@
 # Runs an arbitrary git command and FATALS if it fails
 #
 __git() {
-  git "$@" || _FATAL "git $1 failed"
+  git "$@" || _FATAL -S 1 "git $1 failed"
 }
 
 # Clones a repository and the tags

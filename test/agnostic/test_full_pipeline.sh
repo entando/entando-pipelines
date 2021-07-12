@@ -1,26 +1,15 @@
 #!/bin/bash
 
 # shellcheck disable=SC1091,SC1090
-{
-  # shellcheck disable=SC1090
-  if [ -n "$GITHUB_ACTIONS" ]; then
-    # shellcheck disable=SC1090
-    while read -r fn; do
-      source "$fn"
-    done < <(find "$PROJECT_DIR/macro" -mindepth 2 -type f -iname "*.sh")
-    [ "$1" = "--activate" ] && return 0
-  else
-    echo "Unsupported Pipeline implementation" 1>&2
-    [ "$1" = "--activate" ] && return 77
-    exit 77
-  fi
-}
+. "$PROJECT_DIR/tests/_test_base-sh"
 
 # shellcheck disable=SC2034
 #TEST:macro
 test_flow_pr_check() {
   print_current_function_name "RUNNING TEST> "  ".."
   # shellcheck disable=SC2034
+  
+  ENTANDO_OPT_FEATURES="*"
   
   #~
   #~ CHECKOUT
@@ -42,7 +31,7 @@ test_flow_pr_check() {
     ppl--pr-labels --id "TEST" remove "test" || _SOE
 
     ASSERT -v RES $? -eq 0
-    LATEST__TEST__TLOG_COMMAND TMP
+    TEST__GET_TLOG_COMMAND TMP -1
     ASSERT TMP =~ "\[HTS\] \"DELETE\" to \"https:.*\""
   ) || FAILED
 
@@ -56,7 +45,7 @@ test_flow_pr_check() {
 
   (
     TEST__APPLY_OVERRIDES() {
-      EE_PR_LABELS+="skip-test,"
+      EE_PR_LABELS+=",skip-test"
     }
 
     TMP="$(ppl--gate-check --id TEST | grep "set-output")"
@@ -116,10 +105,7 @@ test_flow_pr_check() {
   #~ GENERATE PREVIEW VERSION
   #~
   (
-    export PS4='$LINENO: '
-    set -x
     ppl--release prepare-preview-release --id "PREVIEW-RELEASE" --lcd "local-checkout"
-    set +x
 
     _ppl-load-context "$PPL_CONTEXT"
     __cd "$EE_CLONE_URL"

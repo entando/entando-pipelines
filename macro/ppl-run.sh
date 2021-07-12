@@ -7,6 +7,13 @@
 # If COMMAND if prefixed with "@" the command error is ignored.
 #
 
+ppl-exit-proc() { 
+  local RV="$1"; shift
+  [ "$RV" != "0" ] && {
+    echo "~ pp-run terminated with ERROR CODE \"$RV\"; the last command was: \"$1\""
+  }
+}
+
 # shellcheck disable=SC1090
 if [ -n "$GITHUB_ACTIONS" ]; then
   # shellcheck disable=SC1090
@@ -23,9 +30,11 @@ fi
 (
   # shellcheck disable=SC2034
   [ -t 0 ] && IN_TTY=false || IN_TTY=trye
+  LAST_CMD=()
   CMD=()
   IE=false  # ignore command error
   ELEM="${1:-}"
+  RV=0
   shift
 
   LOOP=true; [ $# -le 0 ] && LOOP=false
@@ -47,7 +56,10 @@ fi
     shift
     
     if [ "$ELEM" = "--AND" ] || [ "$ELEM" = ".." ] || ! $LOOP; then
-      "${CMD[@]}" || $IE || exit $?
+      LAST_CMD=("${CMD[@]}")
+      if [ "${#CMD[@]}" != 0 ]; then
+        "${CMD[@]}" || $IE || { RV="$?"; break; }
+      fi
       CMD=()
       ELEM="${1:-}"
       IE=false
@@ -55,5 +67,6 @@ fi
     fi
   done
   
-  exit 0
+  ppl-exit-proc "$RV" "${LAST_CMD[@]}"
+  exit "$RV"
 )

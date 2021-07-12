@@ -10,8 +10,8 @@ cd "$SCRIPT_DIR/.." || { echo "Unable to enter the script dir"; exit 99; }
   exit "$?"
 }
 
-. "./lib/base.sh"     # only for the itmlst functions
-  . "./lib/misc.sh"     # only for the itmlst functions
+. "./lib/base.sh"
+. "./lib/misc.sh"     # only for the itmlst functions
 
 ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-DEBUG}"
 # Composes the execution labels "itmlst"
@@ -19,7 +19,7 @@ EXECUTION_LABELS=""
 _itmlst_fill EXECUTION_LABELS "$@"
 _itmlst_empty "$EXECUTION_LABELS" && _itmlst_fill EXECUTION_LABELS "lib" "macro"
 
-echo -e "\nTEST> Execution labels: ${EXECUTION_LABELS:1:-1}\n"
+echo -e "\nTEST> Execution labels: ${EXECUTION_LABELS}\n"
 
 _failend() { EC="$?"; echo -e "\nTEST> TEST FAILURE DETECTED (EXITCODE: $EC)\n"; exit "$EC"; }
 

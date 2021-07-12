@@ -17,7 +17,8 @@ ppl--gate-check() {
 
     if [ "$?" -eq 101 ]; then
       _ppl-set-persistent-var ENABLED false
-      _EXIT "$EE_CURRENT_MACRO will be skipped due to skip-label: \"skip-${1,,}\"" 1>&2
+      _ppl-job-update-status "$EE_COMMIT_ID" "skip" "Skipped" "Skipped"
+      _EXIT "$EE_CURRENT_MACRO will be skipped due to skip-label: \"skip-${EE_CURRENT_MACRO,,}\"" 1>&2
     else
       _ppl-set-persistent-var ENABLED true
     fi
