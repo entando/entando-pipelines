@@ -15,6 +15,7 @@ test_misc() {
   test_itmlst_utils
   test_semver_cmp
   test_args
+  test_str
   
   true
 }
@@ -55,6 +56,33 @@ test_itmlst_utils() {
   _itmlst_contains "$itmlst" "green" || FAILED
   _itmlst_contains "$itmlst" "blue"  || FAILED
   _itmlst_contains "$itmlst" "blu" && FAILED
+  
+  _itmlst_from_string itmlst ""
+  _itmlst_is_item_enabled "$itmlst" "red" && FAILED
+  
+  _itmlst_from_string itmlst "red,green|blue"$'\n'"yellow"
+  _itmlst_is_item_enabled "$itmlst" "red" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "green" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "blue" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "yellow" || FAILED
+  
+  _itmlst_from_string itmlst "*"
+  _itmlst_is_item_enabled "$itmlst" "red" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "green" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "blue" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "yellow" || FAILED
+
+  _itmlst_from_string itmlst "*,-blue"
+  _itmlst_is_item_enabled "$itmlst" "red" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "green" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "blue" && FAILED
+  _itmlst_is_item_enabled "$itmlst" "yellow" || FAILED
+  
+  _itmlst_from_string itmlst "red,green|blue"$'\n'"yellow|-*|blue"
+  _itmlst_is_item_enabled "$itmlst" "red" && FAILED
+  _itmlst_is_item_enabled "$itmlst" "green" && FAILED
+  _itmlst_is_item_enabled "$itmlst" "blue" || FAILED
+  _itmlst_is_item_enabled "$itmlst" "yellow" && FAILED
 }
 
 test_semver_cmp() {
@@ -107,6 +135,58 @@ test_args() {
   ASSERT RES = 101
   _get_arg RES unexistent a-fallback
   ASSERT RES = a-fallback
+}
+
+test_str() {
+  print_current_function_name "RUNNING TEST> "  ".."
+  
+  local RES
+  _str_last_pos RES ",10,11,12,11,13" "11"
+  ASSERT RES = 4
+  _str_last_pos RES ",10,11,12,*,13" "*"
+  ASSERT RES = 4
+  
+  local RES='hey'
+  _decode_entando_opt RES
+  ASSERT RES = 'hey'
+  local RES='"""hey'
+  _decode_entando_opt RES
+  ASSERT RES = 'hey'
+  local RES='"""'$'\n''hey'
+  _decode_entando_opt RES
+  ASSERT RES = 'hey'
+}
+
+#TEST:lib
+test_stream_utils() {
+  print_current_function_name "RUNNING TEST> "  ".."
+  
+  local RES="$(
+    _summarize_stream --lf --li 3 --ti 0 TEST < <(
+      for ((i=0;i<10;i++)); do
+        echo "dsaas   ERROR  das"
+        echo "saad WARN asdsa"
+      done
+    ) | sed 's/SEC:\s*[0-9]*/../';
+    echo "X"
+  )"
+  
+  RES="${RES:0:-1}"
+  
+  local EXP
+  EXP+="~ TEST > | .. | TOT:      3  | ERR:      2 | WRN:      1 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:      6  | ERR:      3 | WRN:      3 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:      9  | ERR:      5 | WRN:      4 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:     12  | ERR:      6 | WRN:      6 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:     15  | ERR:      8 | WRN:      7 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:     18  | ERR:      9 | WRN:      9 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:     20  | ERR:     10 | WRN:     10 | DNL:      0 |       "$'\n'
+
+  echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  
+  ASSERT RES = "$EXP"
 }
 
 true

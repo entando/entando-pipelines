@@ -38,7 +38,7 @@ ppl--check-pr-format.CHECK_MAINLINE() {
   _semver_parse mMaj mMin "" "" "${ENTANDO_OPT_MAINLINE}"
   _semver_parse maj min "" "" "${projectVersion}"
   
-  _pp projectVersion mMaj mMin maj min
+  #_pp projectVersion mMaj mMin maj min
   
   if [ "$mMaj" != "$maj" ] || [ "$mMin" != "$min" ]; then
     if [ "${EE_REF_NAME:0:8}" != "release/" ]; then
@@ -64,7 +64,7 @@ ppl--check-pr-format.CHECK_TITLE_FORMAT() {
   _get_arg formatRules 1 "${ENTANDO_OPT_PR_TITLE_FORMAT:-"SINGLE|HIERARCHICAL"}"
   _NONNULL formatRules
 
-  local olFormatRules=",${formatRules//\|/,}," # conversion to itmlst
+  local olFormatRules="${formatRules//\|/,}" # conversion to itmlst
 
   local TICKET_ID_REGEX="[A-Z]{2,5}-[0-9]{1,5}"
   local REGEX_S="^${TICKET_ID_REGEX}([[:space:]]|:)"
