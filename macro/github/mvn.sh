@@ -24,25 +24,40 @@ ppl--mvn() {
       "SONAR")
         _log_i "Starting the sonar analysis"
         _NONNULL SONAR_TOKEN
-        __mvn_exec -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+        
+        __mvn_exec clean -B test \
+          org.jacoco:jacoco-maven-plugin:prepare-agent \
+          org.jacoco:jacoco-maven-plugin:report \
+          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          -Ppre-deployment-verification
+        
+        local RV="$?"          
+        [ "$RV" -ne 0 ] && {
+          #~ ON ERROR
+          _ppl-set-persistent-var "ERROR_${EE_CURRENT_MACRO}" true
+        }
+        return "$RV"
         ;;
       "BUILD-AND-TEST")
         _log_i "Building and testing with group \"$arg2\""
         __mvn_exec -B test -Dgroups="$arg2"
+        #mvn clean package -DskipPostDeploymentTests=false -DskipPreDeploymentTests=false
+        #__mvn_exec clean test -Ppre-deployment-verification
         ;;
       "BUILD")
-      _log_i "Building with group \"$arg2\""
+        _log_i "Building with group \"$arg2\""
         __mvn_exec package -Dmaven.test.skip=true -Dgroups="$arg2"
+        #__mvn_exec clean package -DskipPostDeploymentTests=true -DskipPreDeploymentTests=true -Dmaven.test.skip=true
         ;;
       "OWASP")
-      _log_i "Starting the owasp analysis"
+        _log_i "Starting the owasp analysis"
         __mvn_exec verify -Powasp-dependency-check
         ;;
       "PUBLISH")
         case "$EE_REF_NAME" in
           v*)
             _log_i "Publishing to the internal releases repo"
-            _NONNULL ENTANDO_OPT_MAVEN_REPO_PROD
+            _NONNULL ENTANDO_OPT_MAVEN_REPO_PROD            
             __mvn_deploy "internal-nexus" "$ENTANDO_OPT_MAVEN_REPO_PROD"
             ;;
           p*)
