@@ -7,6 +7,23 @@
 . "$PROJECT_DIR/lib/debug.sh"
 }
 
+# shellcheck disable=SC1091,SC1090
+{
+  # shellcheck disable=SC1090
+  if [ -n "$GITHUB_ACTIONS" ]; then
+    # shellcheck disable=SC1090
+    while read -r fn; do
+      source "$fn"
+    done < <(find "$PROJECT_DIR/macro" -mindepth 2 -type f -iname "*.sh")
+    [ "$1" = "--activate" ] && return 0
+  else
+    echo "Unsupported Pipeline implementation" 1>&2
+    [ "$1" = "--activate" ] && return 77
+    exit 77
+  fi
+}
+
+
 # shellcheck disable=2034
 TEST__BEFORE_RUN() {
   GIT_USER_NAME="CiCd Bot"
@@ -19,10 +36,7 @@ TEST__BEFORE_RUN() {
 FAILED() {
   [ "$?" = "99" ] && exit 99
 
-  #local ln fn fl
-  #read -r ln fn fl < <(caller "0")
-  #_FATAL -S 3 -99 "Test failed in $fl on line $ln ($fn)${1:+ [COMMENT: $1]}"
-  _FATAL -S 2 -99 "Test failed${1:+ (COMMENT: $1)}"
+  _FATAL -S 1 -99 "Test failed${1:+ (COMMENT: $1)}"
 }
 
 ASSERT() {
@@ -81,6 +95,12 @@ _create-test-git-repo() {
   ) 1>/dev/null || _FATAL "Test git repo preparation failed"
 }
 
-LATEST__TEST__TLOG_COMMAND() {
-  _set_var "$1" "$(tail -n 1 "$TEST__TECHNICAL_LOG_FILE")"
+TEST__GET_TLOG_COMMAND() {
+  local N="$2"
+  _NONNULL N
+  if [ "$N" -ge 0 ]; then
+    _set_var "$1" "$(sed -n "${N},${N}p" "$TEST__TECHNICAL_LOG_FILE")"
+  else
+    _set_var "$1" "$(tail -n$((N*-1)) "$TEST__TECHNICAL_LOG_FILE" | head -n1)"
+  fi
 }
