@@ -36,8 +36,11 @@ _ppl_determine_release_branch() {
   _set_var "$1" "$_releaseBranch_"
 }
 
-
 __ppl_enter_local_clone_dir() {
   [ -n "$EE_LOCAL_CLONE_DIR" ] && __cd "$EE_LOCAL_CLONE_DIR"
   true
+}
+
+_ppl_is_feature_enabled() {
+  _itmlst_is_item_enabled "$ENTANDO_OPT_FEATURES" "$1" 
 }

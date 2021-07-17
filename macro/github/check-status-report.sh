@@ -14,12 +14,16 @@ ppl--status-report() {
     PR_MERGE_TARGET_BRANCH="$EE_BASE_REF"
     PR_BRANCH="$EE_HEAD_REF"
     PR_NUMBER="$EE_PR_NUM"
-    PR_LABELS="${EE_PR_LABELS:1:-1}"
+    PR_LABELS="$EE_PR_LABELS"
     PR_TITLE="$EE_PR_TITLE"
+    LINK="$EE_PR_HTML_URL"
+    FEATURES="$ENTANDO_OPT_FEATURES"
     
     if [ -n "$PR_TITLE" ]; then
       _pp \
         IN \
+        LINK \
+        FEATURES \
         EE_REF \
         EE_COMMIT_ID \
         EE_CLONE_URL \
@@ -32,6 +36,7 @@ ppl--status-report() {
     else
       _pp \
         IN \
+        FEATURES \
         EE_REF \
         EE_COMMIT_ID \
         EE_CLONE_URL \

@@ -85,7 +85,7 @@ ppl--release() {
         ;;
       prepare-preview-release)
         git push --delete origin "$TAG" 2>/dev/null
-        __git_add_tag -f "$TAG"
+        __git_add_tag -f "$TAG" "$EE_RUN_ID"
         __git push --tags
         ;;
       auto-finalize-release)

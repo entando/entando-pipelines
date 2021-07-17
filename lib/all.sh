@@ -10,11 +10,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
   . "$SCRIPT_DIR/../lib/misc.sh"
   . "$SCRIPT_DIR/../lib/semver.sh"
   
-  # Tools
+  # Domain Specific Tools
   . "$SCRIPT_DIR/../lib/git.sh"
   . "$SCRIPT_DIR/../lib/pkg.sh"
   . "$SCRIPT_DIR/../lib/pom.sh"
   . "$SCRIPT_DIR/../lib/mvn.sh"
+  . "$SCRIPT_DIR/../lib/docker.sh"
   
   # Composite
   . "$SCRIPT_DIR/../lib/composite.sh"

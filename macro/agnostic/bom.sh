@@ -13,7 +13,7 @@ ppl--bom() {
     START_MACRO "BOM" "$@"
 
     _pkg_get "xmlstarlet" -c "xmlstarlet"
-
+    
     local action
     _get_arg action 1
 
@@ -21,9 +21,9 @@ ppl--bom() {
     case "$action" in
       update-bom)
         local projectArtifactId projectVersion
-
+        
         ppl--bom.update-bom.SHOULD_RUN || return 0
-        _extract_project_information_from_pom "$EE_LOCAL_CLONE_DIR" projectArtifactId projectVersion
+        ppl--bom.EXTRACT_PROJECT_INFORMATION "$EE_LOCAL_CLONE_DIR" projectArtifactId projectVersion
         ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM "$projectArtifactId" "$projectVersion" "$EE_TOKEN_OVERRIDE"
         ;;
       *)
@@ -40,11 +40,17 @@ ppl--bom.update-bom.SHOULD_RUN() {
   esac
 }
 
+ppl--bom.EXTRACT_PROJECT_INFORMATION() {
+  __cd "$1"
+  __exist -f "pom.xml"
+  _pom_get_project_artifact_id "$2" "pom.xml"
+  _pom_get_project_version "$3" "pom.xml"
+}
 
 ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM() {
   local projectArtifactId="$1" projectVersion="$2" token="$3"
   _NONNULL projectArtifactId projectVersion
-
+  
   _git_full_clone --as-work-area "$ENTANDO_OPT_REPO_BOM_URL" "" "$ENTANDO_OPT_REPO_BOM_MAIN_BRANCH" "$token"
 
   # get current BOM version

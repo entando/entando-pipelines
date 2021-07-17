@@ -7,78 +7,86 @@
 #
 # Params:
 # $1: action to apply
+# $2: The comma delimitest list of docker builds in the form `{Dockerfile}=>{ImageAddress},...`
 #
 ppl--docker() {
   (
     START_MACRO "DOCKER" "$@"
 
-    _pkg_get "xmlstarlet" -c "xmlstarlet"
-
-    __ppl_enter_local_clone_dir
-
     local action
     _get_arg action 1
 
-
     case "$action" in
       publish)
-        local dockerUsename dockerPassword projectArtifactId projectVersion
+        local builds
+        _get_arg builds 2 || _EXIT -d "Docker image publication is not enabled"
 
-        _get_arg dockerfiles 1 "${ENTANDO_OPT_DOCKERFILES:-"Dockerfile"}"
-        _NONNULL dockerfiles
-
-        dockerUsename="${DOCKER_USERNAME}"
-        dockerPassword="${DOCKER_PASSWORD}"
-        _NONNULL dockerUsename dockerPassword
-
-        ppl--docker.publish.DO_LOGIN "$dockerUsename" "$dockerPassword"
-        _extract_project_information_from_pom "$EE_LOCAL_CLONE_DIR" projectArtifactId projectVersion
-        ppl--docker.publish.PUBLISH_DOCKER_IMAGES "$dockerUsename" "$projectArtifactId" "$projectVersion" "$dockerfiles"
+        local projectArtifactId projectVersion
+        ppl--docker.publish.INIT projectArtifactId projectVersion
+        
+        ppl--docker.publish.LOGIN
+        ppl--docker.publish.BUILD_AND_PUSH_ALL "$builds" "$projectArtifactId" "$projectVersion"
         ;;
       *)
-        _FATAL "Illegal bom action \"$action\""
+        _FATAL "Illegal docker macro action \"$action\""
         ;;
     esac
   )
 }
 
-
-ppl--docker.publish.DO_LOGIN() {
-  if [ "$TEST__EXECUTION" != "true" ]; then
-    docker login -u "$1" -p "$2" || _FATAL "Docker login failed"
-  else
-    echo "[DOK] docker login -u $1 -p $2" >> "$TEST__TECHNICAL_LOG_FILE"
-    true
-  fi
+ppl--docker.publish.INIT() {
+  __ppl_enter_local_clone_dir
+  __exist -f "pom.xml"
+  _pkg_get "xmlstarlet" -c "xmlstarlet"
+  _pom_get_project_artifact_id "$1" "pom.xml"
+  _pom_get_project_version "$2" "pom.xml"
+  _NONNULL "${1}" "${2}"
 }
 
-ppl--docker.publish.BUILD_TAG() {
-
-  local suffix=$5
-
-  suffix=$(echo "$5" | tr "." -)
-  _set_var "$1" "$2/$3$suffix:$4"
+ppl--docker.publish.LOGIN() {
+  _NONNULL ENTANDO_OPT_DOCKER_USERNAME ENTANDO_OPT_DOCKER_PASSWORD
+  __docker login -u "$ENTANDO_OPT_DOCKER_USERNAME" --password-stdin <<<"$ENTANDO_OPT_DOCKER_PASSWORD"
 }
 
-ppl--docker.publish.PUBLISH_DOCKER_IMAGES() {
-
-  regex='(Dockerfile)(.*)'
-
-  local imageTag dockerOrg="$1" imageName="$2" imageVersion="$3" dockerfiles="$4" dockerfilesArray
-  _NONNULL dockerOrg imageName imageVersion dockerfiles
-
-  # TODO: CHECK IF IT IS A v TAG?
-
-  IFS=',' read -ra dockerfilesArray <<< "$dockerfiles"
-  for dockerfile in "${dockerfilesArray[@]}"; do
-    [[ $dockerfile =~ $regex ]]
-    ppl--docker.publish.BUILD_TAG imageTag "$org" "$artifact" "$version" "${BASH_REMATCH[2]}"
-
-    if [ "$TEST__EXECUTION" != "true" ]; then
-      docker build . -t "$imageTag" -f "$dockerfile" && docker push "$imageTag"
-    else
-      echo "[DOK]  docker build . -t $imageTag -f $dockerfile && docker push $imageTag"
-      true
+ppl--docker.publish.BUILD_AND_PUSH_ALL() {
+  local dockerBuilds="$1"
+  local projectArtifactId="$2"
+  local projectVersion="$3"
+  local dockerFile dockerImageAddress dockerOrg dockerImageName dockerImageTag
+  local dockerFileExt buildQualifier
+  
+  while IFS= read -r build; do
+    IFS= read -r dockerFile dockerImageAddress <<<"${build//=>/$'\n'}"
+    _NONNULL dockerFile
+    
+    dockerFileExt="${dockerFile##*.}"
+    
+    if [ -n "$dockerFileExt" ]; then
+      buildQualifier="-$dockerFileExt"
     fi
-  done
+
+    _docker_parse_image_address dockerOrg dockerImageName dockerImageTag "$dockerImageAddress"
+
+    [ -z "$dockerOrg" ] && dockerOrg="$ENTANDO_OPT_DOCKER_ORG"
+    _NONNULL dockerOrg
+    
+    [ -n "$dockerImageTag" ] && _FATAL "Please do not provide the image tag in the docker build directive as it will be automatically derived from the project information"
+    
+    [ "${dockerImageName:-*}" == "*" ] && dockerImageName="$projectArtifactId"
+    dockerImageTag="$projectVersion"
+
+    local finalAddr
+    case "$ENTANDO_OPT_DOCKER_BUILD_QUALIFIER_POSITION" in
+      after-name|"") finalAddr="$dockerOrg/$dockerImageName$buildQualifier:$dockerImageTag";;
+      after-tag) finalAddr="$dockerOrg/$dockerImageName:$dockerImageTag$buildQualifier";;
+      *) _FATAL "Invalid image qualifier \"$ENTANDO_OPT_DOCKER_BUILD_QUALIFIER_POSITION\""
+    esac
+    
+    #_pp dockerOrg dockerImageName dockerImageTag finalAddr
+
+    __docker build . -t "$finalAddr" -f "$dockerFile"
+    __docker image inspect "$finalAddr"
+    __docker push "$finalAddr"
+
+  done <<<  "${dockerBuilds//,/$'\n'}"
 }
