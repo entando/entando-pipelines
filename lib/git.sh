@@ -3,7 +3,7 @@
 # Runs an arbitrary git command and FATALS if it fails
 #
 __git() {
-  git "$@" || _FATAL "git $1 failed"
+  git "$@" || _FATAL -S 1 "git $1 failed"
 }
 
 # Clones a repository and the tags
@@ -46,7 +46,7 @@ _git_full_clone() {
 
     if [ "$?" = 0 ]; then
       __cd "$FULL_DST_DIR"
-      [ -n "$BRANCH" ] && __git checkout "$BRANCH"
+      [ -n "$BRANCH" ] && __git -c advice.detachedHead=false checkout "$BRANCH"
       __git fetch -q --tag 1>/dev/null
       _log_t "Repo \"$REPO_URL\" cloned"
     else

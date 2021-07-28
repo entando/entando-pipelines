@@ -1,38 +1,21 @@
 #!/bin/bash
 
-# Runs a maven operation
-# - Shows partial output if successful
-# - Shows full output if error
-#
-# Params:
-# $@: all params are forwarded to the mvn command
-#
 __mvn_exec() {
-  local TMPFILE="$(mktemp)"
+  local SIMPLE=""; [ "$1" = "--ppl-simple" ] && { SIMPLE="$1"; shift; }
   local MVN="mvn"
   [ -f "./mvnw" ] && MVN="./mvnw"
-
+  
   _log_d "Running mvn $1.."
-  if "$MVN" "$@" &> "$TMPFILE"; then
-    
-    if _log_on_level TRACE; then
-      _log_t "mvn execution was successful; log tail:"
-      # shellcheck disable=SC2088
-      echo "~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~"
-      grep -v "Progress.* kB" "$TMPFILE" | tail -n 20 "$TMPFILE"
-    else
-      _log_d "mvn execution was successful"
-    fi
-
-    rm "$TMPFILE"
-  else
-    grep -v "Progress.* kB" "$TMPFILE"
-    rm "$TMPFILE"
-    sleep 0.3
-    _FATAL "Error executing mvn"
-  fi
+  
+  _exec_cmd \
+    ${SIMPLE:+"$SIMPLE"} \
+    --hide "Progress.* kB" \
+    --hide "Error message = null" \
+    --pe \
+    ${EE_OUTPUT_FILE:+--po "$EE_OUTPUT_FILE"} \
+    "$MVN" "$@"
 }
-
+  
 # Runs a maven deploy over the received environment params
 #
 # Params:
@@ -40,5 +23,12 @@ __mvn_exec() {
 # $2: repository url
 #
 __mvn_deploy() {
-  __mvn_exec --batch-mode deploy -DskipTests=true -DaltDeploymentRepository="$1::default::$2"
+  local GPG="true"; [ "$1" = "--ppl-with-gpg" ] && { GPG="false"; shift; }
+  
+  __mvn_exec --ppl-simple --batch-mode javadoc:jar source:jar source:test-jar deploy \
+    -DskipTests=true \
+    -Ppre-deployment-verification \
+    -DaltDeploymentRepository="$1::default::$2" \
+    -P prepare-for-nexus \
+    -Dgpg.skip="$GPG"
 }

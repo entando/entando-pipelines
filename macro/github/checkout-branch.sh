@@ -32,7 +32,7 @@ ppl--checkout-branch() {
     (
       _log_on_level TRACE || exec 1>/dev/null
       git config pull.rebase false
-      git checkout "$branchToCheckout"
+      git -c advice.detachedHead=false checkout "$branchToCheckout"
     ) || _FATAL "Git checkout failed"
     
     _log_i "Checkout of repo \"$EE_CLONE_URL\" and branch \"$branchToCheckout\" completed"

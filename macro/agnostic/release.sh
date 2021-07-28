@@ -45,6 +45,8 @@ ppl--release() {
         _NONNULL EE_PR_NUM EE_PR_TITLE_PREFIX
         _pom_get_project_version snapshotVersion "./pom.xml"
         EE_PR_TITLE_PREFIX="${EE_PR_TITLE_PREFIX/\//-}"
+        EE_PR_TITLE_PREFIX="${EE_PR_TITLE_PREFIX/\[/_}"
+        EE_PR_TITLE_PREFIX="${EE_PR_TITLE_PREFIX/\]/_}"
         _semver_set_tag versionToSet "$snapshotVersion" "$EE_PR_TITLE_PREFIX-PR-$EE_PR_NUM-SNAPSHOT"
         _NONNULL versionToSet
         TAG="p$versionToSet"
@@ -85,7 +87,7 @@ ppl--release() {
         ;;
       prepare-preview-release)
         git push --delete origin "$TAG" 2>/dev/null
-        __git_add_tag -f "$TAG"
+        __git_add_tag -f "$TAG" "$EE_RUN_ID"
         __git push --tags
         ;;
       auto-finalize-release)

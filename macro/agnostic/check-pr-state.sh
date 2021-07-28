@@ -11,7 +11,7 @@
 # Params:
 # $1: the format rules to respect or nothing for the default
 #
-ppl--check-pr-format() {
+ppl--check-pr-state() {
   (
     START_MACRO "CHECK-PR-FORMAT" "$@"
     _pkg_get "xmlstarlet" -c "xmlstarlet"
@@ -22,15 +22,15 @@ ppl--check-pr-format() {
     local projectVersion
     _pom_get_project_version projectVersion "pom.xml"
     
-    ppl--check-pr-format.CHECK_TITLE_FORMAT
-    ppl--check-pr-format.CHECK_MAINLINE "$projectVersion"
-    ppl--check-pr-format.CHECK_PROJECT_VERSION_FORMAT "$projectVersion"
+    ppl--check-pr-state.CHECK_TITLE_FORMAT
+    ppl--check-pr-state.CHECK_MAINLINE "$projectVersion"
+    ppl--check-pr-state.CHECK_PROJECT_VERSION_FORMAT "$projectVersion"
   )
 }
 
-ppl--check-pr-format.CHECK_MAINLINE() {
+ppl--check-pr-state.CHECK_MAINLINE() {
   if [ -z "${ENTANDO_OPT_MAINLINE}" ]; then
-    _leg_d "Mainline check is not enabled"
+    _log_d "Mainline check is not enabled"
     return 0
   fi
   
@@ -38,7 +38,7 @@ ppl--check-pr-format.CHECK_MAINLINE() {
   _semver_parse mMaj mMin "" "" "${ENTANDO_OPT_MAINLINE}"
   _semver_parse maj min "" "" "${projectVersion}"
   
-  _pp projectVersion mMaj mMin maj min
+  #_pp projectVersion mMaj mMin maj min
   
   if [ "$mMaj" != "$maj" ] || [ "$mMin" != "$min" ]; then
     if [ "${EE_REF_NAME:0:8}" != "release/" ]; then
@@ -48,7 +48,7 @@ ppl--check-pr-format.CHECK_MAINLINE() {
   fi
 }
 
-ppl--check-pr-format.CHECK_PROJECT_VERSION_FORMAT() {
+ppl--check-pr-state.CHECK_PROJECT_VERSION_FORMAT() {
   local projectVersion="$1" 
   
   if [[ "$projectVersion" =~ .*-SNAPSHOT ]]; then
@@ -59,16 +59,17 @@ ppl--check-pr-format.CHECK_PROJECT_VERSION_FORMAT() {
   fi
 }
 
-ppl--check-pr-format.CHECK_TITLE_FORMAT() {
+ppl--check-pr-state.CHECK_TITLE_FORMAT() {
   local formatRules
   _get_arg formatRules 1 "${ENTANDO_OPT_PR_TITLE_FORMAT:-"SINGLE|HIERARCHICAL"}"
   _NONNULL formatRules
 
-  local olFormatRules=",${formatRules//\|/,}," # conversion to itmlst
+  local olFormatRules="${formatRules//\|/,}" # conversion to itmlst
 
   local TICKET_ID_REGEX="[A-Z]{2,5}-[0-9]{1,5}"
   local REGEX_S="^${TICKET_ID_REGEX}([[:space:]]|:)"
   local REGEX_H="^${TICKET_ID_REGEX}\/${TICKET_ID_REGEX}([[:space:]]|:)"
+  local REGEX_SNYK="^\[Snyk\]"
   local prTitleIsValid=false
 
   _itmlst_contains "$olFormatRules" "ANY" && {
@@ -77,6 +78,8 @@ ppl--check-pr-format.CHECK_TITLE_FORMAT() {
   
   local currentPrTitle
   _ppl-query-pr-info currentPrTitle title
+
+  [[ "$currentPrTitle" =~ $REGEX_SNYK ]] && prTitleIsValid=true
   
   _itmlst_contains "$olFormatRules" "SINGLE" && {
       [[ "$currentPrTitle" =~ $REGEX_S ]] && prTitleIsValid=true
@@ -89,7 +92,10 @@ ppl--check-pr-format.CHECK_TITLE_FORMAT() {
     _log_i "Pull Request title \"$currentPrTitle\" is valid"
     true
   else
-    _ppl-job-update-status "$EE_COMMIT_ID" "failure" "Failed" "Ill-formatted PR title"
     _FATAL "The Pull Request title \"$currentPrTitle\" violates the required format ($formatRules)"
   fi
+}
+
+ppl--check-pr-format() {
+  ppl--check-pr-state "$@"
 }
