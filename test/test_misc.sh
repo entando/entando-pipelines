@@ -180,17 +180,14 @@ test_stream_utils() {
   RES="${RES:0:-1}"
   
   local EXP
-  EXP+="~ TEST > | .. | TOT:      3  | ERR:      2 | WRN:      1 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:      6  | ERR:      3 | WRN:      3 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:      9  | ERR:      5 | WRN:      4 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:     12  | ERR:      6 | WRN:      6 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:     15  | ERR:      8 | WRN:      7 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:     18  | ERR:      9 | WRN:      9 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:      1  | ERR:      1 | WRN:      0 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:      4  | ERR:      2 | WRN:      2 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:      7  | ERR:      4 | WRN:      3 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:     10  | ERR:      5 | WRN:      5 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:     13  | ERR:      7 | WRN:      6 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:     16  | ERR:      8 | WRN:      8 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:     19  | ERR:     10 | WRN:      9 | DNL:      0 |       "$'\n'
   EXP+="~ TEST > | .. | TOT:     20  | ERR:     10 | WRN:     10 | DNL:      0 |       "$'\n'
-
-  echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-  echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-  echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
   
   ASSERT RES = "$EXP"
 }
@@ -205,7 +202,7 @@ test_exec_cmd() {
         echo "Line (${i})"
         echo "Progress 20 kB (${i})"
         echo "Important Error (${i})"
-        echo "at XXX (${i})"
+        echo "  at XXX (${i})"
         echo "Error message = null (${i}/a)"
         echo "Error message = null (${i}/b)"
       done
@@ -221,29 +218,30 @@ test_exec_cmd() {
       --hide "Error message = null" \
       --pe \
       --po "$TMPFILE" \
-      "_TEXT__EXEC_CMD_SAMPLE")"
-      
-      N1="$(echo "$RES" | grep -c "Line")"
-      N2="$(echo "$RES" | grep -c "Important Error")"
-      N3="$(echo "$RES" | grep -c "^at")"
-      N4="$(echo "$RES" | grep -c "Error message")"
-      N5="$(echo "$RES" | grep -c "Progress")"
-      
-      ASSERT -v RES "$N1" = 0
-      ASSERT -v RES "$N2" = 100
-      ASSERT -v RES "$N3" = 100
-      ASSERT -v RES "$N4" = 0
-      ASSERT -v RES "$N5" = 0
-      
-      N1="$(grep -c "Line" "$TMPFILE")"
-      N2="$(grep -c "Important Error" "$TMPFILE")"
-      N3="$(grep -c "Error message" "$TMPFILE")"
-      N4="$(grep -c "Progress" "$TMPFILE")"
-      
-      ASSERT -v RES "$N1" = 100
-      ASSERT -v RES "$N2" = 100
-      ASSERT -v RES "$N3" = 200
-      ASSERT -v RES "$N4" = 100
+      "_TEXT__EXEC_CMD_SAMPLE"
+    )"
+    
+    N1="$(echo "$RES" | grep -c "Line")"
+    N2="$(echo "$RES" | grep -c "Important Error")"
+    N3="$(echo "$RES" | grep -c -E "^\s+at\s")"
+    N4="$(echo "$RES" | grep -c "Error message")"
+    N5="$(echo "$RES" | grep -c "Progress")"
+    
+    ASSERT -v RES "$N1" = 0
+    ASSERT -v RES "$N2" = 100
+    ASSERT -v RES "$N3" = 100
+    ASSERT -v RES "$N4" = 0
+    ASSERT -v RES "$N5" = 0
+    
+    N1="$(grep -c "Line" "$TMPFILE")"
+    N2="$(grep -c "Important Error" "$TMPFILE")"
+    N3="$(grep -c "Error message" "$TMPFILE")"
+    N4="$(grep -c "Progress" "$TMPFILE")"
+    
+    ASSERT -v RES "$N1" = 100
+    ASSERT -v RES "$N2" = 100
+    ASSERT -v RES "$N3" = 200
+    ASSERT -v RES "$N4" = 100
 
   ) || _SOE
 }

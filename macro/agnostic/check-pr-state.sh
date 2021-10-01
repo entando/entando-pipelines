@@ -69,6 +69,7 @@ ppl--check-pr-state.CHECK_TITLE_FORMAT() {
   local TICKET_ID_REGEX="[A-Z]{2,5}-[0-9]{1,5}"
   local REGEX_S="^${TICKET_ID_REGEX}([[:space:]]|:)"
   local REGEX_H="^${TICKET_ID_REGEX}\/${TICKET_ID_REGEX}([[:space:]]|:)"
+  local REGEX_SNYK="^\[Snyk\]"
   local prTitleIsValid=false
 
   _itmlst_contains "$olFormatRules" "ANY" && {
@@ -77,6 +78,7 @@ ppl--check-pr-state.CHECK_TITLE_FORMAT() {
   
   local currentPrTitle
   _ppl-query-pr-info currentPrTitle title
+  [[ "$currentPrTitle" =~ $REGEX_SNYK ]] && prTitleIsValid=true
   
   _itmlst_contains "$olFormatRules" "SINGLE" && {
       [[ "$currentPrTitle" =~ $REGEX_S ]] && prTitleIsValid=true
@@ -89,7 +91,6 @@ ppl--check-pr-state.CHECK_TITLE_FORMAT() {
     _log_i "Pull Request title \"$currentPrTitle\" is valid"
     true
   else
-    _ppl-job-update-status "$EE_COMMIT_ID" "failure" "Failed" "Ill-formatted PR title"
     _FATAL "The Pull Request title \"$currentPrTitle\" violates the required format ($formatRules)"
   fi
 }

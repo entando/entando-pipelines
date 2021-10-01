@@ -286,3 +286,23 @@ _ppl-pr-request-change() {
     github-request --set RES POST "$EE_PULLS_URL/reviews/$review_id/events" "$data" "number" "$EE_PR_NUM"
   fi  
 }
+
+
+# Allows grouping togheter a set of lines in a collapsable element
+#
+# Params:
+# $1    action: "start" or "stop"
+# [$2]  the group title title, only required if action is "start"
+#
+_ppl-stdout-group() {
+  case "$1" in
+    start) 
+      [ -z "$2" ] && _FATAL "Please provide the group title"
+      echo "::group::$2"
+      ;;
+    stop)
+      echo "::endgroup::"
+      ;;
+    *) _FATAL "Invalid action \"$1\" provided";;
+  esac
+}

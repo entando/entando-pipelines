@@ -21,15 +21,11 @@ ppl--mvn() {
     __exist -f "pom.xml"
 
     case "$action" in
-      "SONAR")
+      "SONAR-SCAN")
         _log_i "Starting the sonar analysis"
         _NONNULL SONAR_TOKEN
         
-        __mvn_exec clean -B test \
-          org.jacoco:jacoco-maven-plugin:prepare-agent \
-          org.jacoco:jacoco-maven-plugin:report \
-          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-          -Ppre-deployment-verification -Ppost-deployment-verification
+        __mvn_exec clean -B test org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
         
         local RV="$?"          
         [ "$RV" -ne 0 ] && {
@@ -41,15 +37,24 @@ ppl--mvn() {
       "BUILD-AND-TEST")
         _log_i "Building and testing with group \"$arg2\""
         __mvn_exec -B test -Dgroups="$arg2"
+
         #mvn clean package -DskipPostDeploymentTests=false -DskipPreDeploymentTests=false
         #__mvn_exec clean test -Ppre-deployment-verification
+        ;;
+      "FULL-BUILD")
+        _log_i "Building and testing"
+
+        __mvn_exec clean -B test \
+          org.jacoco:jacoco-maven-plugin:prepare-agent \
+          org.jacoco:jacoco-maven-plugin:report \
+          -Ppre-deployment-verification -Ppost-deployment-verification
         ;;
       "BUILD")
         _log_i "Building with group \"$arg2\""
         __mvn_exec package -Dmaven.test.skip=true -Dgroups="$arg2"
         #__mvn_exec clean package -DskipPostDeploymentTests=true -DskipPreDeploymentTests=true -Dmaven.test.skip=true
         ;;
-      "OWASP")
+      "OWASP-SCAN")
         _log_i "Starting the owasp analysis"
         __mvn_exec verify -Powasp-dependency-check
         ;;

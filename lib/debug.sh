@@ -231,6 +231,7 @@ __VERIFY_EXPRESSION() {
     =|==) O="=";OD="TO:  ";  [[ "$E" = "$V" ]];;
     !=) O="!=";OD="TO:  ";  [[ "$E" != "$V" ]];;
     =~) O="=~";OD="TO:  ";   [[ "$E" =~ $V ]];;
+    !=~) O="=~";OD="TO:  ";   [[ ! "$E" =~ $V ]];;
     starts-with) O="=";OD="TO:  ";  [[ "$E" = "$V"* ]];;
     *) _FATAL "Unknown operator \"$O\"";;
   esac

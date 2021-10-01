@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # shellcheck disable=SC1091,SC1090
-. "$PROJECT_DIR/tests/_test_base-sh"
+. "$PROJECT_DIR/tests/_test_base.sh"
 
 # shellcheck disable=SC2034
 #TEST:macro
@@ -15,6 +15,7 @@ test_flow_pr_check() {
   #~ CHECKOUT
   #~
   (
+    rm -rf "local-checkout"
     ppl--checkout-branch pr --id "PR-CHECKOUT" --lcd "local-checkout" || _SOE
 
     __cd "local-checkout"
@@ -33,23 +34,6 @@ test_flow_pr_check() {
     ASSERT -v RES $? -eq 0
     TEST__GET_TLOG_COMMAND TMP -1
     ASSERT TMP =~ "\[HTS\] \"DELETE\" to \"https:.*\""
-  ) || FAILED
-
-  #~
-  #~ GATE
-  #~
-  (
-    TMP="$(ppl--gate-check --id TEST | grep "set-output")"
-    ASSERT TMP = "::set-output name=ENABLED::true"
-  ) || FAILED
-
-  (
-    TEST__APPLY_OVERRIDES() {
-      EE_PR_LABELS+=",skip-test"
-    }
-
-    TMP="$(ppl--gate-check --id TEST | grep "set-output")"
-    ASSERT TMP = "::set-output name=ENABLED::false"
   ) || FAILED
 
   #~

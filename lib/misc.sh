@@ -359,30 +359,31 @@ _summarize_stream() {
   local sln TITLE="${1:-SUMMARY}"
   local showNext=0
   
-  while read -r ln; do
+  while IFS= read -r ln; do
     [ -n "$OUTFILE" ] && echo "$ln" >> "$OUTFILE"
-
+    
     sln="${ln:0:20}"
     
     ((_stat_nt++))
     
-    if [ "$showNext" -gt 0 ]; then
-      ((showNext--))
-      echo "$ln"
-    else
-      case "${sln,,}" in
-        *error*) 
-          ((_stat_ne++))
-          "$PE" && {
-            echo "$ln"
-            showNext=1
-          }
-        ;;
-        *warning*) ((_stat_nw++));;
-        *warn*) ((_stat_nw++));;
-        *downloaded*) ((_stat_nd++));;
-      esac
-    fi
+    case "${sln,,}" in
+      *error*) 
+        ((_stat_ne++))
+        "$PE" && {
+          echo "$ln"
+          showNext=2
+        }
+      ;;
+      *warning*) ((_stat_nw++));;
+      *warn*) ((_stat_nw++));;
+      *downloaded*) ((_stat_nd++));;
+      *)
+        if [ "$showNext" -gt 0 ]; then
+          echo "$ln" | grep -E '^\s+at\s'
+        fi
+    esac
+
+    [ "$showNext" -gt 0 ] && ((showNext--))
 
     if [ $((_stat_nt - _last_nt)) -ge "$LI" ]; then
       now="$SECONDS"
@@ -470,18 +471,138 @@ _exec_cmd() {
       if $SIMPLE; then
         _log_e "Command \"$1\" completed with error code \"$RV\""
       else
-        local SEP="~~~~~~~~~~"
-        echo -e "\n$SEP$SEP$SEP$SEP$SEP$SEP$SEP$SEP$SEP$SEP$SEP$SEP"
         if [ -n "$PO" ]; then
+          local SEP="~~~~~~~~~~"
+          echo -e "\n$SEP$SEP$SEP$SEP$SEP$SEP$SEP$SEP$SEP$SEP$SEP$SEP"
           _log_e "Command \"$1\" completed with error code \"$RV\"; full log available under \"$PO\""
         else
           _log_e "Command \"$1\" completed with error code \"$RV\"; full log:"
+          
+          local n=1
+          _ppl-stdout-group start "FULL LOG $n.."
+          while read -r ln; do
+            ((n++))
+            if [ "$((n % 1000))" = 0 ]; then
+              _ppl-stdout-group stop
+              _ppl-stdout-group start "FULL LOG from line $n"
+            fi
+            echo "$ln"
+          done <"$TMPFILE"
+          _ppl-stdout-group stop
           # shellcheck disable=SC2002
-          cat "$TMPFILE" | $H1 ${HH1:+"$HH1"} | $H2 ${HH2:+"$HH2"} | $H3 ${HH3:+"$HH3"}
+          #cat | $H1 ${HH1:+"$HH1"} | $H2 ${HH2:+"$HH2"} | $H3 ${HH3:+"$HH3"}
+          #_ppl-stdout-group stop
           sleep 0.3
         fi
       fi
       return "$RV"
     fi
   )
+}
+
+# Determines the name of the release branch for the given reference version
+#
+# Params:
+# $1: the receiver var of the designated release branch
+# $2: the reference version
+#
+# The business rule is simple:
+# - Versions X.Y.Z are released under the branch "release/X.Y.0"
+#
+_ppl_determine_release_branch() {
+  local _referenceVersion_="$2"
+  local _releaseBranch_
+  _semver_parse maj min ptc "" "$_referenceVersion_"
+  # shellcheck disable=SC2154
+  _releaseBranch_="release/$maj.$min.0"
+  _set_var "$1" "$_releaseBranch_"
+}
+
+__ppl_enter_local_clone_dir() {
+  [ -n "$EE_LOCAL_CLONE_DIR" ] && __cd "$EE_LOCAL_CLONE_DIR"
+  true
+}
+
+# Determines the action related to a feature
+#
+# Params:
+# $1 output var for the result
+# $2 feature name
+# $3 fallback value
+#
+# Rules:
+# - Features are in the format of labels
+# - Features are also read from the ENTANDO_OPT_FEATURES, expect for SKIP directives
+# - Features are also read from the ENTANDO_OPT_GLOBAL_FEATURES, expect for SKIP directives
+# - Features will be converted into CI vars usable in CI conditions
+# - SKIP directive are like DISABLE directives but they should supposed to be removed once evaluated
+#
+# Directives Formats:
+# - Enable a feature: ENABLE-{FEATURE}
+# - Disable a feature: DISABLE-{FEATURE}
+# - Disable a feature once: SKIP-{FEATURE}
+#
+# Directives Priority crieria:
+# 1. LABEL then ENTANDO_OPT_FEATURES then ENTANDO_OPT_GLOBAL_FEATURES
+# 2. LAST directive of a given feature overwrites the previous directives of the same feature
+# 3. Above crieria #1 wins over crieria #2
+# 
+# Returns a result of this structure:
+# - {main-result}.{detail}
+# 
+# where {main-result} can be:
+# - D => disabled
+# - E => enabled
+# - I => illegal
+#
+# and {detail} can be:
+# - var => result source is ENTANDO_OPT_FEATURES or ENTANDO_OPT_GLOBAL_FEATURES
+# - label => result source is a label
+# - any other arbitrary text => non-functional text providing details
+#
+_ppl_get_feature_action() {
+  local _tmp_feature="$2" _tmp_action
+  
+  case "$3" in
+    "true") _tmp_action="E.fallback";;
+    "false") _tmp_action="D.fallback";;
+  esac
+  
+  # shellcheck disable=SC2154
+  {
+    _itmlst_contains "$EE_FEATURES" "ENABLE-$_tmp_feature" && _tmp_action="E.var"
+    _itmlst_contains "$EE_FEATURES" "DISABLE-$_tmp_feature" && _tmp_action="D.var"
+    _itmlst_contains "$EE_FEATURES" "SKIP-$_tmp_feature" && _tmp_action="I.skip-in-var"
+  }
+  _ppl-pr-has-label "ENABLE-$_tmp_feature" && _tmp_action="E.label"
+  _ppl-pr-has-label "DISABLE-$_tmp_feature" && _tmp_action="D.label"
+  _ppl-pr-has-label "SKIP-$_tmp_feature" && _tmp_action="S.label"
+  
+  _set_var "$1" "$_tmp_action"
+}
+
+# Returns the status of a directive
+#
+# Params:
+# $1 feature name
+# $2 fallback value
+#
+# [$?=0]  => directive is present
+# [$?!=0] => directive is not present
+#
+_ppl_is_feature_enabled() {
+  local ACTION
+  _ppl_get_feature_action ACTION "$1" "$2"
+  
+  case "$ACTION" in
+    E*) return 0;;
+    D*) return 1;;
+    S*) return 2;;
+    I*)
+      _log_w "Skip directives (SKIP-$1) are not allowed in "
+              "\"ENTANDO_OPT_FEATURES\" or \"ENTANDO_OPT_GLOBAL_FEATURES\" => ignored"
+      return "$2"
+      ;;
+  esac
+
 }

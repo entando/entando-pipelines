@@ -28,6 +28,9 @@ START_MACRO() {
   _ppl_is_feature_enabled "$EE_CURRENT_MACRO" || {
     _EXIT "Macro of id \"$EE_CURRENT_MACRO\" is not enabled"
   }
+  
+  _itmlst_from_string ENTANDO_OPT_DIRECTIVES "$ENTANDO_OPT_DIRECTIVES"
+
 
   ENTANDO_OPT_REPO_BOM_MAIN_BRANCH="${ENTANDO_OPT_REPO_BOM_MAIN_BRANCH:-develop}"
 
@@ -59,15 +62,6 @@ START_MACRO() {
   ENTANDO_OPT_REPO_BOM_URL="${ENTANDO_OPT_REPO_BOM_URL}"
   
   _ppl-load-context "$PPL_CONTEXT"
-
-  #_pp EE_CLONE_URL ENTANDO_OPT_REPO_BOM_URL EE_HEAD_REF
-  _ppl-pr-has-label "skip-${EE_CURRENT_MACRO,,}" && {
-    if "$noSkip"; then
-      return 101
-    else
-      _EXIT "$EE_CURRENT_MACRO skipped due to skip-label: \"skip-${EE_CURRENT_MACRO,,}\""
-    fi
-  }
 }
 
 # Stops the execution with a success result and an info message
