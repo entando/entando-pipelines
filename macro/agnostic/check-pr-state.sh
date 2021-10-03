@@ -41,8 +41,8 @@ ppl--check-pr-state.CHECK_MAINLINE() {
   #_pp projectVersion mMaj mMin maj min
   
   if [ "$mMaj" != "$maj" ] || [ "$mMin" != "$min" ]; then
-    if [ "${EE_REF_NAME:0:8}" != "release/" ]; then
-      _ppl-job-update-status "$EE_COMMIT_ID" "failure" "Failed" "Invalid project version (incompatible with mainline)"
+    if [ "${PPL_REF_NAME:0:8}" != "release/" ]; then
+      _ppl-job-update-status "$PPL_COMMIT_ID" "failure" "Failed" "Invalid project version (incompatible with mainline)"
       _FATAL "In non-release branches the project version (\"$projectVersion\") must be compatible with the current mainline: \"${ENTANDO_OPT_MAINLINE}\""
     fi
   fi
@@ -54,7 +54,7 @@ ppl--check-pr-state.CHECK_PROJECT_VERSION_FORMAT() {
   if [[ "$projectVersion" =~ .*-SNAPSHOT ]]; then
     _log_i "Project version number is a snapshot as request"
   else
-    _ppl-job-update-status "$EE_COMMIT_ID" "failure" "Failed" "Invalid project version"
+    _ppl-job-update-status "$PPL_COMMIT_ID" "failure" "Failed" "Invalid project version"
     _FATAL "The project version \"$projectVersion\" is not a snapshot"
   fi
 }

@@ -20,6 +20,8 @@ ppl--docker() {
       publish)
         local builds
         _get_arg builds 2 || _EXIT -d "Docker image publication is not enabled"
+        
+        [[ "${builds:0:3}" = "###" ]] && builds="${builds:3}"
 
         local projectArtifactId projectVersion
         ppl--docker.publish.INIT projectArtifactId projectVersion
@@ -61,7 +63,7 @@ ppl--docker.publish.BUILD_AND_PUSH_ALL() {
     
     dockerFileExt="${dockerFile##*.}"
     
-    if [ -n "$dockerFileExt" ]; then
+    if [[ -n "$dockerFileExt" && "${dockerFileExt,,}" != "dockerfile" ]]; then
       buildQualifier="-$dockerFileExt"
     fi
 
@@ -77,8 +79,8 @@ ppl--docker.publish.BUILD_AND_PUSH_ALL() {
 
     local finalAddr
     case "$ENTANDO_OPT_DOCKER_BUILD_QUALIFIER_POSITION" in
-      after-name|"") finalAddr="$dockerOrg/$dockerImageName$buildQualifier:$dockerImageTag";;
-      after-tag) finalAddr="$dockerOrg/$dockerImageName:$dockerImageTag$buildQualifier";;
+      after-name|"") finalAddr="$dockerOrg/${dockerImageName,,}${buildQualifier,,}:${dockerImageTag}";;
+      after-tag) finalAddr="$dockerOrg/${dockerImageName,,}:${dockerImageTag}${buildQualifier,,}";;
       *) _FATAL "Invalid image qualifier \"$ENTANDO_OPT_DOCKER_BUILD_QUALIFIER_POSITION\""
     esac
     

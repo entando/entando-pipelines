@@ -8,7 +8,7 @@
   . "$PROJECT_DIR/lib/git.sh"
 }
 
-#TEST:lib
+#TEST:libx
 test_git() {
   test_git_base
   test_git_advanced
@@ -30,7 +30,7 @@ test_git_base() {
     _create-test-git-repo "git-repo-0bba91d9" "the-feature-branch" "v999.88.77"
     __cd "git-repo-0bba91d9"
     sleep 1.1   # <= this is intentional: Test needs a different timestamp
-    __git_add_tag "66.66.66"
+    __git_add_tag "v66.66.66"
     __cd -
     
     _git_full_clone "./git-repo-0bba91d9" "clone-of-git-repo-0bba91d9"
@@ -40,6 +40,15 @@ test_git_base() {
     ASSERT TMP = "66.66.66"
     _git_determine_highest_version TMP
     ASSERT TMP = "999.88.77"
+    __git_add_tag "v999.88.77.1"
+    _git_determine_highest_version TMP
+    ASSERT TMP = "999.88.77.1"
+    _git_determine_highest_version --for "66.66" TMP
+    ASSERT TMP = "66.66.66"
+    __git_add_tag "v66.66.67"
+    _git_determine_highest_version --for "66.66" TMP
+    ASSERT TMP = "66.66.67"
+
     __cd -
      
     _git_full_clone --as-work-area "./git-repo-0bba91d9"

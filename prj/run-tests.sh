@@ -68,7 +68,7 @@ type TEST__BEFORE_RUN &>/dev/null && TEST__BEFORE_RUN
 
 
 TEST__APPLY_DEFAULT_OVERRIDES() {
-  EE_CLONE_URL="file://$TEST__WORK_DIR/repo-mocks/entando-portal-ui"
+  PPL_CLONE_URL="file://$TEST__WORK_DIR/repo-mocks/entando-portal-ui"
 }
 
 test-cleanup() {

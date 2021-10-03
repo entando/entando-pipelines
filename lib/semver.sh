@@ -12,16 +12,26 @@
 # $5  semver to parse
 #
 _semver_parse() {
-  local _tmpV_ _tmpT_ _tmp1_ _tmp2_ _tmp3_
+  _semver_ex_parse "$1" "$2" "$3" "" "$4" "$5"
+  true
+}
 
-  IFS='-' read -r _tmpV_ _tmpT_ <<< "$5"
-  IFS='.' read -r _tmp1_ _tmp2_ _tmp3_ <<< "$_tmpV_"
+# Extended version of _semver_parse that also supports 4 digit versions
+#
+_semver_ex_parse() {
+  local _tmpV_ _tmpT_ _tmp1_ _tmp2_ _tmp3_ _tmp4_
+
+  IFS='-' read -r _tmpV_ _tmpT_ <<< "$6"
+  IFS='.' read -r _tmp1_ _tmp2_ _tmp3_ _tmp4_ <<< "$_tmpV_"
+
   [ "${_tmp1_:0:1}" = "v" ] && _tmp1_="${_tmp1_:1}"
   [ "${_tmp1_:0:1}" = "p" ] && _tmp1_="${_tmp1_:1}"
+  
   [ -n "$1" ] && _set_var "$1" "$_tmp1_"
   [ -n "$2" ] && _set_var "$2" "$_tmp2_"
   [ -n "$3" ] && _set_var "$3" "$_tmp3_"
-  [ -n "$4" ] && _set_var "$4" "$_tmpT_"
+  [ -n "$4" ] && _set_var "$4" "$_tmp4_"
+  [ -n "$5" ] && _set_var "$5" "$_tmpT_"
   
   true
 }

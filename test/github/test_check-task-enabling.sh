@@ -13,10 +13,11 @@ test_setup-task-enabling() {
   print_current_function_name "RUNNING TEST> "  ".."
   (
     TEST__APPLY_OVERRIDES() {
-      _itmlst_from_string EE_PR_LABELS \
+      _itmlst_from_string PPL_PR_LABELS \
         "ENABLE-TASK-A,DISABLE-TASK-B,ENABLE-TASK-X,DISABLE-TASK-X2,DISABLE-TASK-Z,ENABLE-TASK-Z,SKIP-TASK-S"
       # shellcheck disable=SC2034
-      ENTANDO_OPT_DIRECTIVES="ENABLE-TASK-C,DISABLE-TASK-D,DISABLE-TASK-X,ENABLE-TASK-X2,SKIP-TASK-S2"
+      PPL_FEATURES="ENABLE-TASK-C,DISABLE-TASK-D,DISABLE-TASK-X,ENABLE-TASK-X2,SKIP-TASK-S2"
+      ENTANDO_OPT_GLOBAL_FEATURES="ENABLE-TASK-G"
     }
     # shellcheck disable=SC2034
     local RES="$(
@@ -31,7 +32,8 @@ test_setup-task-enabling() {
     ASSERT RES =~ "::set-output name=TASK-X2::false"
     ASSERT RES =~ "::set-output name=TASK-Z::false"
     ASSERT RES =~ "::set-output name=TASK-S::false"
-    ASSERT RES =~ "SKIP-TASK-S2.*not allowed in \"ENTANDO_OPT_DIRECTIVES\""
+    ASSERT RES =~ "::set-output name=TASK-G::true"
+    ASSERT RES =~ "SKIP-TASK-S2.*not allowed in \"PPL_FEATURES\""
     ASSERT -v QUERY_HISTORY "$(cat "$TEST__TECHNICAL_LOG_FILE")" =~ "DELETE.*SKIP-TASK-S"
 
     true
@@ -43,24 +45,27 @@ test_setup-task-list() {
   print_current_function_name "RUNNING TEST> "  ".."
   (
     TEST__APPLY_OVERRIDES() {
-      _itmlst_from_string EE_PR_LABELS \
+      _itmlst_from_string PPL_PR_LABELS \
         "ENABLE-TASK-A,DISABLE-TASK-B"
       # shellcheck disable=SC2034
-      ENTANDO_OPT_DIRECTIVES="ENABLE-TASK-C,DISABLE-TASK-D"
+      {
+        ENTANDO_OPT_FEATURES="ENABLE-TASK-C,DISABLE-TASK-D"
+        ENTANDO_OPT_GLOBAL_FEATURES="ENABLE-TASK-G"
+      }
     }
     
     # shellcheck disable=SC2034
     local RES="$(
-      ppl--setup-task-list "TASK_LIST" false "TASK-A" "TASK-B" "TASK-C" "TASK-D" "TASK-X" 
+      ppl--setup-task-list "TASK_LIST" false "TASK-A" "TASK-B" "TASK-C" "TASK-D" "TASK-X" "TASK-G"
     )"
     
-    ASSERT RES =~ "::set-output name=TASK_LIST::\['TASK-A','TASK-C'\]"
+    ASSERT RES =~ "::set-output name=TASK_LIST::\['TASK-A','TASK-C','TASK-G'\]"
 
     TEST__APPLY_OVERRIDES() { :; }
 
     # shellcheck disable=SC2034
     local RES="$(
-      ppl--setup-task-list "TASK_LIST" false "TASK-A" "TASK-B" "TASK-C" "TASK-D" "TASK-X" 
+      ppl--setup-task-list "TASK_LIST" false "TASK-A" "TASK-B" "TASK-C" "TASK-D" "TASK-X" "TASK-G"
     )"
     
     ASSERT RES !=~ "::set-output"

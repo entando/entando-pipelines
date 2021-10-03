@@ -53,7 +53,7 @@ ppl--scan.SCAN() {
   snyk test \
     --org="$org" \
     ${prj:+--project-name="$prj"} \
-    --remote-repo-url="$EE_REPO_GIT_URL" \
+    --remote-repo-url="$PPL_REPO_GIT_URL" \
   > "$RESFILE"
   
   RV="$?"
@@ -74,7 +74,7 @@ ppl--scan.SCAN() {
   snyk monitor \
   --org="$org" \
   ${prj:+--project-name="$prj"} \
-  --remote-repo-url="$EE_REPO_GIT_URL" || true
+  --remote-repo-url="$PPL_REPO_GIT_URL" || true
 
   if [ "$RV" != "0" ]; then
     _FATAL "Snyk reported error code \"$RV\""

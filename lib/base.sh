@@ -22,34 +22,18 @@ START_MACRO() {
   
   local noSkip
   _get_arg noSkip --no-skip
-  _get_arg EE_CURRENT_MACRO --id "$defaultMacroName"
+  _get_arg PPL_CURRENT_MACRO --id "$defaultMacroName"
   
-  _itmlst_from_string ENTANDO_OPT_FEATURES "${ENTANDO_OPT_FEATURES:-*}"
-  _ppl_is_feature_enabled "$EE_CURRENT_MACRO" || {
-    _EXIT "Macro of id \"$EE_CURRENT_MACRO\" is not enabled"
-  }
-  
-  _itmlst_from_string ENTANDO_OPT_DIRECTIVES "$ENTANDO_OPT_DIRECTIVES"
-
-
   ENTANDO_OPT_REPO_BOM_MAIN_BRANCH="${ENTANDO_OPT_REPO_BOM_MAIN_BRANCH:-develop}"
-
-  _get_arg EE_LOCAL_CLONE_DIR --lcd
-  _get_arg EE_TOKEN_OVERRIDE --token
-  _get_arg EE_OUTPUT_FILE --out
   
-  if [ "${EE_CURRENT_MACRO:0:1}" = "@" ]; then
-    EE_CURRENT_MACRO_PREFIX="@"
-    EE_CURRENT_MACRO="${EE_CURRENT_MACRO:1}"
+  _get_arg PPL_LOCAL_CLONE_DIR --lcd
+  _get_arg PPL_TOKEN_OVERRIDE --token
+  _get_arg PPL_OUTPUT_FILE --out
+  
+  if [ "${PPL_CURRENT_MACRO:0:1}" = "@" ]; then
+    PPL_CURRENT_MACRO_PREFIX="@"
+    PPL_CURRENT_MACRO="${PPL_CURRENT_MACRO:1}"
     local comment="user macro "
-  fi
-
-  if _log_on_level DEBUG; then
-    echo -e "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo "~~ ${comment}${EE_CURRENT_MACRO} invoked on $(date +'%Y-%m-%d %H-%M-%S')"
-    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-  else
-    _log_i "~~ ${comment}${EE_CURRENT_MACRO} invoked"
   fi
 
   TEST__EXECUTION="${TEST__EXECUTION:-false}"
@@ -62,6 +46,19 @@ START_MACRO() {
   ENTANDO_OPT_REPO_BOM_URL="${ENTANDO_OPT_REPO_BOM_URL}"
   
   _ppl-load-context "$PPL_CONTEXT"
+  
+  _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_GLOBAL_FEATURES},${ENTANDO_OPT_FEATURES}"
+  _ppl_is_feature_enabled "$PPL_CURRENT_MACRO" || {
+    _EXIT "Macro of id \"$PPL_CURRENT_MACRO\" is not enabled"
+  }
+
+  if _log_on_level DEBUG; then
+    echo -e "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    echo "~~ ${comment}${PPL_CURRENT_MACRO} invoked on $(date +'%Y-%m-%d %H-%M-%S')"
+    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  else
+    _log_i "~~ ${comment}${PPL_CURRENT_MACRO} invoked"
+  fi
 }
 
 # Stops the execution with a success result and an info message

@@ -20,7 +20,7 @@ ppl--release() {
     __exist -f "pom.xml"
 
     local action versionToSet TAG pomVersionToSet
-    local currentBranch="${EE_REF##*/}"
+    local currentBranch="${PPL_REF##*/}"
     
     _get_arg action 1
 
@@ -29,28 +29,34 @@ ppl--release() {
     #~ READY-ONLY
     #~
     case "$action" in
-      prepare-tag-release)
+      prepare-tag-release)        
         #~ determine the next module version from the current git repo tags
-        local highestModuleVersion maj min ptc
-        _git_determine_highest_version highestModuleVersion
+        local highestModuleVersion maj min ptc baseVersion base_maj base_min
+        _pom_get_project_version baseVersion "./pom.xml"
+        _semver_parse base_maj base_min "" "" "$baseVersion"
+        _pp highestModuleVersion base_maj base_min
+        _git_determine_highest_version --for "${base_maj}.${base_min}" highestModuleVersion
         _semver_parse maj min ptc "" "$highestModuleVersion"
+        _pp maj min ptc
+        maj="${maj:-$base_maj}"
+        min="${min:-$base_min}"
         ((ptc++))
         versionToSet="${maj:-0}.${min:-0}.${ptc:-0}"
         TAG="v$versionToSet"
         ;;
       prepare-preview-release)
-        __git checkout "$EE_BASE_REF"
+        __git checkout "$PPL_BASE_REF"
         local snapshotVersion
         #~ derived from the PR information
-        _NONNULL EE_PR_NUM EE_PR_TITLE_PREFIX
+        _NONNULL PPL_PR_NUM PPL_PR_TITLE_PREFIX
         _pom_get_project_version snapshotVersion "./pom.xml"
-        EE_PR_TITLE_PREFIX="${EE_PR_TITLE_PREFIX/\//-}"
-        EE_PR_TITLE_PREFIX="${EE_PR_TITLE_PREFIX/\[/_}"
-        EE_PR_TITLE_PREFIX="${EE_PR_TITLE_PREFIX/\]/_}"
-        _semver_set_tag versionToSet "$snapshotVersion" "$EE_PR_TITLE_PREFIX-PR-$EE_PR_NUM-SNAPSHOT"
+        PPL_PR_TITLE_PREFIX="${PPL_PR_TITLE_PREFIX/\//-}"
+        PPL_PR_TITLE_PREFIX="${PPL_PR_TITLE_PREFIX/\[/_}"
+        PPL_PR_TITLE_PREFIX="${PPL_PR_TITLE_PREFIX/\]/_}"
+        _semver_set_tag versionToSet "$snapshotVersion" "$PPL_PR_TITLE_PREFIX-PR-$PPL_PR_NUM-SNAPSHOT"
         _NONNULL versionToSet
         TAG="p$versionToSet"
-        __git checkout "$EE_HEAD_REF"
+        __git checkout "$PPL_HEAD_REF"
         ;;
       auto-finalize-release)
         case "$currentBranch" in
@@ -86,7 +92,7 @@ ppl--release() {
         __git_ACTP "Release of version $versionToSet"  "$TAG" "$releaseBranch"
         ;;
       prepare-preview-release)
-        __git_add_tag -f "$TAG" "$EE_RUN_ID"
+        __git_add_tag -f "$TAG" "$PPL_RUN_ID"
         __git push origin "$TAG" -f
         ;;
       auto-finalize-release)

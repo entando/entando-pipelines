@@ -12,7 +12,7 @@ __mvn_exec() {
     --hide "Progress.* kB" \
     --hide "Error message = null" \
     --pe \
-    ${EE_OUTPUT_FILE:+--po "$EE_OUTPUT_FILE"} \
+    ${PPL_OUTPUT_FILE:+--po "$PPL_OUTPUT_FILE"} \
     "$MVN" "$@"
 }
   
@@ -23,10 +23,12 @@ __mvn_exec() {
 # $2: repository url
 #
 __mvn_deploy() {
-  __mvn_exec --batch-mode javadoc:jar source:jar source:test-jar deploy \
+  local GPG="true"; [ "$1" = "--ppl-with-gpg" ] && { GPG="false"; shift; }
+  
+  __mvn_exec --ppl-simple --batch-mode javadoc:jar source:jar source:test-jar deploy \
     -DskipTests=true \
     -Ppre-deployment-verification \
     -DaltDeploymentRepository="$1::default::$2" \
     -P prepare-for-nexus \
-    -Dgpg.skip=true
+    -Dgpg.skip="$GPG"
 }

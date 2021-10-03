@@ -9,8 +9,6 @@ test_flow_pr_check() {
   print_current_function_name "RUNNING TEST> "  ".."
   # shellcheck disable=SC2034
   
-  ENTANDO_OPT_FEATURES="*"
-  
   #~
   #~ CHECKOUT
   #~
@@ -71,17 +69,17 @@ test_flow_pr_check() {
   ) && FAILED
 
   (
-    TEST__APPLY_OVERRIDES() { EE_PR_TITLE="ENG-999-Hey There!"; }
+    TEST__APPLY_OVERRIDES() { PPL_PR_TITLE="ENG-999-Hey There!"; }
     ppl--check-pr-state --lcd "local-checkout"
   ) && FAILED "I was expecting an error, but I've got success"
 
   (
-    TEST__APPLY_OVERRIDES() { EE_PR_TITLE="ENG-999 Hey There!"; }
+    TEST__APPLY_OVERRIDES() { PPL_PR_TITLE="ENG-999 Hey There!"; }
     ppl--check-pr-state --lcd "local-checkout"
   ) || FAILED
 
   (
-    TEST__APPLY_OVERRIDES() { EE_PR_TITLE="ENG-100/ENG-999 Hey There!"; }
+    TEST__APPLY_OVERRIDES() { PPL_PR_TITLE="ENG-100/ENG-999 Hey There!"; }
     ppl--check-pr-state --lcd "local-checkout"
   ) || FAILED
 
@@ -92,8 +90,8 @@ test_flow_pr_check() {
     ppl--release prepare-preview-release --id "PREVIEW-RELEASE" --lcd "local-checkout"
 
     _ppl-load-context "$PPL_CONTEXT"
-    __cd "$EE_CLONE_URL"
-    __git checkout "$EE_HEAD_REF"
+    __cd "$PPL_CLONE_URL"
+    __git checkout "$PPL_HEAD_REF"
     _pom_get_project_version RES "pom.xml"
     ASSERT RES = "6.3.0-SNAPSHOT"
     _git_determine_latest_version --include-previews RES
@@ -126,7 +124,7 @@ test_flow_pr_check() {
     ppl--release prepare-tag-release --id "TAG-RELEASE" --lcd "local-checkout" || _SOE
 
     _ppl-load-context "$PPL_CONTEXT"
-    __cd "$EE_CLONE_URL"
+    __cd "$PPL_CLONE_URL"
     __git checkout "release/6.3.0"
     _pom_get_project_version RES "pom.xml"
     ASSERT RES = "6.3.11"
@@ -158,7 +156,7 @@ test_flow_pr_check() {
 SIMULATE_PR_MERGE() {
   (
     _ppl-load-context "$PPL_CONTEXT"
-    local prBranch="$EE_HEAD_REF"
+    local prBranch="$PPL_HEAD_REF"
     PPL_CONTEXT="$(cat "$PROJECT_DIR/test/resources/github-context-sample-03.json")"
     _ppl-load-context "$PPL_CONTEXT"
 

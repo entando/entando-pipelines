@@ -16,17 +16,17 @@ ppl--checkout-branch() {
     _get_arg action 1
     
     # CLONE
-    if [ -n "$EE_HEAD_REF" ]; then
-      branchToCheckout="$EE_HEAD_REF"
+    if [ -n "$PPL_HEAD_REF" ]; then
+      branchToCheckout="$PPL_HEAD_REF"
     else
-      branchToCheckout="${EE_REF##*/}"
+      branchToCheckout="${PPL_REF##*/}"
     fi
 
-    _NONNULL EE_LOCAL_CLONE_DIR EE_CLONE_URL branchToCheckout
-    _git_full_clone "$EE_CLONE_URL" "$EE_LOCAL_CLONE_DIR" "" "${EE_TOKEN_OVERRIDE:-$EE_TOKEN}"
+    _NONNULL PPL_LOCAL_CLONE_DIR PPL_CLONE_URL branchToCheckout
+    _git_full_clone "$PPL_CLONE_URL" "$PPL_LOCAL_CLONE_DIR" "" "${PPL_TOKEN_OVERRIDE:-$PPL_TOKEN}"
     
     # CHECKOUT    
-    __cd "$EE_LOCAL_CLONE_DIR"
+    __cd "$PPL_LOCAL_CLONE_DIR"
     _git_auto_setup_commit_config
     
     (
@@ -35,6 +35,6 @@ ppl--checkout-branch() {
       git -c advice.detachedHead=false checkout "$branchToCheckout"
     ) || _FATAL "Git checkout failed"
     
-    _log_i "Checkout of repo \"$EE_CLONE_URL\" and branch \"$branchToCheckout\" completed"
+    _log_i "Checkout of repo \"$PPL_CLONE_URL\" and branch \"$branchToCheckout\" completed"
   )
 }

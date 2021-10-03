@@ -86,7 +86,7 @@ _common_action_handling() {
       ;;
     S*)
       _log_i "Explicitly skipping feature \"$_tmp_feature\" (due to ${_tmp_action:2})"
-      _ppl-pr-remove-label "$EE_PR_NUM" "SKIP-$_tmp_feature"
+      _ppl-pr-remove-label "$PPL_PR_NUM" "SKIP-$_tmp_feature"
       ;;
   esac
 }

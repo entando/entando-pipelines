@@ -499,7 +499,6 @@ _exec_cmd() {
     fi
   )
 }
-
 # Determines the name of the release branch for the given reference version
 #
 # Params:
@@ -519,7 +518,7 @@ _ppl_determine_release_branch() {
 }
 
 __ppl_enter_local_clone_dir() {
-  [ -n "$EE_LOCAL_CLONE_DIR" ] && __cd "$EE_LOCAL_CLONE_DIR"
+  [ -n "$PPL_LOCAL_CLONE_DIR" ] && __cd "$PPL_LOCAL_CLONE_DIR"
   true
 }
 
@@ -570,9 +569,9 @@ _ppl_get_feature_action() {
   
   # shellcheck disable=SC2154
   {
-    _itmlst_contains "$EE_FEATURES" "ENABLE-$_tmp_feature" && _tmp_action="E.var"
-    _itmlst_contains "$EE_FEATURES" "DISABLE-$_tmp_feature" && _tmp_action="D.var"
-    _itmlst_contains "$EE_FEATURES" "SKIP-$_tmp_feature" && _tmp_action="I.skip-in-var"
+    _itmlst_contains "$PPL_FEATURES" "ENABLE-$_tmp_feature" && _tmp_action="E.var"
+    _itmlst_contains "$PPL_FEATURES" "DISABLE-$_tmp_feature" && _tmp_action="D.var"
+    _itmlst_contains "$PPL_FEATURES" "SKIP-$_tmp_feature" && _tmp_action="I.skip-in-var"
   }
   _ppl-pr-has-label "ENABLE-$_tmp_feature" && _tmp_action="E.label"
   _ppl-pr-has-label "DISABLE-$_tmp_feature" && _tmp_action="D.label"

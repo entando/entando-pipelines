@@ -10,23 +10,23 @@ ppl--status-report() {
   (
     START_MACRO "STATUS-REPORT" "$@"
     
-    IN="$EE_REPO: $EE_WORKFLOW/$EE_JOB ($EE_EVENT)"
-    PR_MERGE_TARGET_BRANCH="$EE_BASE_REF"
-    PR_BRANCH="$EE_HEAD_REF"
-    PR_NUMBER="$EE_PR_NUM"
-    PR_LABELS="$EE_PR_LABELS"
-    PR_TITLE="$EE_PR_TITLE"
-    LINK="$EE_PR_HTML_URL"
-    FEATURES="$ENTANDO_OPT_FEATURES"
+    IN="$PPL_REPO: $PPL_WORKFLOW/$PPL_JOB ($PPL_EVENT)"
+    PR_MERGE_TARGET_BRANCH="$PPL_BASE_REF"
+    PR_BRANCH="$PPL_HEAD_REF"
+    PR_NUMBER="$PPL_PR_NUM"
+    PR_LABELS="$PPL_PR_LABELS"
+    PR_TITLE="$PPL_PR_TITLE"
+    LINK="$PPL_PR_HTML_URL"
+    FEATURES="${PPL_FEATURES:1}"
     
     if [ -n "$PR_TITLE" ]; then
       _pp \
         IN \
         LINK \
         FEATURES \
-        EE_REF \
-        EE_COMMIT_ID \
-        EE_CLONE_URL \
+        PPL_REF \
+        PPL_COMMIT_ID \
+        PPL_CLONE_URL \
         PR_TITLE \
         PR_NUMBER \
         PR_LABELS \
@@ -37,9 +37,9 @@ ppl--status-report() {
       _pp \
         IN \
         FEATURES \
-        EE_REF \
-        EE_COMMIT_ID \
-        EE_CLONE_URL \
+        PPL_REF \
+        PPL_COMMIT_ID \
+        PPL_CLONE_URL \
       ;
     fi
   )

@@ -30,7 +30,7 @@ ppl--mvn() {
         local RV="$?"          
         [ "$RV" -ne 0 ] && {
           #~ ON ERROR
-          _ppl-set-persistent-var "ERROR_${EE_CURRENT_MACRO}" true
+          _ppl-set-persistent-var "ERROR_${PPL_CURRENT_MACRO}" true
         }
         return "$RV"
         ;;
@@ -59,7 +59,7 @@ ppl--mvn() {
         __mvn_exec verify -Powasp-dependency-check
         ;;
       "PUBLISH")
-        case "$EE_REF_NAME" in
+        case "$PPL_REF_NAME" in
           v*)
             _log_i "Publishing to the internal releases repo"
             _NONNULL ENTANDO_OPT_MAVEN_REPO_PROD            
@@ -72,7 +72,7 @@ ppl--mvn() {
             _pkg_get "xmlstarlet" -c "xmlstarlet"
 
             #~ UPDATES the version on the POM and REBUILDS the module
-            local versionToSet="${EE_REF_NAME:1}"
+            local versionToSet="${PPL_REF_NAME:1}"
             _pom_set_project_version "$versionToSet" "./pom.xml"
             __mvn_deploy "internal-nexus" "$ENTANDO_OPT_MAVEN_REPO_DEVL"
             ;;
@@ -84,7 +84,7 @@ ppl--mvn() {
         ;;
       "GA-PUBLICATION")
         _NONNULL ENTANDO_OPT_MAVEN_REPO_GA
-        __mvn_deploy "maven-central" "$ENTANDO_OPT_MAVEN_REPO_GA"
+        __mvn_deploy --ppl-with-gpg "maven-central" "$ENTANDO_OPT_MAVEN_REPO_GA"
         ;;
       *)
         shift 3

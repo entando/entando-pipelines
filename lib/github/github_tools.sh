@@ -7,7 +7,7 @@
 #
 _ppl-query-pr-info() {
   if ! $TEST__EXECUTION; then
-    github-request --set RES GET "$EE_PULLS_URL" "" "number" "$EE_PR_NUM"
+    github-request --set RES GET "$PPL_PULLS_URL" "" "number" "$PPL_PR_NUM"
     Q="["; for ((i=2;i<=$#;i+=2)); do Q+=".${!i}"; done; Q+="] | @csv"
     i=1
     while IFS= read -r var; do
@@ -22,7 +22,7 @@ TEST__EXECUTION._ppl-query-pr-info() {
   for ((i=2;i<=$#;i+=2)); do 
     if [ "${!i}" = "title" ]; then
       ((i--))
-      _set_var "${!i}" "$EE_PR_TITLE"
+      _set_var "${!i}" "$PPL_PR_TITLE"
     fi
   done
 }
@@ -36,10 +36,10 @@ TEST__EXECUTION._ppl-query-pr-info() {
 # $4: the state description
 #
 # Expected Env:
-# - EE_TOKEN
+# - PPL_TOKEN
 #
 _ppl-job-update-status() {
-  github-request POST "$EE_STATUSES_URL" \
+  github-request POST "$PPL_STATUSES_URL" \
     "{\"state\":\"$2\", \"description\": \"$3\", \"context\":\"$4\"}" \
     "sha" "$1" || true
 }
@@ -52,7 +52,7 @@ _ppl-job-update-status() {
 # $2: the label to add
 #
 _ppl-pr-add-label() {
-  if github-request POST "$EE_ISSUES_URL/labels" "[\"$2\"]" "number" "$1"; then
+  if github-request POST "$PPL_ISSUES_URL/labels" "[\"$2\"]" "number" "$1"; then
     _log_d "Added label \"$2\" to pr #$1"
     return 0
   else
@@ -68,7 +68,7 @@ _ppl-pr-add-label() {
 # $2: the label to remove
 #
 _ppl-pr-remove-label() {
-  if github-request DELETE "$EE_ISSUES_URL/labels/{label}" "" "number" "$1" "label" "$2"; then
+  if github-request DELETE "$PPL_ISSUES_URL/labels/{label}" "" "number" "$1" "label" "$2"; then
     _log_d "Removed label \"$2\" from pr #$1"
     return 0
   else
@@ -92,7 +92,7 @@ _ppl-set-persistent-var() {
 
 _ppl-pr-has-label() {
   _ppl_must_have_env
-  if _itmlst_contains "$EE_PR_LABELS" "$1"; then
+  if _itmlst_contains "$PPL_PR_LABELS" "$1"; then
     return 0
   else
     return 1
@@ -110,10 +110,10 @@ _ppl-pr-has-label() {
 # $.. $4 and $5 repeated at will
 #
 # Expected Env:
-# - EE_TOKEN
+# - PPL_TOKEN
 #
 github-request() {
-  local TOKEN="$EE_TOKEN";[ "$1" = "--no-auth" ] && { TOKEN=""; shift; }
+  local TOKEN="$PPL_TOKEN";[ "$1" = "--no-auth" ] && { TOKEN=""; shift; }
   local SET=false VAR;[ "$1" = "--set" ] && { SET=true; shift; VAR="$1"; shift; }
   _ppl_must_have_env
   local VERB="$1"; shift
@@ -179,7 +179,7 @@ _ppl-load-context() {
     return 0
   }
 
-  [ "$EE_PARSED_CONTEXT" = "$PPL_CONTEXT" ] && [ -n "$PPL_CONTEXT" ] && {
+  [ "$PPL_PARSED_CONTEXT" = "$PPL_CONTEXT" ] && [ -n "$PPL_CONTEXT" ] && {
     _log_t "Pipeline context was already loaded"
     return 0
   }
@@ -214,37 +214,37 @@ _ppl-load-context() {
   # shellcheck disable=SC2034
   {
     IFS=',' read -r \
-      EE_REPO \
-      EE_REPO_GIT_URL \
-      EE_WORKFLOW \
-      EE_JOB \
-      EE_EVENT \
-      EE_TOKEN \
-      EE_RUN_ID \
-      EE_REF \
-      EE_SHA \
-      EE_BASE_REF \
-      EE_HEAD_REF \
-      EE_REPO_NAME \
-      EE_CLONE_URL \
-      EE_STATUSES_URL \
-      EE_ISSUES_URL \
-      EE_PULLS_URL \
-      EE_PR_HTML_URL \
-      EE_PR_NUM \
-      EE_PR_TITLE \
-      EE_PR_SHA \
+      PPL_REPO \
+      PPL_REPO_GIT_URL \
+      PPL_WORKFLOW \
+      PPL_JOB \
+      PPL_EVENT \
+      PPL_TOKEN \
+      PPL_RUN_ID \
+      PPL_REF \
+      PPL_SHA \
+      PPL_BASE_REF \
+      PPL_HEAD_REF \
+      PPL_REPO_NAME \
+      PPL_CLONE_URL \
+      PPL_STATUSES_URL \
+      PPL_ISSUES_URL \
+      PPL_PULLS_URL \
+      PPL_PR_HTML_URL \
+      PPL_PR_NUM \
+      PPL_PR_TITLE \
+      PPL_PR_SHA \
     <<< "$RES"
-    _extract_pr_title_prefix EE_PR_TITLE_PREFIX "$EE_PR_TITLE"
-    EE_PARSED_CONTEXT="$PPL_CONTEXT"
-    EE_PR_LABELS="$(
+    _extract_pr_title_prefix PPL_PR_TITLE_PREFIX "$PPL_PR_TITLE"
+    PPL_PARSED_CONTEXT="$PPL_CONTEXT"
+    PPL_PR_LABELS="$(
       __jq ".event.pull_request.labels | map(.name)? | join(\",\")?" -r <<< "$PPL_CONTEXT" 2> /dev/null
     )"
-    EE_PR_LABELS="${EE_PR_LABELS//\"/}"
-    EE_REF_NAME="${EE_REF##*/}"
+    PPL_PR_LABELS="${PPL_PR_LABELS//\"/}"
+    PPL_REF_NAME="${PPL_REF##*/}"
   }
   
-  EE_COMMIT_ID="${EE_PR_SHA:-$EE_SHA}"
+  PPL_COMMIT_ID="${PPL_PR_SHA:-$PPL_SHA}"
 
   # TEST__EXECUTION OVERRIDES
   ! $NOOVR && {
@@ -260,7 +260,7 @@ _ppl-load-context() {
 }
 
 _ppl_must_have_env() {
-  [ -z "${EE_PARSED_CONTEXT}" ] && _FATAL "Please run _ppl-load-context"
+  [ -z "${PPL_PARSED_CONTEXT}" ] && _FATAL "Please run _ppl-load-context"
 }
 
 # Submits to the current PR/commit a review with a request for change
@@ -275,15 +275,15 @@ _ppl_must_have_env() {
 _ppl-pr-request-change() {
   if ! $TEST__EXECUTION; then
     local data="{"
-    data+="\"commit_id\":\"$EE_COMMIT_ID\","
+    data+="\"commit_id\":\"$PPL_COMMIT_ID\","
     data+="\"body\":$(_str_quote "$1")"
     data+="}"
     
-    github-request --set RES POST "$EE_PULLS_URL/reviews" "$data" "number" "$EE_PR_NUM"
+    github-request --set RES POST "$PPL_PULLS_URL/reviews" "$data" "number" "$PPL_PR_NUM"
       
     local review_id=$(echo "$RES" | jq '.id' -r)
     local data="{\"event\":\"REQUEST_CHANGES\"}"
-    github-request --set RES POST "$EE_PULLS_URL/reviews/$review_id/events" "$data" "number" "$EE_PR_NUM"
+    github-request --set RES POST "$PPL_PULLS_URL/reviews/$review_id/events" "$data" "number" "$PPL_PR_NUM"
   fi  
 }
 

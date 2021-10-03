@@ -23,8 +23,8 @@ ppl--bom() {
         local projectArtifactId projectVersion
         
         ppl--bom.update-bom.SHOULD_RUN || return 0
-        ppl--bom.EXTRACT_PROJECT_INFORMATION "$EE_LOCAL_CLONE_DIR" projectArtifactId projectVersion
-        ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM "$projectArtifactId" "$projectVersion" "$EE_TOKEN_OVERRIDE"
+        ppl--bom.EXTRACT_PROJECT_INFORMATION "$PPL_LOCAL_CLONE_DIR" projectArtifactId projectVersion
+        ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM "$projectArtifactId" "$projectVersion" "$PPL_TOKEN_OVERRIDE"
         ;;
       *)
         _FATAL "Illegal bom action \"$action\""
@@ -34,7 +34,7 @@ ppl--bom() {
 }
 
 ppl--bom.update-bom.SHOULD_RUN() {
-  case "${EE_REF_NAME}" in
+  case "${PPL_REF_NAME}" in
     v*) return 0;;
     *) _log_d "update-bom skipped"; return 1;;
   esac

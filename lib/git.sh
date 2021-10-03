@@ -114,19 +114,37 @@ _git_get_current_commit_id() {
 # Returns the last version tag added
 # Note that the command by default filters out the preview versions
 #
+# Options:
+# --for: specifies the base version for the search (eg: 6.3 only looks for 6.3.* tags)
+#
+# Params:
+# $1: the output var
+#
 #
 _git_determine_highest_version() {
   local __tmp__
+  
+  local for_base_version
+  [ "$1" == "--for" ] && {
+    for_base_version="$2"
+    [ "${for_base_version:0}" != "v" ] && for_base_version="v$for_base_version"
+    [ "${for_base_version::-1}" != "." ] && for_base_version+="."
+    shift 2
+  }
+  
   __tmp__="$(
-    local maj min ptc
+    local maj min ptc upd
     
     while read -r v; do
+      [[ -n "$for_base_version" && "$v" != "${for_base_version}"* ]] && continue
+
       if [ "${v:0:1}" = "v" ]; then
-        _semver_parse maj min ptc "" "$v"
-        printf "X%04dX%04dX%04d\n" "$maj" "$min" "$ptc"
+        _semver_ex_parse maj min ptc upd "" "$v"
+        printf "X%04dX%04dX%04dX%04d\n" "$maj" "$min" "$ptc" "$upd"
       fi
-    done < <(git tag -l) | sort | tail -1 | sed -E "s/X0+/./g"
+    done < <(git tag -l) | sort | tail -1 | sed -E "s/X0+/./g" | sed "s/\.$//"
   )"
+  
   _set_var "$1" "${__tmp__:1}"
 }
 
