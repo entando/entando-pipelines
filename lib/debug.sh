@@ -152,7 +152,7 @@ _pp() {
   echo "▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁"
   echo "▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒$TITLE"
   for var_name in "$@"; do
-    (echo "▕- $var_name: ${!var_name}")
+    echo "▕- $var_name: ${!var_name}"
   done
   echo "▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒"
   echo "▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
@@ -182,7 +182,7 @@ _pp_adjust_var() {
 _NONNULL() {
   for var_name in "$@"; do
     local var_value="${!var_name}"
-    [ -z "$var_value" ] && _FATAL "${FUNCNAME[1]}> Variable \"$var_name\" should not be null"
+    [ -z "$var_value" ] && _FATAL -S 1 "${FUNCNAME[1]}> Variable \"$var_name\" should not be null"
   done
 }
 
@@ -216,7 +216,7 @@ __VERIFY_EXPRESSION() {
     shift 4
   else
     N="$1";
-    (E="${!N}") || _FATAL "Invalid variable name"
+    (E="${!N}") || _FATAL -S 2 "Invalid variable name"
     E="${!N}"; O=$2; V=$3
     shift 4
   fi
@@ -231,6 +231,7 @@ __VERIFY_EXPRESSION() {
     =|==) O="=";OD="TO:  ";  [[ "$E" = "$V" ]];;
     !=) O="!=";OD="TO:  ";  [[ "$E" != "$V" ]];;
     =~) O="=~";OD="TO:  ";   [[ "$E" =~ $V ]];;
+    !=~) O="=~";OD="TO:  ";   [[ ! "$E" =~ $V ]];;
     starts-with) O="=";OD="TO:  ";  [[ "$E" = "$V"* ]];;
     *) _FATAL "Unknown operator \"$O\"";;
   esac
@@ -263,7 +264,7 @@ __VERIFY_EXPRESSION() {
     fi
 
     [ -n "$MSG2" ] && echo -e "$MSG2" 1>&2
-    _FATAL -S 3 -99 "$MSG" 1>&2
+    _FATAL -S 2 -99 "$MSG" 1>&2
   fi
 }
 
