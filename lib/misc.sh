@@ -630,3 +630,44 @@ _ppl_extract_snapshot_version_name_part() {
   [[ -z "$_tmp_res_" || "$_tmp4_" != "PR" ]] && _FATAL "Provided snapshot version name \"$2\" is not valid"
   _set_var "$1" "$_tmp_res_"
 }
+
+_ppl_validate_command_version() {
+  local DESC="$1"; REQ_VER="$2" shift
+  local VER
+  
+  VER=$(eval "$3")
+  
+  if [ $? -ne 0 ] || [ -z "$VER" ]; then
+    _FATAL "Command \"$DESC\" is not available"
+  fi
+  
+  local maj min
+  _semver_parse maj min "" "" "$VER"
+  
+  REQ_VER="${REQ_VER//x/}"
+  
+  [[ "${maj}.${min}." =~ $REQ_VER. ]] || _FATAL "Command \"$DESC\" has invalid version ($VER)"
+}
+
+# Determines the type of project in the current dir
+#
+# Params:
+# $1: dest var
+#
+_ppl_determine_current_project_type() {
+  local _tmp_
+
+  if [ -f "pom.xml" ]; then
+    _tmp_="MVN"
+  elif [ -f "package.json" ]; then
+    _tmp_="NPM"
+  else
+    _FATAL "Unable to determine the project type"
+  fi
+    
+  if [ "$1" == "--print" ]; then
+    echo "$_tmp_"
+  else
+    _set_var "$1" "$_tmp_"
+  fi
+}

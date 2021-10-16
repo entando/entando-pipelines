@@ -17,14 +17,18 @@ ppl--check-pr-state() {
     _pkg_get "xmlstarlet" -c "xmlstarlet"
     
     __ppl_enter_local_clone_dir
-    __exist -f "pom.xml"
-    
-    local projectVersion
-    _pom_get_project_version projectVersion "pom.xml"
     
     ppl--check-pr-state.CHECK_TITLE_FORMAT
-    ppl--check-pr-state.CHECK_MAINLINE "$projectVersion"
-    ppl--check-pr-state.CHECK_PROJECT_VERSION_FORMAT "$projectVersion"
+
+    [[ -f "pom.xml" ]] && {
+      local projectVersion
+      _ppl_get_current_project_version projectVersion
+      
+      ppl--check-pr-state.CHECK_MAINLINE "$projectVersion"
+      ppl--check-pr-state.CHECK_PROJECT_VERSION_FORMAT "$projectVersion"
+    }
+    
+    true
   )
 }
 

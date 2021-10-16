@@ -21,9 +21,8 @@ ppl--bom() {
     case "$action" in
       update-bom)
         local projectArtifactId projectVersion
-        
         ppl--bom.update-bom.SHOULD_RUN || return 0
-        ppl--bom.EXTRACT_PROJECT_INFORMATION "$PPL_LOCAL_CLONE_DIR" projectArtifactId projectVersion
+        ppl--bom.EXTRACT_PROJECT_INFORMATION projectArtifactId projectVersion "$PPL_LOCAL_CLONE_DIR"
         ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM "$projectArtifactId" "$projectVersion" "$PPL_TOKEN_OVERRIDE"
         ;;
       *)
@@ -41,10 +40,9 @@ ppl--bom.update-bom.SHOULD_RUN() {
 }
 
 ppl--bom.EXTRACT_PROJECT_INFORMATION() {
-  __cd "$1"
-  __exist -f "pom.xml"
-  _pom_get_project_artifact_id "$2" "pom.xml"
-  _pom_get_project_version "$3" "pom.xml"
+  __cd "$3"
+  _ppl_get_current_project_artifact_id "$1"
+  _ppl_get_current_project_version "$2"
 }
 
 ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM() {
@@ -55,7 +53,7 @@ ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM() {
 
   # get current BOM version
   #local currentBomVersion
-  #_pom_get_project_version currentBomVersion "pom.xml" "${projectArtifactId}.version"
+  #_ppl_get_current_project_version currentBomVersion "pom.xml" "${projectArtifactId}.version"
   #_NONNULL currentBomVersion
 
   # get the currently project version referenced in BOM

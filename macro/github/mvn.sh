@@ -76,7 +76,7 @@ ppl--mvn() {
             _NONNULL ENTANDO_OPT_MAVEN_REPO_DEVL
             _pkg_get "xmlstarlet" -c "xmlstarlet"
             
-            #~ UPDATES the version on the POM and REBUILDS the module
+            #~ UPDATES the version on the MVN and REBUILDS the module
             local projectVersion="${PPL_REF_NAME:1}"
             _pom_set_project_version "$projectVersion" "./pom.xml"
             __mvn_deploy "internal-nexus" "$ENTANDO_OPT_MAVEN_REPO_PROD"

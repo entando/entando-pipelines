@@ -14,7 +14,6 @@ test_pom() {
 
   _pkg_get "xmlstarlet" -c xmlstarlet
 
-
   # shellcheck disable=SC2034
   local RES
 

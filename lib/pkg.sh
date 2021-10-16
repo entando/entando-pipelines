@@ -44,6 +44,21 @@ _pkg_get() {
   return 0
 }
 
+# Ensura a mandatory command is avaliable
+#
+# Params:
+# $1:   command
+# [$2]: optional description of the command
+#
+require_mandatory_command() {
+  local desc=${2:-$1}
+  if command -v "$1" >/dev/null; then
+    _log_d "Mandatory command \"$desc\" is available"
+  else
+    _FATAL "Mandatory command \"$desc\" is not avaliable"
+  fi
+}
+
 #  Checks for the presence of a command
 #
 # Params:

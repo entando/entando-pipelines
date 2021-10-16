@@ -21,11 +21,11 @@ ppl--checkout-branch() {
     else
       branchToCheckout="${PPL_REF##*/}"
     fi
-
+    
     _NONNULL PPL_LOCAL_CLONE_DIR PPL_CLONE_URL branchToCheckout
     _git_full_clone "$PPL_CLONE_URL" "$PPL_LOCAL_CLONE_DIR" "" "${PPL_TOKEN_OVERRIDE:-$PPL_TOKEN}"
     
-    # CHECKOUT    
+    # CHECKOUT
     __cd "$PPL_LOCAL_CLONE_DIR"
     _git_auto_setup_commit_config
     

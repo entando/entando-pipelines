@@ -69,6 +69,9 @@ test.docker.publish.BUILD_AND_PUSH() {
 test.docker.ppl--docker-skipped-due-to-no-dockerfile() {  
   print_current_function_name "RUNNING TEST> " ".."
 
+  _git_full_clone --as-work-area "file://$TEST__WORK_DIR/repo-mocks/app-builder" "local-checkout"
+  __cd ..
+
   TEST.RESET_TLOG
   # shellcheck disable=SC2034
   ppl--docker publish "" --id "TEST" --lcd "local-checkout" || _SOE

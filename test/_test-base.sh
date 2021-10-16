@@ -133,3 +133,10 @@ TEST.mock.param() {
     *) _FATAL "Unknown mock param \"$1\"";;
   esac
 }
+
+TEST.mock.context() {
+  PPL_CONTEXT="$(cat "$PROJECT_DIR/test/resources/$1")"
+  # shellcheck disable=2034
+  PPL_PARSED_CONTEXT=""
+  _ppl-load-context --disable-overrides "$PPL_CONTEXT"
+}

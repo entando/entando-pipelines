@@ -66,7 +66,7 @@ _pom_get_depman_artifact_version() {
     "./pom:version"
 }
 
-# Sets a pom property
+# Gets a pom property
 #
 # Params:
 # $1 the receiver var
@@ -75,6 +75,7 @@ _pom_get_depman_artifact_version() {
 # $4 the property name
 #
 _pom_get() {
+  __exist -f "$2"
   local _tmp_
   _tmp_="$(xmlstarlet sel -N pom="http://maven.apache.org/POM/4.0.0" -t -m "$3" -v "$4" "$2")"
   _log_t "> POM: $3/$4 => \"$_tmp_\""

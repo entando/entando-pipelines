@@ -13,6 +13,14 @@ ppl--docker() {
   (
     START_MACRO "DOCKER" "$@"
 
+    __ppl_enter_local_clone_dir
+    
+    case "$(_ppl_determine_current_project_type --print)" in
+      "MVN") _pkg_get "xmlstarlet" -c "xmlstarlet";;
+      "NPM") _pkg_get "jq" -c "jq";;
+      *) _FATAL  "Unable to detect the project type"
+    esac
+    
     local action
     _get_arg action 1
 
@@ -22,7 +30,7 @@ ppl--docker() {
         _get_arg builds 2 || _EXIT -d "Docker image publication is not enabled"
         
         [[ "${builds:0:3}" = "###" ]] && builds="${builds:3}"
-
+        
         local projectArtifactId projectVersion
         ppl--docker.publish.INIT projectArtifactId projectVersion
         
@@ -37,11 +45,8 @@ ppl--docker() {
 }
 
 ppl--docker.publish.INIT() {
-  __ppl_enter_local_clone_dir
-  __exist -f "pom.xml"
-  _pkg_get "xmlstarlet" -c "xmlstarlet"
-  _pom_get_project_artifact_id "$1" "pom.xml"
-  _pom_get_project_version "$2" "pom.xml"
+  _ppl_get_current_project_artifact_id "$1"
+  _ppl_get_current_project_version "$2"
   _NONNULL "${1}" "${2}"
 }
 
@@ -72,19 +77,19 @@ ppl--docker.publish.BUILD_AND_PUSH_ALL() {
     [ -z "$dockerOrg" ] && dockerOrg="$ENTANDO_OPT_DOCKER_ORG"
     _NONNULL dockerOrg
     
-    [ -n "$dockerImageTag" ] && _FATAL "Please do not provide the image tag in the docker build directive as it will be automatically derived from the project information"
+    [ -n "$dockerImageTag" ] && _FATAL \
+        "Please do not provide the image tag in the docker build directive" \
+        "as it will be automatically derived from the project information"
     
     [ "${dockerImageName:-*}" == "*" ] && dockerImageName="$projectArtifactId"
     dockerImageTag="$projectVersion"
-
+    
     local finalAddr
     case "$ENTANDO_OPT_DOCKER_BUILD_QUALIFIER_POSITION" in
       after-name|"") finalAddr="$dockerOrg/${dockerImageName,,}${buildQualifier,,}:${dockerImageTag}";;
       after-tag) finalAddr="$dockerOrg/${dockerImageName,,}:${dockerImageTag}${buildQualifier,,}";;
       *) _FATAL "Invalid image qualifier \"$ENTANDO_OPT_DOCKER_BUILD_QUALIFIER_POSITION\""
     esac
-    
-    #_pp dockerOrg dockerImageName dockerImageTag finalAddr
 
     __docker build . -t "$finalAddr" -f "$dockerFile"
     __docker image inspect "$finalAddr"

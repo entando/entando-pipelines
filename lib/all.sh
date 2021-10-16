@@ -16,6 +16,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
   . "$SCRIPT_DIR/../lib/pom.sh"
   . "$SCRIPT_DIR/../lib/mvn.sh"
   . "$SCRIPT_DIR/../lib/docker.sh"
+  . "$SCRIPT_DIR/../lib/npm.sh"
+  . "$SCRIPT_DIR/../lib/project.sh"
   
   # Composite
   . "$SCRIPT_DIR/../lib/composite.sh"
