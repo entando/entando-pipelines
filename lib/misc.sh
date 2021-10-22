@@ -25,9 +25,25 @@ _url_add_token() {
 #
 _extract_pr_title_prefix() {
   local _tmp_="$2"
+  [ "${_tmp_:0:8}" = "Revert \"" ] && _tmp_="${_tmp_:8}"
   _tmp_="${_tmp_//: */}"
   _tmp_="${_tmp_// */}"
   _set_var "$1" "$_tmp_"
+}
+
+# Gets from a PR title the part of the prefix that should qualify the artifacts
+#
+# Params:
+# $1 destination var
+# $2 the PR title
+#
+_ppl_extract_artifact_qualifier_from_pr_title() {
+  local _tmp_="$2" _tmp2_
+  [ "${_tmp_:0:8}" = "Revert \"" ] && _tmp_="${_tmp_:8}"
+  IFS=' ' read -r _tmp_ _tmp2_ <<<"$_tmp_"
+  _tmp_="${_tmp_/:/}"
+  IFS='/' read -r _tmp_ _tmp2_ <<<"$_tmp_"
+  _set_var "$1" "${_tmp1_:-$_tmp_}"
 }
 
 
@@ -91,7 +107,7 @@ _itmlst_fill() {
   for _tmp_L_ in "$@"; do
     _tmp_+=",$_tmp_L_"
   done
-  _set_var "$_var_name_" "${_tmp_},"
+  _set_var "$_var_name_" "${_tmp_:1}"
 }
 
 # Checks if a given entry is present in a itmlst (list of items)
@@ -103,11 +119,34 @@ _itmlst_fill() {
 # $2 the entry
 #
 _itmlst_contains() {
-  if [[ "$1" = *",$2,"* ]]; then
-    return 0
-  else
-    return 1
-  fi
+  local _il_tmp_
+  _str_last_pos _il_tmp_ "$1" "$2"
+  [ "$_il_tmp_" != -1 ]
+}
+
+# Checks if a given entry enabled in itmlst, which means:
+# - it's contained
+# - its negative (prefixed with a minus) is not contained
+#
+# Params:
+# $1 the label list
+# $2 the entry
+#
+# Options:
+# [-W] consider the "*" as a wildcard matching for every item
+#
+_itmlst_is_item_enabled() {
+  local _il_tmpP_ _il_tmpN_ _il_tmpPa_ _il_tmpNa_
+
+  _str_last_pos _il_tmpPa_ "$1" "*"
+  _str_last_pos _il_tmpNa_ "$1" "-*"
+  _str_last_pos _il_tmpP_ "$1" "$2"
+  _str_last_pos _il_tmpN_ "$1" "-$2"
+
+  [ "$_il_tmpPa_" -gt "$_il_tmpP_" ] && _il_tmpP_="$_il_tmpPa_"
+  [ "$_il_tmpNa_" -gt "$_il_tmpN_" ] && _il_tmpN_="$_il_tmpNa_"
+
+  [ "$_il_tmpP_" -gt "$_il_tmpN_" ]
 }
 
 # Checks if a given itmlst is empty
@@ -121,12 +160,42 @@ _itmlst_empty() {
   [ "$EXECUTION_LABELS" = "," ] || [ "$EXECUTION_LABELS" = "" ]
 }
 
+# Generates an itemlist from a list string
+#
+# Params:
+# $1 the receiver of the itmlst
+# $2 the source list string
+#
+# Supports the following separators:
+# - ","
+# - "|"
+# - "\n"
+#
+_itmlst_from_string() {
+  local _tmp_="$2"
+  _tmp_="${_tmp_//$'\n'/,}"
+  _tmp_="${_tmp_//$'|'/,}"
+  _set_var "$1" "$_tmp_"
+}
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Program Arguments Parser
 
 ARGS_FLAGS=()
 ARGS_POS=("")
 declare -A ARGS_OPT
+
+# Program Arguments Parser
+# 
+# Parses argumets array for positional and optional arguments
+# and sends the result to ARGS_POS (array) and ARGS_OPT (map)
+#
+# Node:
+# - ARGS_FLAGS indicates "PARSE_ARGS" which optional arguments should be considered booleans with no explicit value
+# 
+# See also:
+# - _get_arg
+# - test_args
+#
 PARSE_ARGS() {
   local K
   local eoo=false
@@ -167,34 +236,97 @@ PARSE_ARGS() {
   done
 }
 
-# Extracts a positional or optional argument
+# Extracts a positional or optional argument from the arguments passed to "PARSE_ARGS"
 #
 # Params:
 # $1 the receiver var
 # $2 the option name or the positional index
+# $3 the fallback value
+#
+# Options:
+# [-m] is specified the function fails if no value can be extracted from argument or fallback
 #
 # Examples:
 # _get_arg arg1 1         # sets the var "arg1" with the first positional argument
 # _get_arg mode --mode    # sets the var "mode" with optional argument "--mode"
 #
 _get_arg() {
+  local MANDATORY=false;[ "$1" = "-m" ] && { MANDATORY=true; shift; }
   local _tmp_
   case "$2" in
     ''|*[!0-9]*) _tmp_="${ARGS_OPT[$2]}";;
     *) _tmp_="${ARGS_POS[$2]}";;
   esac
   _set_var "$1" "${_tmp_:-$3}"
+  [ -n "${_tmp_}" ] || { "$MANDATORY" && _FATAL "Mandatory param  \"$2\" was not provided"; }
+  [ -z "${_tmp_:-$3}" ] && return 1
+  return 0
 }
 
+# Returns the position of the last occurrent of string in a comma separed list
+#
+_str_last_pos() { 
+  local _slp_tmp1_ _slp_tmp2_="$2" _slp_tmp3_=0 _slp_tmp4_=-1
+  while IFS= read -r _slp_tmp1_; do
+    if [ "$_slp_tmp1_" = "$3" ]; then
+      _slp_tmp4_="$_slp_tmp3_"
+    fi
+    ((_slp_tmp3_++))
+  done <<<"${_slp_tmp2_//,/$'\n'}"  
+  _set_var "$1" "$_slp_tmp4_"
+}
+
+# prints a quoted version of the give value
+#
+_str_quote() {
+  local _sq_simple_=false;[ "$1" = "-s" ] && { _sq_simple_=true; shift; }
+  local tmp="$1"
+  tmp="${tmp//\\/\\\\}"
+  tmp="${tmp//\"/\\\"}"
+  if $_sq_simple_; then
+    echo "$tmp"
+  else
+    echo "\"$tmp\""
+  fi
+}
+
+# Decodes an ENTANDO_OPT variable encoded with a triple-hash prefix to evade the censoring
+#
+# Params:
+# $@ a list of vars to decode
+#
+_decode_entando_opt() {
+  for _deo_var_name in "$@"; do
+    local _deo_var_value="${!_deo_var_name}"
+    if [ "${_deo_var_value:0:4}" = '###'$'\n' ]; then
+      _deo_var_value="${_deo_var_value:4}"
+    elif [ "${_deo_var_value:0:3}" = '###' ]; then
+      _deo_var_value="${_deo_var_value:3}"
+    else
+      continue
+    fi
+    _set_var "$_deo_var_name" "$_deo_var_value"
+  done
+}
+
+# Scans the environment for ENTANDO_OPT_XXX variables and decodes them
+# See also _decode_entando_opt
+#
+_auto_decode_entando_opts() {
+  for varname in ${!ENTANDO_OPT*}; do
+    _decode_entando_opt "$varname"
+  done
+}
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 # Successfully changes dir or fatals
 #
 __cd() {
   local L="$1"
   [ "${L:0:7}" = "file://" ] && L="${L:7}"
   [ -z "$L" ] && _FATAL "Null directory provided"
-  cd "$L" 1>/dev/null || _FATAL "Unable to enter directory \"$1\""
+  cd "$L" 1>/dev/null || _FATAL -S 1 "Unable to enter directory \"$1\""
   _log_t "Entered directory \"$L\""
 }
 
@@ -217,4 +349,284 @@ __exist() {
 # 
 __jq() {
   jq "$@" || _FATAL "Error parsing the json input"
+}
+
+# Intercept the stdin and instead prints an summary
+#
+# Params:
+# $1    the title of the summary
+#
+# Options:
+# --lf      uses LF instead of CR when terminating the summmary
+# --no-tlf  the latest summary update will not be terminated by line-feedd
+# --li      number of lines before updating the summary (default: 73)
+# --ti      number of seconds before updating the summary (default: 5)
+# --pe      immediately prints errors to stdout
+# -f file   adds the command output to the given file
+#
+_summarize_stream() {
+  local EOL=$'\r'; [ "$1" = "--lf" ] && { EOL=$'\n'; shift; }
+  local TLF=$'\n'; [ "$1" = "--no-tlf" ] && { TLF=''; shift; }
+  local LI=73; [ "$1" = "--li" ] && { LI="$2"; shift 2; }
+  local TI=5; [ "$1" = "--ti" ] && { TI="$2"; shift 2; }
+  local PE=false; [ "$1" = "--pe" ] && { PE=true; shift; }
+  local OUTFILE; [ "$1" = "-f" ] && { OUTFILE="$2"; shift 2; }
+  local _stat_nt=0 _stat_ne=0 _stat_nw=0 _stat_nd=0 _last_nt=-1000
+  local started_at="$SECONDS" 
+  local latest="$((started_at-100))" now elapsed
+  local sln TITLE="${1:-SUMMARY}"
+  local showNext=0
+  
+  while IFS= read -r ln; do
+    [ -n "$OUTFILE" ] && echo "$ln" >> "$OUTFILE"
+    
+    sln="${ln:0:20}"
+    
+    ((_stat_nt++))
+    
+    case "${sln,,}" in
+      *error*) 
+        ((_stat_ne++))
+        "$PE" && {
+          echo "$ln"
+          showNext=2
+        }
+      ;;
+      *warning*) ((_stat_nw++));;
+      *warn*) ((_stat_nw++));;
+      *downloaded*) ((_stat_nd++));;
+      *)
+        if [ "$showNext" -gt 0 ]; then
+          echo "$ln" | grep -E '^\s+at\s'
+        fi
+    esac
+
+    [ "$showNext" -gt 0 ] && ((showNext--))
+
+    if [ $((_stat_nt - _last_nt)) -ge "$LI" ]; then
+      now="$SECONDS"
+      if [ "$((now-latest))" -ge "$TI" ]; then
+        latest="$now"
+        _last_nt="$_stat_nt"
+        elapsed="$((now-started_at))"
+        printf "~ $TITLE > | SEC: %4d | TOT: %6d  | ERR: %6d | WRN: %6d | DNL: %6d |       %s" \
+          "$elapsed" "$_stat_nt" "$_stat_ne" "$_stat_nw" "$_stat_nd" "$EOL"
+      fi
+    fi
+  done < "/dev/stdin"
+  
+  now="$SECONDS"
+  elapsed="$((now-started_at))"
+  printf "~ $TITLE > | SEC: %4d | TOT: %6d  | ERR: %6d | WRN: %6d | DNL: %6d |       %s" \
+    "$elapsed" "$_stat_nt" "$_stat_ne" "$_stat_nw" "$_stat_nd" "$TLF"
+}
+
+# Executes a command and handle the output
+# 
+# Params:
+# $@ the full command line
+# 
+# Options
+# --hide regex  suppress the given regex from the output, can be repeated up to 3 times
+# --pe          see _summarize_stream
+#
+_exec_cmd() {
+  local SIMPLE=false; [ "$1" = "--ppl-simple" ] && { SIMPLE=true; shift; }
+  local HIDE1=""; [ "$1" = "--hide" ] && { HIDE1="$2"; shift 2; }
+  local HIDE2=""; [ "$1" = "--hide" ] && { HIDE2="$2"; shift 2; }
+  local HIDE3=""; [ "$1" = "--hide" ] && { HIDE3="$2"; shift 2; }
+  local PE=''; [ "$1" = "--pe" ] && { PE="--pe"; shift; }
+  local PO=''; [ "$1" = "--po" ] && { PO="$2"; shift 2; }
+  
+  local H1="cat" H2="cat" H3="cat" HH1 HH2 HH3
+  if [ -n "$HIDE1" ]; then H1="grep -v"; HH1="$(_str_quote -s "$HIDE1")"; fi
+  if [ -n "$HIDE2" ]; then H2="grep -v"; HH2="$(_str_quote -s "$HIDE2")"; fi
+  if [ -n "$HIDE3" ]; then H3="grep -v"; HH3="$(_str_quote -s "$HIDE3")"; fi
+
+  (
+    local RVFILE="$(mktemp)"
+    if "$SIMPLE"; then
+      # shellcheck disable=SC2064
+      trap "rm \"$RVFILE\"" exit
+      (
+        # shellcheck disable=SC2068
+        $@ 2>&1
+        echo "$?" > "$RVFILE"
+      ) | $H1 ${HH1:+"$HH1"} | $H2 ${HH2:+"$HH2"} | $H3 ${HH3:+"$HH3"}
+    else
+      if [ -n "$PO" ]; then
+        local TMPFILE="$PO"
+        # shellcheck disable=SC2064
+        trap "rm \"$RVFILE\"" exit
+      else
+        local TMPFILE="$(mktemp)"
+        # shellcheck disable=SC2064
+        trap "rm \"$TMPFILE\" \"$RVFILE\"" exit
+      fi
+      
+      _summarize_stream --lf ${PE:+"$PE"} -f "$TMPFILE" "$1" < <(
+          # shellcheck disable=SC2068
+          $@ 2>&1
+          echo "$?" > "$RVFILE"
+      ) | $H1 ${HH1:+"$HH1"} | $H2 ${HH2:+"$HH2"} | $H3 ${HH3:+"$HH3"}
+    fi
+
+    local RV="$(cat "$RVFILE")"
+    if [ "$RV" = "0" ]; then
+      # SUCCESS
+      
+      if $SIMPLE; then
+        _log_d "$1 execution was successful"
+      else
+        _log_t "$1 execution was successful; log tail:"
+        # shellcheck disable=SC2088
+        echo '~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~'
+        _ppl-print-file-paginated "$TMPFILE" 500 "LOG"
+        sleep 0.3
+      fi
+    else
+      # FAILURE
+      
+      if $SIMPLE; then
+        _log_e "Command \"$1\" completed with error code \"$RV\""
+      else
+        _log_e "Command \"$1\" completed with error code \"$RV\"; full log:"
+        # shellcheck disable=SC2088
+        echo '~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~'
+        _ppl-print-file-paginated "$TMPFILE" 500 "LOG"
+        sleep 0.3
+      fi
+      
+      return "$RV"
+    fi
+  )
+}
+# Determines the name of the release branch for the given reference version
+#
+# Params:
+# $1: the receiver var of the designated release branch
+# $2: the reference version
+#
+# The business rule is simple:
+# - Versions X.Y.Z are released under the branch "release/X.Y.0"
+#
+_ppl_determine_release_branch() {
+  local _referenceVersion_="$2"
+  local _releaseBranch_
+  _semver_parse maj min ptc "" "$_referenceVersion_"
+  # shellcheck disable=SC2154
+  _releaseBranch_="release/$maj.$min.0"
+  _set_var "$1" "$_releaseBranch_"
+}
+
+__ppl_enter_local_clone_dir() {
+  [ -n "$PPL_LOCAL_CLONE_DIR" ] && __cd "$PPL_LOCAL_CLONE_DIR"
+  true
+}
+
+# Determines the action related to a feature
+#
+# Params:
+# $1 output var for the result
+# $2 feature name
+# $3 fallback value
+#
+# Rules:
+# - Features are in the format of labels
+# - Features are also read from the ENTANDO_OPT_FEATURES, expect for SKIP directives
+# - Features are also read from the ENTANDO_OPT_GLOBAL_FEATURES, expect for SKIP directives
+# - Features will be converted into CI vars usable in CI conditions
+# - SKIP directive are like DISABLE directives but they should supposed to be removed once evaluated
+#
+# Directives Formats:
+# - Enable a feature: ENABLE-{FEATURE}
+# - Disable a feature: DISABLE-{FEATURE}
+# - Disable a feature once: SKIP-{FEATURE}
+#
+# Directives Priority crieria:
+# 1. LABEL then ENTANDO_OPT_FEATURES then ENTANDO_OPT_GLOBAL_FEATURES
+# 2. LAST directive of a given feature overwrites the previous directives of the same feature
+# 3. Above crieria #1 wins over crieria #2
+# 
+# Returns a result of this structure:
+# - {main-result}.{detail}
+# 
+# where {main-result} can be:
+# - D => disabled
+# - E => enabled
+# - I => illegal
+#
+# and {detail} can be:
+# - var => result source is ENTANDO_OPT_FEATURES or ENTANDO_OPT_GLOBAL_FEATURES
+# - label => result source is a label
+# - any other arbitrary text => non-functional text providing details
+#
+_ppl_get_feature_action() {
+  local _tmp_feature="$2" _tmp_action
+  
+  case "$3" in
+    "true") _tmp_action="E.fallback";;
+    "false") _tmp_action="D.fallback";;
+  esac
+
+  # shellcheck disable=SC2154
+  {
+    _itmlst_contains "$PPL_FEATURES" "ENABLE-$_tmp_feature" && _tmp_action="E.var"
+    _itmlst_contains "$PPL_FEATURES" "DISABLE-$_tmp_feature" && _tmp_action="D.var"
+    _itmlst_contains "$PPL_FEATURES" "SKIP-$_tmp_feature" && _tmp_action="I.skip-in-var"
+  }
+  _ppl-pr-has-label "ENABLE-$_tmp_feature" && _tmp_action="E.label"
+  _ppl-pr-has-label "DISABLE-$_tmp_feature" && _tmp_action="D.label"
+  _ppl-pr-has-label "SKIP-$_tmp_feature" && _tmp_action="S.label"
+  
+  _set_var "$1" "$_tmp_action"
+}
+
+# Returns the status of a directive
+#
+# Params:
+# $1 feature name
+# $2 fallback value
+#
+# [$?=0]  => directive is present
+# [$?!=0] => directive is not present
+#
+_ppl_is_feature_enabled() {
+  local ACTION
+  _ppl_get_feature_action ACTION "$1" "$2"
+  
+  case "$ACTION" in
+    E*) return 0;;
+    D*) return 1;;
+    S*) return 2;;
+    I*)
+      _log_w "Skip directives (SKIP-$1) are not allowed in "
+              "\"ENTANDO_OPT_FEATURES\" or \"ENTANDO_OPT_GLOBAL_FEATURES\" => ignored"
+      return "$2"
+      ;;
+  esac
+
+}
+
+# Extracts a part of the snapshot version name
+#
+# Params:
+# $1  output var
+# $1  snapshot version name
+# $2  part: "base-version" or "qualifier" or "pr-num"
+#
+_ppl_extract_snapshot_version_name_part() {
+  local _tmp1_ _tmp2_ _tmp3_ _tmp4_ _tmp5_ _tmp_res_
+  IFS='-' read -r _tmp1_ _tmp2_ _tmp3_ _tmp4_ _tmp5_ <<<"$2"
+  case "$3" in
+    "base-version") 
+      _tmp_res_="$_tmp1_"
+      [[ "${_tmp_res_:0:1}" = "v" ]] && _tmp_res_="${_tmp_res_:1}"
+      ;;
+    "qualifier") _tmp_res_="$_tmp2_-$_tmp3_";;
+    "pr-num") _tmp_res_="$_tmp5_";;
+    *) _FATAL "Invalid part name \"$3\" provided";;
+  esac
+  [[ -z "$_tmp_res_" || "$_tmp4_" != "PR" ]] && _FATAL "Provided snapshot version name \"$2\" is not valid"
+  _set_var "$1" "$_tmp_res_"
 }

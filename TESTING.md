@@ -39,7 +39,7 @@ Furthermore defines environment variable defaults, deploys some fixtures and moc
 The script provides two mocked repositories that can be referenced through these variables:
 
 - `ENTANDO_OPT_REPO_BOM_URL`: (local) url of the mock of the BOM repository
-- `EE_CLONE_URL`: (local) url of the mock of an example module repository
+- `PPL_CLONE_URL`: (local) url of the mock of an example module repository
 
 
 ### Test Environment Vars
@@ -81,6 +81,7 @@ The `VALUE-DESC` is used instead of `VAR-NAME` in order to compose the error mes
 | Numerical | `-eq`,`-ne`,`-gt`,`-ge`,`-lt`,`-le` |
 | General | `=` or `==`,`!=` |
 | Regexp | `=~` |
+| Regexp negated (custom) | `!=~` |
 
 Refer to the bash "IF" documentation for details
 
@@ -112,7 +113,7 @@ Define this function in order to override the execution environment variables ju
 Example:
 
 ```
-TEST__APPLY_OVERRIDES() { EE_PR_TITLE="A-MOCKED-PR-TITLE"; }
+TEST__APPLY_OVERRIDES() { PPL_PR_TITLE="A-MOCKED-PR-TITLE"; }
 ```
 
 ### ENTANDO_OPT_SHELL_ON_TEST_ASSERT

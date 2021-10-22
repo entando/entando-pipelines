@@ -41,12 +41,12 @@ ppl--check-pr-bom-state() {
     _log_d "> THE LATEST BOM VERSION PUBLISHED IS: $latestBomVersion"
   
     if [ "$prBomVersion" != "$latestBomVersion" ]; then
-      _ppl-job-update-status "$EE_COMMIT_ID" "failure" "Failed" "BOM misalignment error"
+      _ppl-job-update-status "$PPL_COMMIT_ID" "failure" "Failed" "BOM misalignment error"
       local MSG="The BOM version requested by this PR is not aligned with "
       MSG+="the latest BOM version released ($prBomVersion != $latestBomVersion)"
       _FATAL "$MSG"
     else
-      _ppl-job-update-status "$EE_COMMIT_ID" "failure" "Failed" "BOM misalignment error"
+      _ppl-job-update-status "$PPL_COMMIT_ID" "failure" "Failed" "BOM misalignment error"
       _log_i "BOM check ok ($prBomVersion = $latestBomVersion)"
     fi
   )

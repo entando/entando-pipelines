@@ -18,84 +18,88 @@ ppl--release() {
 
     __ppl_enter_local_clone_dir
     __exist -f "pom.xml"
-
-    local action versionToSet TAG pomVersionToSet
-    local currentBranch="${EE_REF##*/}"
     
+    local action
     _get_arg action 1
 
-    #~ 
-    #~ ANALYSIS of the current repo/branch
-    #~ READY-ONLY
-    #~
     case "$action" in
-      prepare-tag-release)
-        #~ determine the next module version from the current git repo tags
-        local highestModuleVersion maj min ptc
-        _git_determine_highest_version highestModuleVersion
-        _semver_parse maj min ptc "" "$highestModuleVersion"
-        ((ptc++))
-        versionToSet="${maj:-0}.${min:-0}.${ptc:-0}"
-        TAG="v$versionToSet"
-        ;;
-      prepare-preview-release)
-        __git checkout "$EE_BASE_REF"
-        local snapshotVersion
-        #~ derived from the PR information
-        _NONNULL EE_PR_NUM EE_PR_TITLE_PREFIX
-        _pom_get_project_version snapshotVersion "./pom.xml"
-        EE_PR_TITLE_PREFIX="${EE_PR_TITLE_PREFIX/\//-}"
-        _semver_set_tag versionToSet "$snapshotVersion" "$EE_PR_TITLE_PREFIX-PR-$EE_PR_NUM-SNAPSHOT"
-        _NONNULL versionToSet
-        TAG="p$versionToSet"
-        __git checkout "$EE_HEAD_REF"
-        ;;
-      auto-finalize-release)
-        case "$currentBranch" in
-          v*)
-            _log_i "Finalizing tag-release \"${currentBranch:1}\""
-            pomVersionToSet=""
-            ;;
-          p*)
-            pomVersionToSet="${currentBranch:1}"
-            _log_i "Finalizing preview release \"$pomVersionToSet\""
-            ;;
-          *)
-        esac
-        ;;
+      "tag-snapshot-release") ppl--release.tag-snapshot-release "v";;
+      "tag-final-release") ppl--release.prepare-final-release;;
       *)
         _FATAL "Illegal action \"$action\" provided"
         ;;
     esac
-    
-    #~ 
-    #~ UPDATE OF THE RELEASE BRANCH
-    #~ READY-WRITE
-    #~ 
-    case "$action" in
-      prepare-tag-release)
-        _ppl_determine_release_branch releaseBranch "$versionToSet"
-        # shellcheck disable=SC2154
-        __git_auto_checkout "$releaseBranch"
-        _NONNULL currentBranch
-        __git_force_merge_branch "$currentBranch"
-        #~ UPDATES the version on the POM and REBUILDS the module
-        _pom_set_project_version "$versionToSet" "./pom.xml"
-        __git_ACTP "Release of version $versionToSet"  "$TAG" "$releaseBranch"
-        ;;
-      prepare-preview-release)
-        git push --delete origin "$TAG" 2>/dev/null
-        __git_add_tag -f "$TAG"
-        __git push --tags
-        ;;
-      auto-finalize-release)
-        # Build
-        _pom_set_project_version "$pomVersionToSet" "./pom.xml"
-        #__mvn_exec package -Dmaven.test.skip=true
-        ;;
-      *)
-        _FATAL "Illegal action \"$action\""
-        ;;
-    esac
   )
+}
+
+
+ppl--release.tag-snapshot-release() {
+  _NONNULL PPL_RUN_ID
+  
+  local snapshotVersionTypePrefix="$1"
+  
+  local snapshotVersionName pr_num
+  ppl--release._determine_snapshot_version_name snapshotVersionName
+  _NONNULL snapshotVersionTypePrefix snapshotVersionName
+  
+  local snapshotVersionTag="$snapshotVersionTypePrefix$snapshotVersionName"
+  if [ -n "$PPL_HEAD_REF" ]; then
+    __git checkout "$PPL_HEAD_REF"
+    pr_num="$PPL_PR_NUM"
+  else
+    _ppl_extract_snapshot_version_name_part pr_num "$snapshotVersionName" "pr-num"
+  fi
+
+  _NONNULL pr_num
+  
+  __git_add_tag -f "$snapshotVersionTag" "$PPL_RUN_ID" "$PPL_COMMIT_ID"
+  __git push origin "$snapshotVersionTag" -f
+  
+  _ppl-pr-submit-comment "$pr_num" "ADDED TO THE PIPELINE THE PUBLICATION OF SNAPSHOT VERSION: \`${snapshotVersionName}\`"
+}
+
+ppl--release._determine_snapshot_version_name() {
+  local _tmp_ver_ _tmp_qual_
+  
+  if [ -n "$PPL_BASE_REF" ]; then
+    # ON THE PR BRANCH
+    _NONNULL PPL_PR_TITLE_PREFIX
+    _pom_get_project_version _tmp_ver_ "./pom.xml"
+    _ppl_extract_artifact_qualifier_from_pr_title _tmp_qual_ "$PPL_PR_TITLE_PREFIX"
+    _semver_set_tag _tmp_ver_ "$_tmp_ver_" "$_tmp_qual_-PR-$PPL_PR_NUM"
+  else
+    # ON THE DEVELOPMENT BRANCH
+    __git_get_commit_tag --snapshot-tag _tmp_ver_ "$PPL_COMMIT_ID"
+    
+    if [[ -n "$_tmp_ver_" ]]; then
+      # development branch was already published
+      _log_i "This merge was already tagged => Reusing tag \"$_tmp_ver_\""
+    else
+      # development branch is yet to be published
+      local pr_parent
+      __git_get_parent_pr pr_parent "$PPL_COMMIT_ID"
+      __git_get_commit_tag --snapshot-tag _tmp_ver_ "$pr_parent"
+    fi
+
+    _tmp_ver_="${_tmp_ver_:1}"    # strips the tag version prefix
+  fi
+  
+  _set_var "$1" "$_tmp_ver_"
+}
+
+ppl--release._determine_final_version_name() {
+  _NONNULL PPL_BASE_REF PPL_PR_TITLE_PREFIX
+  local _tmp_ver_ _tmp_qual_
+  
+  _FATAL "NOT IMPLEMENTED"
+  
+  # READ THE BASE PROJECT VERSION
+  __git checkout "$PPL_BASE_REF"
+  _pom_get_project_version _tmp_ver_ "./pom.xml"
+  _ppl_extract_artifact_qualifier_from_pr_title _tmp_qual_ "$PPL_PR_TITLE_PREFIX"
+  __git checkout "-"
+
+  _semver_set_tag _tmp_ver_ "$_tmp_ver_" "$_tmp_qual_-PR-$PPL_PR_NUM-SNAPSHOT"
+
+  _set_var "$1" "$_tmp_ver_"
 }
