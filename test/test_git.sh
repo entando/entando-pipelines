@@ -101,6 +101,7 @@ test_git_advanced() {
   rm -rf "$TEST__WORK_DIR/git-repo-0bba91d9"
 }
 
+#TEST:lib
 test_git_utils() {
   local RES
   local COMMIT_ID

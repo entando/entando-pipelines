@@ -257,8 +257,9 @@ _get_arg() {
     ''|*[!0-9]*) _tmp_="${ARGS_OPT[$2]}";;
     *) _tmp_="${ARGS_POS[$2]}";;
   esac
-  _set_var "$1" "${_tmp_:-$3}"
-  [ -n "${_tmp_}" ] || { "$MANDATORY" && _FATAL "Mandatory param  \"$2\" was not provided"; }
+  _tmp_="${_tmp_:-$3}"
+  [ -n "${_tmp_}" ] || { "$MANDATORY" && _FATAL "No value or fallback available for mandatory param \"$2\"" ; }
+  _set_var "$1" "$_tmp_"
   [ -z "${_tmp_:-$3}" ] && return 1
   return 0
 }
@@ -536,11 +537,11 @@ __ppl_enter_local_clone_dir() {
 # - Features are also read from the ENTANDO_OPT_FEATURES, expect for SKIP directives
 # - Features are also read from the ENTANDO_OPT_GLOBAL_FEATURES, expect for SKIP directives
 # - Features will be converted into CI vars usable in CI conditions
-# - SKIP directive are like DISABLE directives but they should supposed to be removed once evaluated
+# - SKIP directive are like DISABLE directives but they are removed once evaluated
 #
 # Directives Formats:
-# - Enable a feature: ENABLE-{FEATURE}
-# - Disable a feature: DISABLE-{FEATURE}
+# - Enable a feature: +{FEATURE}
+# - Disable a feature: -{FEATURE}
 # - Disable a feature once: SKIP-{FEATURE}
 #
 # Directives Priority crieria:
@@ -571,12 +572,13 @@ _ppl_get_feature_action() {
 
   # shellcheck disable=SC2154
   {
-    _itmlst_contains "$PPL_FEATURES" "ENABLE-$_tmp_feature" && _tmp_action="E.var"
-    _itmlst_contains "$PPL_FEATURES" "DISABLE-$_tmp_feature" && _tmp_action="D.var"
+    _itmlst_contains "$PPL_FEATURES" "$_tmp_feature" && _tmp_action="E.var"
+    _itmlst_contains "$PPL_FEATURES" "+$_tmp_feature" && _tmp_action="E.var"
+    _itmlst_contains "$PPL_FEATURES" "-$_tmp_feature" && _tmp_action="D.var"
     _itmlst_contains "$PPL_FEATURES" "SKIP-$_tmp_feature" && _tmp_action="I.skip-in-var"
   }
-  _ppl-pr-has-label "ENABLE-$_tmp_feature" && _tmp_action="E.label"
-  _ppl-pr-has-label "DISABLE-$_tmp_feature" && _tmp_action="D.label"
+  _ppl-pr-has-label "+$_tmp_feature" && _tmp_action="E.label"
+  _ppl-pr-has-label "-$_tmp_feature" && _tmp_action="D.label"
   _ppl-pr-has-label "SKIP-$_tmp_feature" && _tmp_action="S.label"
   
   _set_var "$1" "$_tmp_action"
@@ -588,8 +590,8 @@ _ppl_get_feature_action() {
 # $1 feature name
 # $2 fallback value
 #
-# [$?=0]  => directive is present
-# [$?!=0] => directive is not present
+# [$? == 0] => directive is present
+# [$? != 0] => directive is not present
 #
 _ppl_is_feature_enabled() {
   local ACTION
@@ -629,4 +631,47 @@ _ppl_extract_snapshot_version_name_part() {
   esac
   [[ -z "$_tmp_res_" || "$_tmp4_" != "PR" ]] && _FATAL "Provided snapshot version name \"$2\" is not valid"
   _set_var "$1" "$_tmp_res_"
+}
+
+_ppl_validate_command_version() {
+  local DESC="$1"; REQ_VER="$2" shift
+  local VER
+  
+  VER=$(eval "$3")
+  
+  if [ $? -ne 0 ] || [ -z "$VER" ]; then
+    _FATAL "Command \"$DESC\" is not available"
+  fi
+  
+  local maj min
+  _semver_parse maj min "" "" "$VER"
+  
+  REQ_VER="${REQ_VER//x/}"
+  
+  [[ "${maj}.${min}." =~ $REQ_VER. ]] || _FATAL "Command \"$DESC\" has invalid version ($VER)"
+}
+
+# Determines the type of project in the current dir
+#
+# Params:
+# $1: dest var
+#
+__ppl_determine_current_project_type() {
+  local _tmp_
+
+  if [ -f "pom.xml" ]; then
+    _tmp_="MVN"
+  elif [ -f "package.json" ]; then
+    _tmp_="NPM"
+  else
+    _FATAL "Unable to determine the project type"
+  fi
+    
+  if [ "$1" == "--print" ]; then
+    echo "$_tmp_"
+  elif [ "$1" == "--check" ]; then
+    true
+  else
+    _set_var "$1" "$_tmp_"
+  fi
 }

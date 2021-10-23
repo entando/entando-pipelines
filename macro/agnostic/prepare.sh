@@ -5,30 +5,32 @@
 
 # EXECUTES PRELIMINAR CHECKS ABOUT THE CURRENT PR
 #
-# Business Rules:
-# - The PR title must match the given format rules
+# > Checks the format of the PR title:
+# > Checks the format of the project version name on PR
+# > Checks that the development PR is compatible with the current mainline version (optional via ENTANDO_OPT_MAINLINE)
+# > Runs optional custom check (user provided script "custom-pr-check.sh")
 #
-# Params:
-# $1: the format rules to respect or nothing for the default
-#
-ppl--check-pr-state() {
+ppl--pr-preflight-checks() {
   (
-    START_MACRO "CHECK-PR-FORMAT" "$@"
+    START_MACRO "CHECK-PR-STATE" "$@"
     _pkg_get "xmlstarlet" -c "xmlstarlet"
     
     __ppl_enter_local_clone_dir
-    __exist -f "pom.xml"
     
+    ppl--pr-preflight-checks.CHECK_TITLE_FORMAT
+
     local projectVersion
-    _pom_get_project_version projectVersion "pom.xml"
+    _ppl_get_current_project_version projectVersion
     
-    ppl--check-pr-state.CHECK_TITLE_FORMAT
-    ppl--check-pr-state.CHECK_MAINLINE "$projectVersion"
-    ppl--check-pr-state.CHECK_PROJECT_VERSION_FORMAT "$projectVersion"
+    ppl--pr-preflight-checks.CHECK_MAINLINE "$projectVersion"
+    ppl--pr-preflight-checks.CHECK_PROJECT_VERSION_FORMAT "$projectVersion"
+    ppl--pr-preflight-checks.CHECK_WITH_CUSTOM_SCRIPT "$projectVersion"
+    
+    true
   )
 }
 
-ppl--check-pr-state.CHECK_MAINLINE() {
+ppl--pr-preflight-checks.CHECK_MAINLINE() {
   if [ -z "${ENTANDO_OPT_MAINLINE}" ]; then
     _log_d "Mainline check is not enabled"
     return 0
@@ -37,29 +39,31 @@ ppl--check-pr-state.CHECK_MAINLINE() {
   local projectVersion="$1" mMaj mMin maj min
   _semver_parse mMaj mMin "" "" "${ENTANDO_OPT_MAINLINE}"
   _semver_parse maj min "" "" "${projectVersion}"
-  
-  #_pp projectVersion mMaj mMin maj min
-  
+
+  # Snapshot X.Y must be equal to Mainline X.Y
   if [ "$mMaj" != "$maj" ] || [ "$mMin" != "$min" ]; then
     if [ "${PPL_REF_NAME:0:8}" != "release/" ]; then
       _ppl-job-update-status "$PPL_COMMIT_ID" "failure" "Failed" "Invalid project version (incompatible with mainline)"
       _FATAL "In non-release branches the project version (\"$projectVersion\") must be compatible with the current mainline: \"${ENTANDO_OPT_MAINLINE}\""
     fi
   fi
+  
+  _log_i "Mainline compliance validation passed (${projectVersion} vs ${ENTANDO_OPT_MAINLINE})"
 }
 
-ppl--check-pr-state.CHECK_PROJECT_VERSION_FORMAT() {
+ppl--pr-preflight-checks.CHECK_PROJECT_VERSION_FORMAT() {
   local projectVersion="$1" 
   
-  if [[ "$projectVersion" =~ .*-SNAPSHOT ]]; then
-    _log_i "Project version number is a snapshot as request"
+  if [[ "$projectVersion" =~ .*-SNAPSHOT ||  "$projectVersion" =~ .*-snapshot ]]; then
+    _log_i "Project version number is a snapshot as required"
+    true
   else
     _ppl-job-update-status "$PPL_COMMIT_ID" "failure" "Failed" "Invalid project version"
     _FATAL "The project version \"$projectVersion\" is not a snapshot"
   fi
 }
 
-ppl--check-pr-state.CHECK_TITLE_FORMAT() {
+ppl--pr-preflight-checks.CHECK_TITLE_FORMAT() {
   local formatRules
   _get_arg formatRules 1 "${ENTANDO_OPT_PR_TITLE_FORMAT:-"SINGLE|HIERARCHICAL"}"
   _NONNULL formatRules
@@ -99,6 +103,12 @@ ppl--check-pr-state.CHECK_TITLE_FORMAT() {
   fi
 }
 
-ppl--check-pr-format() {
-  ppl--check-pr-state "$@"
+ppl--pr-preflight-checks.CHECK_WITH_CUSTOM_SCRIPT() {
+  [ ! -f "./.github/custom-pr-check.sh" ] && return 0
+  if ./.github/custom-pr-check.sh; then
+    _log_i "Custom PR validation script passed"
+    true
+  else
+    _FATAL "Custom PR validation script failed with error code: \"$?\""
+  fi
 }

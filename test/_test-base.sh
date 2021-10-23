@@ -68,7 +68,7 @@ _create-test-git-repo() {
 
     __cd "$dst_dir"
 
-    git init
+    __git_init
     _git_set_commit_config "the-user-name" "the-user-email@example.com"
     [ "$(git config "user.name")" = "the-user-name" ] || _FATAL "Test git repo preparation failed"
     [ "$(git config "user.email")" = "the-user-email@example.com" ] || _FATAL "Test git repo preparation failed"
@@ -132,4 +132,11 @@ TEST.mock.param() {
     "--lcd") PPL_LOCAL_CLONE_DIR="$2";;
     *) _FATAL "Unknown mock param \"$1\"";;
   esac
+}
+
+TEST.mock.context() {
+  PPL_CONTEXT="$(cat "$PROJECT_DIR/test/resources/$1")"
+  # shellcheck disable=2034
+  PPL_PARSED_CONTEXT=""
+  _ppl-load-context --disable-overrides "$PPL_CONTEXT"
 }

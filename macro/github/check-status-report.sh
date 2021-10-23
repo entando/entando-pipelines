@@ -3,7 +3,7 @@
 # shellcheck disable=SC1090
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../../lib/all.sh"
 
-# PRINTS A GENERIC STATUS REPORT ABOUT THE PR
+# PRINTS A GENERIC STATUS REPORT ABOUT CURRENT RUN
 #
 ppl--status-report() {
   # shellcheck disable=SC2034
@@ -17,7 +17,9 @@ ppl--status-report() {
     PR_LABELS="$PPL_PR_LABELS"
     PR_TITLE="$PPL_PR_TITLE"
     LINK="$PPL_PR_HTML_URL"
-    FEATURES="${PPL_FEATURES:1}"
+    FEATURES="$PPL_FEATURES"
+    [ "${FEATURES:0:1}" = "," ] && FEATURES="${FEATURES:1}"
+    [ "${FEATURES: -1}" = "," ] && FEATURES="${FEATURES:0:-1}"
     
     if [ -n "$PR_TITLE" ]; then
       _pp \

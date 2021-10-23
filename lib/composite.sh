@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# *..sh the artifactId from a pom
+# Extracts the latest bom version given the bom repository URL
 #
 # Params:
 # $1: dest var

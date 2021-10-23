@@ -48,6 +48,7 @@ START_MACRO() {
   _ppl-load-context "$PPL_CONTEXT"
   
   _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_GLOBAL_FEATURES},${ENTANDO_OPT_FEATURES}"
+
   _ppl_is_feature_enabled "$PPL_CURRENT_MACRO" || {
     _EXIT "Macro of id \"$PPL_CURRENT_MACRO\" is not enabled"
   }
@@ -80,7 +81,7 @@ _EXIT() {
 }
 
 # Stops the execution with a fatal error
-# and optionally prints the callstack
+# and prints the callstack
 #
 # Options
 # [-s]  simple: omits the stacktrace
@@ -114,11 +115,20 @@ _SOE() {
   [ "$R" != 0 ] && exit "$R"
 }
 
-# Sets a variable
+# Sets a variable given the name and the value
+#
+# IMPORTANT:
+# This function can be used to set a variable of the caller's scope and this tecnique
+# is commonly used to return values to the caller.
+# But note that if there is a variable with same name in the local scope, the local one
+# is preferred leaving the caller's variable untouched.
+# That's why functions that returns values uses a special naming convention for their
+# internal variables (_tmp_...).
 #
 # Params:
 # - $1: variable to set
 # - $2: value
+#
 _set_var() {
   [ -z "$1" ] && _FATAL "null var_name provided"
   if [ -z "$2" ]; then

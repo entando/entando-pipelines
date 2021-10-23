@@ -8,9 +8,6 @@
 # Business Rules:
 # - The PR bom should be aligned with the latest published BOM
 #
-# Params:
-# $1: the folder containing the related repo/branch
-#
 ppl--check-pr-bom-state() {
   (
     START_MACRO "CHECK-PR-BOM" "$@"

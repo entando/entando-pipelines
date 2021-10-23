@@ -8,21 +8,13 @@
   . "$PROJECT_DIR/lib/github/github_tools.sh"
 }
 
-#TEST:lib
+#TEST:libx
 test_github_tools() {
   print_current_function_name "RUNNING TEST> "  ".."
   (
-    local E
-    E="$(cat "$PROJECT_DIR/test/resources/github-context-sample-01.json")"
-
-    # shellcheck disable=2034
-    PPL_PARSED_CONTEXT=""
-    _ppl-load-context --disable-overrides "$E"
+    TEST.mock.context "github-context-sample-01.json"
     
-    echo "$PPL_PARSED_CONTEXT" > /tmp/t1
-    echo "$E" > /tmp/t2
-
-    ASSERT --censor PPL_PARSED_CONTEXT = "$E"
+    ASSERT --censor PPL_PARSED_CONTEXT = "$PPL_CONTEXT"
     ASSERT --censor PPL_TOKEN = "999999999"
     ASSERT PPL_RUN_ID = "974609133"
     ASSERT PPL_BASE_REF = "develop"

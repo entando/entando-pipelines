@@ -141,7 +141,7 @@ print_current_function_name() {
 #
 _pp() {
   if [[ "$1" == "-d" && -n "$ENTANDO_DEBUG_TTY" ]]; then
-    shuft
+    shift
     _pp "$@" >"$ENTANDO_DEBUG_TTY"
   fi
 
@@ -272,17 +272,6 @@ __VERIFY_EXPRESSION() {
 #
 __VERIFY() {
   __VERIFY_EXPRESSION "" "$@"
-}
-
-# A defensive verify is a shield against dangerous bugs and conditions.
-#
-# Developers should never remove a defensive check just because the
-# condition tested can't fail according to the (current) code.
-#
-# For the syntax see __VERIFY_EXPRESSION
-#
-__DEFENSIVE_VERIFY() {
-  __VERIFY_EXPRESSION "DEFENSIVE-CHECK>" "$@"
 }
 
 # Drops a shell that inherits the caller environment

@@ -6,6 +6,19 @@ __git() {
   git "$@" || _FATAL -S 1 "git $1 failed"
 }
 
+# Sets the repository defaults
+#
+__git_set_repo_defaults() {
+  __git config merge.ff no
+}
+
+# Runs a git init and sets the repository defaults
+#
+__git_init() {
+  __git init "$@"
+  __git_set_repo_defaults
+}
+
 # Clones a repository and the tags
 #
 # Params:
@@ -46,6 +59,7 @@ _git_full_clone() {
 
     if [ "$?" = 0 ]; then
       __cd "$FULL_DST_DIR"
+      __git_set_repo_defaults
       [ -n "$BRANCH" ] && __git -c advice.detachedHead=false checkout "$BRANCH"
       __git fetch -q --tag 1>/dev/null
       _log_t "Repo \"$REPO_URL\" cloned"
@@ -111,7 +125,8 @@ _git_get_current_commit_id() {
   _set_var "$1" "$_tmp_"
 }
 
-# Returns the last version tag added
+# Returns the tag with the highest value
+#
 # Note that the command by default filters out the preview versions
 #
 # Options:
@@ -186,7 +201,6 @@ __git_ACTP() {
 }
 
 # Checkouts a branch
-# If the release branch doesn't exists it creet
 #
 # Params:
 # $1: the branch to checkout
@@ -294,4 +308,10 @@ __git_get_parent_pr() {
   IFS=' ' read -r _tmp_base_ _tmp_pr_ < <(__git log --pretty="%P" -n 1 "$2")
   _NONNULL _tmp_base_ _tmp_pr_
   _set_var "$1" "$_tmp_pr_"
+}
+
+# Tells if a given commit reference exists on the repo
+#
+_git_commit_exists() {
+  git branch --contains "$1" &> /dev/null
 }

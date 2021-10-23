@@ -27,7 +27,6 @@ __mvn_deploy() {
   
   __mvn_exec --batch-mode javadoc:jar source:jar source:test-jar deploy \
     -DskipTests=true \
-    -Ppre-deployment-verification \
     -DaltDeploymentRepository="$1::default::$2" \
     -P prepare-for-nexus \
     -Dgpg.skip="$GPG"

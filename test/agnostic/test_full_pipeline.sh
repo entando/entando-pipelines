@@ -47,43 +47,43 @@ test_flow_pr_check() {
   #~
   (
     ENTANDO_OPT_MAINLINE=""
-    ppl--check-pr-state --lcd "local-clone"
+    ppl--pr-preflight-checks --lcd "local-clone"
   ) || FAILED
   
   (
     ENTANDO_OPT_MAINLINE="10.9.8"
-    ppl--check-pr-state --lcd "local-clone"
+    ppl--pr-preflight-checks --lcd "local-clone"
   ) || FAILED
   
   (
     ENTANDO_OPT_MAINLINE="99.99"
-    ppl--check-pr-state --lcd "local-clone"
+    ppl--pr-preflight-checks --lcd "local-clone"
   ) && FAILED
 
   (
     TEST__APPLY_OVERRIDES() { PPL_PR_TITLE="ENG-999-Hey There!"; }
-    ppl--check-pr-state --lcd "local-clone"
+    ppl--pr-preflight-checks --lcd "local-clone"
   ) && FAILED "I was expecting an error, but I've got success"
 
   (
     TEST__APPLY_OVERRIDES() { PPL_PR_TITLE="ENG-999 Hey There!"; }
-    ppl--check-pr-state --lcd "local-clone"
+    ppl--pr-preflight-checks --lcd "local-clone"
   ) || FAILED
 
   (
     TEST__APPLY_OVERRIDES() { PPL_PR_TITLE="ENG-100/ENG-999 Hey There!"; }
-    ppl--check-pr-state --lcd "local-clone"
+    ppl--pr-preflight-checks --lcd "local-clone"
   ) || FAILED
 
   (
     TEST__APPLY_OVERRIDES() { PPL_PR_TITLE="Revert \"ENG-100/ENG-999 Hey There!\""; }
-    ppl--check-pr-state --lcd "local-clone"
+    ppl--pr-preflight-checks --lcd "local-clone"
   ) || FAILED
 
   #~
   #~ GENERATE PREVIEW VERSION
   #~
-  TEST.release.tag-snapshot-release
+  TEST.release.tag-snapshot-version
 
   #~
   #~ SIMULATES A PR OPEN+MERGE CHECKOUT
@@ -105,7 +105,7 @@ test_flow_pr_check() {
   
   #~
   #~ GENERATE TAG-RELEASE
-  TEST.release.tag-snapshot-release
+  TEST.release.tag-snapshot-version
   
   # ~
   # ~ SIMULATES THE TAG EVENT

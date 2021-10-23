@@ -8,12 +8,16 @@
 # Params:
 # $1: action to apply
 #
+# Actions:
+# - snyk:   runs a snyk based scan of the current project
+#
 ppl--scan() {
   (
     START_MACRO "SCAN" "$@"
 
     __ppl_enter_local_clone_dir
-    __exist -f "pom.xml"
+    
+    __ppl_determine_current_project_type --check
 
     local action
     _get_arg action 1
@@ -41,7 +45,7 @@ ppl--scan.PREREQUIREMENTS() {
 
 ppl--scan.SCAN() {
   local org prj
-  _get_arg -m org "--org"
+  _get_arg -m org "--org" "$SNYK_ORG"
   _get_arg prj "--prj"
   
   local RV=0

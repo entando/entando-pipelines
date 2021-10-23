@@ -3,14 +3,15 @@
 # shellcheck disable=SC1090
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../../lib/all.sh"
 
-# EXECUTES PRELIMINAR CHECKS ABOUT THE CURRENT PR
-#
-# Business Rules:
-# - The PR title must match the given format rules
+# HELPS DEALING WITH THE PR LABELS
 #
 # Params:
 # $1: the action to perform (add,remove)
 # $2: the label to add or delete
+#
+# Actions:
+# - add {label}
+# - remove {label}
 #
 ppl--pr-labels() {
   (

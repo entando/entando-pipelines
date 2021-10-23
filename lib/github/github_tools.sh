@@ -173,21 +173,21 @@ github-request() {
 #
 _ppl-load-context() {
   NOOVR=false;[ "$1" = "--disable-overrides" ] && shift && NOOVR=true
-  local PPL_CONTEXT="$1"
-  _NONNULL PPL_CONTEXT
+  local CTX="$1"
+  _NONNULL CTX
   
   #~
   #~ CONTEXT JSON
   #~
 
-  [ "$PPL_CONTEXT" = "{{test-run}}" ] && {
+  [ "$CTX" = "{{test-run}}" ] && {
     _log_t "Pipeline context was already loaded by test script"
     # TEST__EXECUTION OVERRIDES
     _ppl-apply-overrides
     return 0
   }
 
-  [ "$PPL_PARSED_CONTEXT" = "$PPL_CONTEXT" ] && [ -n "$PPL_CONTEXT" ] && {
+  [ "$PPL_PARSED_CONTEXT" = "$CTX" ] && [ -n "$CTX" ] && {
     _log_t "Pipeline context was already loaded"
     # TEST__EXECUTION OVERRIDES
     _ppl-apply-overrides
@@ -219,7 +219,7 @@ _ppl-load-context() {
   Q+='.event.pull_request.head.sha'
   Q+="] | @csv"
   local RES
-  RES="$(__jq "$Q" -r <<< "$PPL_CONTEXT")"
+  RES="$(__jq "$Q" -r <<< "$CTX")"
   RES="${RES//\"/}"
   
   # shellcheck disable=SC2034
@@ -247,9 +247,9 @@ _ppl-load-context() {
       PPL_PR_SHA \
     <<< "$RES"
     _extract_pr_title_prefix PPL_PR_TITLE_PREFIX "$PPL_PR_TITLE"
-    PPL_PARSED_CONTEXT="$PPL_CONTEXT"
+    PPL_PARSED_CONTEXT="$CTX"
     PPL_PR_LABELS="$(
-      __jq ".event.pull_request.labels | map(.name)? | join(\",\")?" -r <<< "$PPL_CONTEXT" 2> /dev/null
+      __jq ".event.pull_request.labels | map(.name)? | join(\",\")?" -r <<< "$CTX" 2> /dev/null
     )"
     PPL_PR_LABELS="${PPL_PR_LABELS//\"/}"
     PPL_REF_NAME="${PPL_REF##*/}"

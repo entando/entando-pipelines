@@ -103,8 +103,8 @@ If they are not, the code assumes these ones:
 
 ### Directives
 
- - Enable a feature: `ENABLE-{FEATURE}`
- - Disable a feature: `DISABLE-{FEATURE}`
+ - Enable a feature: `+{FEATURE}`
+ - Disable a feature: `-{FEATURE}`
  - Disable a feature once: `SKIP-{FEATURE}`
  
 ### General
@@ -118,3 +118,6 @@ If they are not, the code assumes these ones:
  2. the last directive of a given feature overrides the previous directives of the same feature
  3. Above rule #1 wins over rule #2
 
+# FURTHER INFO
+
+Check the subdir docs for testing and methods reference documentation.
