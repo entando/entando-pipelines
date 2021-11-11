@@ -12,19 +12,30 @@
 #
 ppl--pr-preflight-checks() {
   (
-    START_MACRO "CHECK-PR-STATE" "$@"
+    START_MACRO "PREFLIGHT-CHECKS" "$@"
     _pkg_get "xmlstarlet" -c "xmlstarlet"
+    
+    _get_arg ONLY --only
     
     __ppl_enter_local_clone_dir
     
-    ppl--pr-preflight-checks.CHECK_TITLE_FORMAT
+    [[ -z "$ONLY" || "$ONLY" = "checks" ]] && {
+      ppl--pr-preflight-checks.CHECK_TITLE_FORMAT
+    }
 
     local projectVersion
     _ppl_get_current_project_version projectVersion
     
-    ppl--pr-preflight-checks.CHECK_MAINLINE "$projectVersion"
-    ppl--pr-preflight-checks.CHECK_PROJECT_VERSION_FORMAT "$projectVersion"
-    ppl--pr-preflight-checks.CHECK_WITH_CUSTOM_SCRIPT "$projectVersion"
+    [[ -z "$ONLY" || "$ONLY" = "checks" ]] && {
+      ppl--pr-preflight-checks.CHECK_MAINLINE "$projectVersion"
+      ppl--pr-preflight-checks.CHECK_PROJECT_VERSION_FORMAT "$projectVersion"
+    }
+    [[ -z "$ONLY" || "$ONLY" = "custom" ]] && {
+      ppl--pr-preflight-checks.CHECK_WITH_CUSTOM_SCRIPT "$projectVersion"
+    }
+    [[ -z "$ONLY" || "$ONLY" = "flags" ]] && {
+      ppl--pr-preflight-checks.SETUP_MERGE_RELATED_FLAGS
+    }
     
     true
   )
@@ -91,7 +102,7 @@ ppl--pr-preflight-checks.CHECK_TITLE_FORMAT() {
   _itmlst_contains "$olFormatRules" "SINGLE" && {
       [[ "$_tmp_" =~ $REGEX_S ]] && prTitleIsValid=true
   }
-    _itmlst_contains "$olFormatRules" "HIERARCHICAL" && {
+  _itmlst_contains "$olFormatRules" "HIERARCHICAL" && {
       [[ "$_tmp_" =~ $REGEX_H ]] && prTitleIsValid=true
   }
 
@@ -110,5 +121,23 @@ ppl--pr-preflight-checks.CHECK_WITH_CUSTOM_SCRIPT() {
     true
   else
     _FATAL "Custom PR validation script failed with error code: \"$?\""
+  fi
+}
+
+ppl--pr-preflight-checks.SETUP_MERGE_RELATED_FLAGS() {
+  local parent_pr
+  __git_get_parent_pr --tolerant parent_pr "$PPL_COMMIT_ID"
+
+  if [ -n "$parent_pr" ]; then
+    # MERGE COMMIT
+    _ppl-set-persistent-var "MERGE_FLAG" true
+    _ppl-set-persistent-var "BOM_UPDATE_FLAG" true
+    _log_d "This is a merge commit"
+  else
+    # NON-MERGE COMMIT
+    _ppl-set-persistent-var "MERGE_FLAG" false
+    _ppl-set-persistent-var "BOM_UPDATE_FLAG" true
+    #_ppl-set-persistent-var "BOM_UPDATE_FLAG" false
+    _log_d "This is not a merge commit"
   fi
 }

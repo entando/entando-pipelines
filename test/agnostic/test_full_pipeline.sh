@@ -116,13 +116,25 @@ test_flow_pr_check() {
   #~ BOM UPDATE
   #~
   (
-    ppl--bom update-bom --id "TEST-BOM-UPDATE" --lcd "local-clone"
+    TEST__APPLY_OVERRIDES() {
+      PPL_REF="refs/tags/v6.4.0-ENG-2704-PR-126"
+    }
+    
+    (
+      __cd "$ENTANDO_OPT_REPO_BOM_URL"
+      __git checkout _tmp_
+    ) || _SOE
+    
+    ppl--bom update-bom --id "TEST-BOM-UPDATE" --lcd "local-clone" || _SOE
 
     _ppl-load-context "$PPL_CONTEXT"
     __cd "$ENTANDO_OPT_REPO_BOM_URL"
     __git checkout "$ENTANDO_OPT_REPO_BOM_MAIN_BRANCH"
     _pom_get_project_property RES "pom.xml" "entando-test-repo-base.version"
-    ASSERT RES = "10.9.8.0-ENT-0000-PR-00-SNAPSHOT" # $$$TO-UDPATE
+    ASSERT RES = "10.9.8.0-SNAPSHOT"
+    
+    RES="$(__git tag | grep ENG | tail -n 1)"
+    ASSERT RES = "v6.4.0-ENG-2704"
 
     __git checkout "_tmp_"
   ) || FAILED

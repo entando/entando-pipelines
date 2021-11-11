@@ -573,6 +573,9 @@
 <details>
 
 ```
+ Options:
+ --tolerant  disables the "MUST-WORK" contraint of the double-underscore functions
+
  Params:
  $1  the output var
  $2  the commit reference
@@ -1291,6 +1294,9 @@
 <details>
 
 ```
+ Options:
+ --tolerant  disables the "MUST-WORK" contraint of the double-underscore functions
+
  Params:
  $1  the output var
  $2  the commit reference

@@ -54,7 +54,7 @@
 ```
  Params:
  $1: var name
- $1: var values
+ $2: var value
 ```
 
 </details>
@@ -134,6 +134,22 @@
 
 </details>
 
+### `_ppl_create_pr()`
+
+**Create or starts the creation of the PR**
+
+<details>
+
+```
+ Params:
+ $1: PR title
+ $2: base branch
+ $3: PR branch
+ [$4]  optional comma-delimited reviewers
+```
+
+</details>
+
 ### `_ppl_get_current_project_version()`
 
 **Extacts the version of a artifactId from a pom**
@@ -156,7 +172,7 @@
 
 ```
  Params:
- $1:   the value to ser
+ $1:   the value to set
  [$2]: the optional project file pathname
 ```
 

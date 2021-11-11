@@ -30,12 +30,16 @@ ppl--mvn() {
         _log_i "Starting the sonar analysis"
         _NONNULL SONAR_TOKEN
         
-         __mvn_exec -B verify \
-          org.jacoco:jacoco-maven-plugin:prepare-agent \
-          org.jacoco:jacoco-maven-plugin:report \
-          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-          -Ppre-deployment-verification -Ppost-deployment-verification \
-        ;
+        if _itmlst_contains "$PPL_FEATURES" "MVN-INSTALL"; then
+          __mvn_exec -B install
+        else
+          __mvn_exec -B verify ${ENTANDO_OPT_SONAR_PROJECT_KEY:+-Dsonar.projectKey="$ENTANDO_OPT_SONAR_PROJECT_KEY"} \
+            org.jacoco:jacoco-maven-plugin:prepare-agent \
+            org.jacoco:jacoco-maven-plugin:report \
+            org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Ppre-deployment-verification -Ppost-deployment-verification \
+          ;
+        fi
 
         local RV="$?"
         [ "$RV" -ne 0 ] && {
@@ -53,13 +57,17 @@ ppl--mvn() {
         ;;
       "FULL-BUILD")
         _log_i "Building and testing"
-
-         __mvn_exec clean -B test \
-          org.jacoco:jacoco-maven-plugin:prepare-agent \
-          org.jacoco:jacoco-maven-plugin:report \
-          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-          -Ppre-deployment-verification -Ppost-deployment-verification \
-        ;
+        
+        if _itmlst_contains "$PPL_FEATURES" "MVN-INSTALL"; then
+          __mvn_exec -B install
+        else
+          __mvn_exec clean -B test ${ENTANDO_OPT_SONAR_PROJECT_KEY:+-Dsonar.projectKey="$ENTANDO_OPT_SONAR_PROJECT_KEY"} \
+            org.jacoco:jacoco-maven-plugin:prepare-agent \
+            org.jacoco:jacoco-maven-plugin:report \
+            org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Ppre-deployment-verification -Ppost-deployment-verification \
+          ;
+        fi
         
         ;;
       "BUILD")

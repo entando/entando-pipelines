@@ -19,6 +19,11 @@ and these main features:
  - Pull Requests formats validity controls (title, version etc..)
  - FeatureFlags and skip-labels to control pipeline features
 
+## Suppoted project types
+
+ - Maven
+ - NMP
+
  
 # How to use it
 
@@ -27,7 +32,11 @@ and these main features:
 ```
 bash <(curl -qsL "https://raw.githubusercontent.com/entando/entando-pipelines/{tag}/macro/install.sh")
 ```
-**NOTE:** Remember to replace the {tag} placeholder
+**NOTE:** 
+
+- Remember to replace the {tag} placeholder
+- check the directory "install" for the current workflows files used for the entando repositories
+
 
 ## Run a macro
 
@@ -68,6 +77,7 @@ _Note:_
 | `ENTANDO_OPT_NO_COL` | toggles the color ascii codes | `true`,`false` |
 | `ENTANDO_OPT_STEP_DEBUG` | toggle the step debug in macros | `true`,`false` |
 | `ENTANDO_OPT_MAINLINE` | **`[1]`** defines the current mainline version | `major.minor` |
+| `ENTANDO_OPT_GLOBAL_FEATURES` | the list of features enabled globally | (see below) |
 | `ENTANDO_OPT_FEATURES` | the list of features enabled | (see below) |
 
 Notes:
@@ -103,9 +113,9 @@ If they are not, the code assumes these ones:
 
 ### Directives
 
- - Enable a feature: `+{FEATURE}`
- - Disable a feature: `-{FEATURE}`
- - Disable a feature once: `SKIP-{FEATURE}`
+ - Enable a feature: `+{FEATURE}` or `{FEATURE}` or `ENABLE-{FEATURE}`
+ - Disable a feature: `-{FEATURE}` or `DISABLE-{FEATURE}`
+ - Disable a feature once: `SKIP-{FEATURE}` (only labels)
  
 ### General
 

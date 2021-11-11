@@ -17,8 +17,8 @@ START_MACRO() {
     set -x
   }
   
-  ARGS_FLAGS=(--no-skip)
-  PARSE_ARGS "$@"
+    ARGS_FLAGS=(--no-skip)
+    PARSE_ARGS "$@"
   
   local noSkip
   _get_arg noSkip --no-skip

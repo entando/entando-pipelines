@@ -87,7 +87,7 @@ _ppl-pr-remove-label() {
 #
 # Params:
 # $1: var name
-# $1: var values
+# $2: var value
 #
 _ppl-set-persistent-var() {
   local var_name="$1"
@@ -246,6 +246,10 @@ _ppl-load-context() {
       PPL_PR_TITLE \
       PPL_PR_SHA \
     <<< "$RES"
+
+    # TEST__EXECUTION OVERRIDES
+    _ppl-apply-overrides
+
     _extract_pr_title_prefix PPL_PR_TITLE_PREFIX "$PPL_PR_TITLE"
     PPL_PARSED_CONTEXT="$CTX"
     PPL_PR_LABELS="$(
@@ -256,9 +260,6 @@ _ppl-load-context() {
   }
   
   PPL_COMMIT_ID="${PPL_PR_SHA:-$PPL_SHA}"
-
-  # TEST__EXECUTION OVERRIDES
-  _ppl-apply-overrides
   
   return 0
 }
@@ -358,4 +359,16 @@ _ppl-print-file-paginated() {
     echo "$ln"
   done <"$1"
   _ppl-stdout-group stop
+}
+
+# Create or starts the creation of the PR
+#
+# Params:
+# $1: PR title
+# $2: base branch
+# $3: PR branch
+# [$4]  optional comma-delimited reviewers
+#
+_ppl_create_pr() {
+  gh pr create --title "$1" --base "$2" --head "$3" ${4:+--reviewer "$4"} --web
 }
