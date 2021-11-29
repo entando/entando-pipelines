@@ -187,15 +187,29 @@ _git_fetch_all_tags() {
 # $3 the remote branch (if not provided push is not executed, if "-" a push with no params is executed)
 #
 __git_ACTP() {
-  __git add .
-  __git commit -m "$1"
-  [ -n "$2" ] && __git_add_tag "$2"
+  local TOLERANT=false; [ "$1" = "--tolerant" ] && { TOLERANT=true; shift; }
+  local FORCE_TAG=""; [ "$1" = "--force-tag" ] && { FORCE_TAG="-f "; shift; }
+  if $TOLERANT; then
+    {
+      git add .
+      git commit -m "$1"
+    } 2> /dev/null || true
+  else
+    __git add .
+    __git commit -m "$1"
+  fi
+  # shellcheck disable=SC2086
+  [ -n "$2" ] && __git_add_tag ${FORCE_TAG}"$2"
   if [ "$3" = "-" ]; then
     __git push
-    [ -n "$2" ] && __git push --tags
   elif [ -n "$3" ]; then
     __git push --set-upstream origin "$3"
-    [ -n "$2" ] && __git push --tags
+  else
+    return 0
+  fi
+  if [ -n "$2" ]; then
+    # shellcheck disable=SC2086
+    __git push ${FORCE_TAG}origin "refs/tags/$2"
   fi
   true
 }
@@ -298,15 +312,23 @@ __git_get_commit_tag() {
 
 # Extract the parent PR of the given commit
 #
+# Options:
+# --tolerant  disables the "MUST-WORK" contraint of the double-underscore functions
+#
 # Params:
 # $1  the output var
 # $2  the commit reference
 #
 __git_get_parent_pr() {
+  TOLERANT=false;[ "$1" = "--tolerant" ] && { TOLERANT=true; shift; }
   local _tmp_base_ _tmp_pr_
   # shellcheck disable=SC2034
-  IFS=' ' read -r _tmp_base_ _tmp_pr_ < <(__git log --pretty="%P" -n 1 "$2")
-  _NONNULL _tmp_base_ _tmp_pr_
+  if ! $TOLERANT; then
+    IFS=' ' read -r _tmp_base_ _tmp_pr_ < <(__git log --pretty="%P" -n 1 "$2")
+    _NONNULL _tmp_base_ _tmp_pr_
+  else
+    IFS=' ' read -r _tmp_base_ _tmp_pr_ < <(git log --pretty="%P" -n 1 "$2")
+  fi
   _set_var "$1" "$_tmp_pr_"
 }
 

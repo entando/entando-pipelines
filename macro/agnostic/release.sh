@@ -39,6 +39,10 @@ ppl--release.tag-snapshot-version() {
   
   local snapshotVersionTypePrefix="$1"
   
+  ppl-release._handle_direct_commits || {
+    return 0
+  }
+  
   local snapshotVersionName pr_num
   ppl--release._determine_snapshot_version_name snapshotVersionName
   _NONNULL snapshotVersionTypePrefix snapshotVersionName
@@ -94,35 +98,6 @@ ppl--release._determine_snapshot_version_name() {
   _set_var "$1" "$_tmp_ver_"
 }
 
-ppl--release._determine_snapshot_version_name.mvn() {
-  local _tmp_ver_ _tmp_qual_
-  
-  if [ -n "$PPL_BASE_REF" ]; then
-    # ON THE PR BRANCH
-    _NONNULL PPL_PR_TITLE_PREFIX
-    _ppl_get_current_project_version _tmp_ver_
-    _ppl_extract_artifact_qualifier_from_pr_title _tmp_qual_ "$PPL_PR_TITLE_PREFIX"
-    _semver_set_tag _tmp_ver_ "$_tmp_ver_" "$_tmp_qual_-PR-$PPL_PR_NUM"
-  else
-    # ON THE DEVELOPMENT BRANCH
-    __git_get_commit_tag --snapshot-tag _tmp_ver_ "$PPL_COMMIT_ID"
-    
-    if [[ -n "$_tmp_ver_" ]]; then
-      # development branch was already published
-      _log_i "This merge was already tagged => Reusing tag \"$_tmp_ver_\""
-    else
-      # development branch is yet to be published
-      local pr_parent
-      __git_get_parent_pr pr_parent "$PPL_COMMIT_ID"
-      __git_get_commit_tag --snapshot-tag _tmp_ver_ "$pr_parent"
-    fi
-
-    _tmp_ver_="${_tmp_ver_:1}"    # strips the tag version prefix
-  fi
-  
-  _set_var "$1" "$_tmp_ver_"
-}
-
 ppl--release._determine_final_version_name() {
   _NONNULL PPL_BASE_REF PPL_PR_TITLE_PREFIX
   local _tmp_ver_ _tmp_qual_
@@ -138,4 +113,20 @@ ppl--release._determine_final_version_name() {
   _semver_set_tag _tmp_ver_ "$_tmp_ver_" "$_tmp_qual_-PR-$PPL_PR_NUM-SNAPSHOT"
 
   _set_var "$1" "$_tmp_ver_"
+}
+
+ppl-release._handle_direct_commits() {
+   if [ -z "$PPL_BASE_REF" ]; then
+    local pr_parent
+    __git_get_parent_pr --tolerant pr_parent "$PPL_COMMIT_ID"
+    if [ -z "$pr_parent" ]; then
+      if _itmlst_contains "$PPL_FEATURES" "TOLERATE-DIRECT-COMMITS"; then
+        _log_i "Direct commit to base branch tolerated due to \"TOLERATE-DIRECT-COMMITS\" feature flag"
+        return 1
+      else
+        _FATAL "Only PR merges can be snapshot-tagged the base branch"
+      fi
+    fi
+  fi  
+  true
 }

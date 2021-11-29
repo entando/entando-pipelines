@@ -197,6 +197,7 @@ declare -A ARGS_OPT
 # - test_args
 #
 PARSE_ARGS() {
+  QUIET=false; [ "$1" == "-q" ] && { QUIET=true; shift; }
   local K
   local eoo=false
 
@@ -210,7 +211,7 @@ PARSE_ARGS() {
   
   while [[ $# -gt 0 ]]; do
     K="$1"
-    
+
     if ! $eoo; then
       case "$K" in
         --)
@@ -221,10 +222,15 @@ PARSE_ARGS() {
         --*|-*)
           if [[ " ${ARGS_FLAGS[*]} " == *" ${K} "* ]]; then
             ARGS_OPT["$K"]=true
-            shift 1
+            shift
           else
-            ARGS_OPT["$K"]="$2"
-            shift;shift
+            if [[ "${2:0:1}" = "-" && "${2:0:2}" != "-" ]]; then
+              ! $QUIET && _log_w "Detected undeclared flag \"$1\""
+              shift
+            else
+              ARGS_OPT["$K"]="$2"
+              shift;shift
+            fi
           fi
           continue
           ;;
@@ -255,14 +261,21 @@ _get_arg() {
   local _tmp_
   case "$2" in
     ''|*[!0-9]*) _tmp_="${ARGS_OPT[$2]}";;
-    *) _tmp_="${ARGS_POS[$2]}";;
+    *) _tmp_="${ARGS_POS[$((ARGS_POS_SHIFT+$2))]}";;
   esac
   _tmp_="${_tmp_:-$3}"
-  [ -n "${_tmp_}" ] || { "$MANDATORY" && _FATAL "No value or fallback available for mandatory param \"$2\"" ; }
+  [ -n "${_tmp_}" ] || { "$MANDATORY" && _FATAL "No value or fallback available for mandatory param \"$2\" ($1)" ; }
   _set_var "$1" "$_tmp_"
   [ -z "${_tmp_:-$3}" ] && return 1
   return 0
 }
+
+# Shifts left the positional arguments of the given number of positions (equivalent of bash "shift")
+# 
+_shift_positional_args() {
+  ((ARGS_POS_SHIFT+=$1))
+}
+
 
 # Returns the position of the last occurrent of string in a comma separed list
 #
@@ -338,9 +351,10 @@ __cd() {
 # $2  file/dir
 #
 __exist() {
+  local where="";[[ "${2:0:1}" != "/" && "${2:0:1}" != "~" ]] && where=" under directory \"$PWD\""
   case "$1" in
-    "-f") [ ! -f "$2" ] && _FATAL "Unable to find the file \"$2\" in directory \"$PWD\"";;
-    "-d") [ ! -d "$2" ] && _FATAL "Unable to find the dir \"$2\" under dir \"$PWD\"";;
+    "-f") [ ! -f "$2" ] && _FATAL "Unable to find the file \"$2\" $where";;
+    "-d") [ ! -d "$2" ] && _FATAL "Unable to find the dir \"$2\" $where";;
     *) _FATAL "Invalid mode \"$1\"";;
   esac
 }
@@ -574,7 +588,9 @@ _ppl_get_feature_action() {
   {
     _itmlst_contains "$PPL_FEATURES" "$_tmp_feature" && _tmp_action="E.var"
     _itmlst_contains "$PPL_FEATURES" "+$_tmp_feature" && _tmp_action="E.var"
+    _itmlst_contains "$PPL_FEATURES" "ENABLE-$_tmp_feature" && _tmp_action="E.var"
     _itmlst_contains "$PPL_FEATURES" "-$_tmp_feature" && _tmp_action="D.var"
+    _itmlst_contains "$PPL_FEATURES" "DISABLE-$_tmp_feature" && _tmp_action="D.var"
     _itmlst_contains "$PPL_FEATURES" "SKIP-$_tmp_feature" && _tmp_action="I.skip-in-var"
   }
   _ppl-pr-has-label "+$_tmp_feature" && _tmp_action="E.label"
@@ -584,7 +600,7 @@ _ppl_get_feature_action() {
   _set_var "$1" "$_tmp_action"
 }
 
-# Returns the status of a directive
+# Returns the status of a feature
 #
 # Params:
 # $1 feature name
@@ -606,9 +622,35 @@ _ppl_is_feature_enabled() {
               "\"ENTANDO_OPT_FEATURES\" or \"ENTANDO_OPT_GLOBAL_FEATURES\" => ignored"
       return "$2"
       ;;
+    "") return 3;;
   esac
-
 }
+
+# Checks the action status of a feature
+#
+# Params:
+# $1 feature name
+# $2 action status
+#    S: skipped
+#    E: enabled
+#    D: disabled
+#    I: illegal feature specification
+#
+# [$? == 0] => directive is present
+# [$? != 0] => directive is not present
+#
+_ppl_is_feature_action() {
+  local ACTION
+  _ppl_get_feature_action ACTION "$1" ""
+  
+  if [[ "$ACTION" = "${2}"* ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+
 
 # Extracts a part of the snapshot version name
 #
@@ -674,4 +716,108 @@ __ppl_determine_current_project_type() {
   else
     _set_var "$1" "$_tmp_"
   fi
+}
+
+# Creates a temporary directory that self destructs
+#
+# Options:
+# --and-enter:  after creating the area, enters it
+#
+# Params:
+# $1: optional variable that receives the area full-path
+#
+__mk_tmp_work_area() {
+  local _tmp_tmpdir_="$(mktemp -d)"
+  if [ "${_tmp_tmpdir_:0:1}" != "/" ]; then
+    _FATAL "Error creating the temporary working area"
+  else
+    echo ".tmp-work-area" > "$_tmp_tmpdir_/.tmp-work-area"
+    # shellcheck disable=SC2064
+    trap "[ -f \"$_tmp_tmpdir_/.tmp-work-area\" ] && rm -rf \"$_tmp_tmpdir_\"" exit
+    [ "$1" = "--and-enter" ] && { __cd "$_tmp_tmpdir_"; shift; }
+    [ -n "$1" ] && _set_var "$1" "$_tmp_tmpdir_"
+  fi
+}
+
+# Prints a colorized banner given its text
+#
+_print_banner() {
+  (
+    H() { echo -e '\033[44m\033[1;37m' ; }
+    E() { echo -e '\033[0;39m'; }
+    local txt="$1"
+    local SEP="~~~~~~~~~~"
+    SEP="$SEP$SEP$SEP$SEP$SEP$SEP$SEP$SEP$SEP$SEP"
+    SEP=${SEP:0:${#txt}}
+    echo "$(H)▒ $SEP ▒$(E)"
+    echo -e "$(H)▒ $txt ▒$(E)"
+    echo "$(H)▒ $SEP ▒$(E)"
+    echo ""
+  )
+}
+
+# Let the use pick an item out of the given list of items
+#
+# Params:
+# $1: prompt 
+# $2  bash array containing the items
+#
+select_one() {
+  local i=1
+  local SELECTED=""
+  local ALL=false
+  local AUTO_SET_IF_SINGLE=false
+  [ "$1" = "-s" ] && AUTO_SET_IF_SINGLE=true && shift
+  [ "$1" = "-a" ] && ALL=true && shift
+  P="$1"
+  shift
+  select_one_res=""
+  select_one_res_alt=""
+
+  if $AUTO_SET_IF_SINGLE && [ "$#" -eq 1 ]; then
+    select_one_res="1"
+    select_one_res_alt="$1"
+    return 0
+  fi
+
+  for item in "$@"; do
+    echo "$i) $item"
+    i=$((i + 1))
+  done
+  ${ALL:-false} && echo "a) all"
+  echo "q) to quit"
+
+  while true; do
+    printf "%s" "$P"
+    set_or_ask "SELECTED" "" ""
+    [[ "$SELECTED" == "q" ]] && EXIT_UE "User interrupted"
+    [[ ! "$SELECTED" =~ ^[0-9]+$ ]] && continue
+    [[ "$SELECTED" -gt 0 && "$SELECTED" -lt "$i" ]] && break
+    [[ "$SELECTED" -gt 0 && "$SELECTED" -lt "$i" ]] && break
+  done
+
+  # shellcheck disable=SC2034
+  {
+    select_one_res="$SELECTED"
+    select_one_res_alt="${!SELECTED}"
+  }
+}
+
+# Convers stdin to bash array or list
+#
+# Params:
+# $1:   separator, ' ' for arrays
+# $2:   destinationvar
+#
+# Example:
+#   stdin_to_arr ' ' AN_ARRAY < <(ls)
+#
+stdin_to_arr() {
+  local i=0
+  local arr
+  IFS="$1" read -d '' -r -a arr
+  for line in "${arr[@]}"; do
+    _set_var "$2[$i]" "$line"
+    ((i++))
+  done
 }

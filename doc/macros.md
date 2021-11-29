@@ -1,3 +1,6 @@
+
+---
+
 ### `ppl--pr-labels()`
 
 **HELPS DEALING WITH THE PR LABELS**
@@ -16,6 +19,9 @@
 
 </details>
 
+
+---
+
 ### `ppl--check-pr-bom-state()`
 
 **EXECUTES THE BOM ALIGNMENT CHECK ABOUT THE CURRENT PR**
@@ -28,6 +34,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `ppl--checkout-branch()`
 
@@ -42,9 +51,15 @@
 
 </details>
 
+
+---
+
 ### `ppl--status-report()`
 
 **PRINTS A GENERIC STATUS REPORT ABOUT CURRENT RUN**
+
+
+---
 
 ### `ppl--npm()`
 
@@ -68,6 +83,9 @@
 
 </details>
 
+
+---
+
 ### `ppl--bom()`
 
 **MACRO OPERATIONS RELATED TO THE BOM**
@@ -89,6 +107,9 @@
 
 </details>
 
+
+---
+
 ### `ppl--scan()`
 
 **MACRO OPERATIONS RELATED TO CODE AND DEPENDECIES SCANS**
@@ -104,6 +125,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `ppl--release()`
 
@@ -122,6 +146,9 @@
 
 </details>
 
+
+---
+
 ### `ppl--pr-preflight-checks()`
 
 **EXECUTES PRELIMINAR CHECKS ABOUT THE CURRENT PR**
@@ -137,6 +164,9 @@
 
 </details>
 
+
+---
+
 ### `ppl--mvn()`
 
 **MACRO OPERATIONS RELATED TO MAVEN**
@@ -148,13 +178,19 @@
  $1: action to apply
 
  Actions:
- - FULL-BUILD      executes a full and clean npm build+test
- - PUBLISH         publishes the maven artifact to the proper artifact repository
-                   in the process, sets on it the proper version name and rebuilds the artifact
- - SCAN-MVN-SONAR      Executes a full sonar scan, including the coverage report
+ - FULL-BUILD        executes a full and clean npm build+test
+ - PUBLISH           publishes the maven artifact for development
+                     in the process, sets on it the proper version name and rebuilds the artifact
+ - GA-PUBLICATION    publishes the maven artifact for general availability
+                     doesn't alter the sources like PUBLISH
+ - SCAN-MVN-SONAR    Executes a full sonar scan, including the coverage report
+ - SCAN-MVN-OWASP    Executes a full owasp scan
 ```
 
 </details>
+
+
+---
 
 ### `ppl--docker()`
 
@@ -178,6 +214,9 @@
 
 </details>
 
+
+---
+
 ### `ppl--setup-feature-flags()`
 
 **SETUP IN THE CI A SET OF FEATURE-FLAGS ACCORDING WITH USER DIRECTIVES**
@@ -194,6 +233,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `ppl--setup-features-list()`
 
@@ -215,6 +257,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `ppl--generic()`
 

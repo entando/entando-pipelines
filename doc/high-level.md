@@ -1,3 +1,6 @@
+
+---
+
 ### `_ppl-job-update-status()`
 
 **Updates the state of the current pipeline job**
@@ -17,6 +20,9 @@
 
 </details>
 
+
+---
+
 ### `_ppl-pr-add-label()`
 
 **Adds a label to a PR**
@@ -30,6 +36,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_ppl-pr-remove-label()`
 
@@ -45,6 +54,9 @@
 
 </details>
 
+
+---
+
 ### `_ppl-set-persistent-var()`
 
 **Sets a persistent variable**
@@ -54,10 +66,13 @@
 ```
  Params:
  $1: var name
- $1: var values
+ $2: var value
 ```
 
 </details>
+
+
+---
 
 ### `_ppl-load-context()`
 
@@ -73,6 +88,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_ppl-pr-request-change()`
 
@@ -91,6 +109,9 @@
 
 </details>
 
+
+---
+
 ### `_ppl-pr-submit-comment()`
 
 **Submits to the given PR/commit a comment**
@@ -105,6 +126,9 @@
 
 </details>
 
+
+---
+
 ### `_ppl-stdout-group()`
 
 **Allows grouping togheter a set of lines in a collapsable element**
@@ -118,6 +142,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_ppl-print-file-paginated()`
 
@@ -134,6 +161,28 @@
 
 </details>
 
+
+---
+
+### `_ppl_create_pr()`
+
+**Create or starts the creation of the PR**
+
+<details>
+
+```
+ Params:
+ $1: PR title
+ $2: base branch
+ $3: PR branch
+ [$4]  optional comma-delimited reviewers
+```
+
+</details>
+
+
+---
+
 ### `_ppl_get_current_project_version()`
 
 **Extacts the version of a artifactId from a pom**
@@ -148,6 +197,9 @@
 
 </details>
 
+
+---
+
 ### `_ppl_set_current_project_version()`
 
 **Extacts the version of a artifactId from a pom**
@@ -156,11 +208,14 @@
 
 ```
  Params:
- $1:   the value to ser
+ $1:   the value to set
  [$2]: the optional project file pathname
 ```
 
 </details>
+
+
+---
 
 ### `_ppl_get_current_project_artifact_id()`
 
@@ -176,6 +231,9 @@
 
 </details>
 
+
+---
+
 ### `_ppl_extract_artifact_qualifier_from_pr_title()`
 
 **Gets from a PR title the part of the prefix that should qualify the artifacts**
@@ -189,6 +247,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_ppl_determine_release_branch()`
 
@@ -206,6 +267,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_ppl_get_feature_action()`
 
@@ -252,9 +316,12 @@
 
 </details>
 
+
+---
+
 ### `_ppl_is_feature_enabled()`
 
-**Returns the status of a directive**
+**Returns the status of a feature**
 
 <details>
 
@@ -268,6 +335,33 @@
 ```
 
 </details>
+
+
+---
+
+### `_ppl_is_feature_action()`
+
+**Checks the action status of a feature**
+
+<details>
+
+```
+ Params:
+ $1 feature name
+ $2 action status
+    S: skipped
+    E: enabled
+    D: disabled
+    I: illegal feature specification
+
+ [$? == 0] => directive is present
+ [$? != 0] => directive is not present
+```
+
+</details>
+
+
+---
 
 ### `_ppl_extract_snapshot_version_name_part()`
 
@@ -284,6 +378,9 @@
 
 </details>
 
+
+---
+
 ### `_ppl_query_latest_bom_version()`
 
 **Extracts the latest bom version given the bom repository URL**
@@ -294,6 +391,27 @@
  Params:
  $1: dest var
  $2: bom repo URL
+```
+
+</details>
+
+
+---
+
+### `_ppl_setup_custom_environment()`
+
+**Setup a custom evironment given a semicolon-delimited list of assignments**
+
+<details>
+
+```
+ WARNING: the parser interprets the backslash
+ WARNING: the parser doesn't support quotes, however you can still escape the colon with the backslash ("\;")
+
+ eg:
+ - LEGAL:   _ppp_setup_custom_environment 'A=1;B=hey there;C=true'
+ - ILLEGAL: _ppp_setup_custom_environment 'A=1;B="hey;there";C=true'
+ - LEGAL:   _ppp_setup_custom_environment 'A=1;B=hey\;there;C=true'
 ```
 
 </details>

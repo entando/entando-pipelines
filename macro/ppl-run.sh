@@ -29,7 +29,7 @@ fi
 
 (
   # shellcheck disable=SC2034
-  [ -t 0 ] && IN_TTY=false || IN_TTY=trye
+  [ -t 0 ] && IN_TTY=false || IN_TTY=true
   LAST_CMD=()
   CMD=()
   IE=false  # ignore command error

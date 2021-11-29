@@ -1,0 +1,137 @@
+#!/bin/bash
+
+STDIN_TTY="$(tty)" || STDIN_TTY=""
+DD() {
+  TEST__WORK_DIR="$(pwd)" && DBGSHELL
+}
+
+ENTANDO_AGNOSTIC=true
+# shellcheck disable=SC1090
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../lib/all.sh"
+
+. "$SCRIPT_DIR/cli-tools/_common.sh"
+
+ppl--status() {
+  [ "$1" = "exec" ] && {
+    echo "~~~"
+    git log --graph --pretty=oneline --abbrev-commit --all | head -n 5
+    git add -uv
+    git commit --amend --no-edit --date="now" > /dev/null
+  }
+  NOCHANGE=true
+}
+
+ppl--custom() {
+  case "$1" in
+    init)
+      _get_arg -m CUSTOM_COMMAND --cmd
+      ;;
+    exec)
+      shift
+      "$CUSTOM_COMMAND"
+      ;;
+  esac
+  NOCHANGE=true
+}
+
+ppl--create-pr() {
+  case "$1" in
+    init)
+      _get_arg REVIEWER --reviewer
+      _get_arg ARG_MESSAGE --msg
+      ;;
+    exec)
+      . "$SCRIPT_DIR/lib/${ARG_DIALECT}/${ARG_DIALECT}_tools.sh"
+      _ppl_create_pr "$ARG_MESSAGE" "$ARG_BASE" "$ARG_TOPIC_BRANCH" "$REVIEWER"
+      if [ -n "$STDIN_TTY" ]; then
+        read -p "press any key to continue" < "$STDIN_TTY"
+      else
+        sleep 3
+      fi
+      ;;
+  esac
+  NOCHANGE=true
+}
+
+ppl--update-mainline() {
+  case "$1" in
+    init)
+      _get_arg -m VERSION --version
+      
+      local maj min ptc upd tag
+      _semver_ex_parse maj min ptc upd tag "$VERSION"
+      
+      local re='^[0-9]+$'
+      ! [[ "$maj" =~ $re ]] && _FATAL "\"Major\" version format is not correct"
+      ! [[ "$min" =~ $re ]] && _FATAL "\"Minor\" version format is not correct"
+      ! [[ "$ptc" =~ $re ]] && _FATAL "\"Patch\" version format is not correct"
+      [[ -n "$upt" ]] && _FATAL "Version Metadata shoud not be supplied"
+      [[ -n "$tag" ]] && _FATAL "Version Tag shoud not be supplied"
+      VERSION="$maj.$min.$ptc-SNAPSHOT"
+      ;;
+    ready)
+      ;;
+    exec)
+      _ppl_set_current_project_version "$VERSION"
+      AUTO_MESSAGE="Version bump to $VERSION"
+      ;;
+  esac
+}
+
+
+ppl--install-pipeline() {
+  case "$1" in
+    init)
+      ;;
+    ready)
+      [[ "$(git rev-parse --abbrev-ref HEAD)" != "$ARG_BASE" ]] && {
+        _log_w "Found an old-style repo, converting it to the new pipelines \"$ARG_REPO\""
+        __git checkout master
+        __git checkout -b "$ARG_BASE"
+        __git push --set-upstream origin "$ARG_BASE"
+      }
+      ;;
+    exec)
+      __ppl_determine_current_project_type PROJECT_TYPE
+      rm -rf ".github/workflows"
+      case "$PROJECT_TYPE" in
+        "MVN") cp -r "$SCRIPT_DIR/install/github/mvn/workflows" ".github/";;
+        "NPM") cp -r "$SCRIPT_DIR/install/github/npm/workflows" ".github/";;
+        *) false;;
+      esac || _FATAL "Failed copying the workflow files"
+      AUTO_MESSAGE="Install pipeline 1.1"
+      ;;
+  esac
+}
+
+ppl--batch-repo-action() {
+  _for_each_batch_item "$ARG_BATCH_FILE" "$ARG_ACTION" _repo_action
+}
+
+_check_action() {
+  case "$1" in
+    install-pipeline|update-mainline|status|custom|create-pr) true;;
+    *) _FATAL "Illegal action \"$1\" provided";;
+  esac
+}
+
+ppl--repo-action() {
+  _get_arg -m ARG_REPO 1; _shift_positional_args 1
+  _custom_status_handler pre "$@"
+  _read_common_repo_args
+  _repo_action "$ARG_ACTION" "$ARG_REPO"
+}
+
+RUN() {
+  _parse_args "$@"
+  _check_action "$ARG_ACTION"; 
+  
+  if [ -z "$ARG_BATCH_FILE" ]; then
+    ppl--repo-action
+  else
+    ppl--batch-repo-action
+  fi
+}
+
+
+RUN "$@"
