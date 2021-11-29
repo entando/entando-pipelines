@@ -48,6 +48,7 @@ RUN() {
 
           BRIEF="$(head -1 <<<"$DOC" | xargs)"
           DOC="$(tail +2 <<<"$DOC" | sed '1{/^[[:space:]]*$/d}')"
+          echo -e "\n---\n"
           echo -e "### \`${fn}()\`\n"
           echo -e "**$BRIEF**\n"
           if [ -n "$DOC" ]; then

@@ -29,5 +29,8 @@ __mvn_deploy() {
     -DskipTests=true \
     -DaltDeploymentRepository="$1::default::$2" \
     -P prepare-for-nexus \
+    -DskipPreDeploymentTests=true \
+    -DskipPostDeploymentTests=true \
+    -Ddependency-check.skip=true \
     -Dgpg.skip="$GPG"
 }

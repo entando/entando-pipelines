@@ -19,12 +19,12 @@ _ppl_get_current_project_version() {
 # Extacts the version of a artifactId from a pom
 #
 # Params:
-# $1:   the value to ser
+# $1:   the value to set
 # [$2]: the optional project file pathname
 #
 _ppl_set_current_project_version() {
   case "$(__ppl_determine_current_project_type --print)" in
-    "MVN") _pom_set_project_property "$@";;
+    "MVN") _pom_set_project_version "$1" "${2:-pom.xml}";;
     "NPM") _npm_set "${2:-package.json}" "version" "$1";;
     *) _FATAL  "Unable to detect the project type"
   esac

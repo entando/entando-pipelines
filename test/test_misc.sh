@@ -275,4 +275,30 @@ test_versioning() {
   _ppl_extract_snapshot_version_name_part RES "v6.4.0-ENG-2268-PR-143" "base-version"
   ASSERT RES = "6.4.0"
 }
+
+#TEST:lib
+test__features() {
+  # shellcheck disable=SC2034
+  PPL_PARSED_CONTEXT="[test]"
+  # shellcheck disable=SC2034
+  PPL_FEATURES="SCAN-MVN-SNYK,SCAN-MVN-OWASP,DISABLE-INTEGRATION-TESTS,MVN-QUARKUS-NATIVE"
+  _ppl_is_feature_enabled "MVN-QUARKUS-NATIVE" || {
+    _FATAL -99 "Feature was configured but is has not been detected" 1>&2
+  }
+  _ppl_is_feature_enabled "MVN-VERIFY" && {
+    _FATAL -99 "Feature was detected but was not actually configured" 1>&2
+  }
+  true
+}
+
+#TEST:lib
+test__ppl_setup_custom_environment() {
+  # shellcheck disable=SC2034
+  local Z="_Z" K="_K"
+  _ppl_setup_custom_environment "X=XX;Y=YY;Z=ZZ;W=W\;W"
+  RES="$(bash -c 'echo "$X/$Y/$Z/$K/$W"')"
+  echo "$RES"
+  ASSERT RES = "XX/YY/ZZ//W;W"
+}
+
 true

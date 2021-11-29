@@ -18,6 +18,7 @@ ppl--status-report() {
     PR_TITLE="$PPL_PR_TITLE"
     LINK="$PPL_PR_HTML_URL"
     FEATURES="$PPL_FEATURES"
+    CUSTOM_ENV="$ENTANDO_OPT_CUSTOM_ENV"
     [ "${FEATURES:0:1}" = "," ] && FEATURES="${FEATURES:1}"
     [ "${FEATURES: -1}" = "," ] && FEATURES="${FEATURES:0:-1}"
     
@@ -26,6 +27,7 @@ ppl--status-report() {
         IN \
         LINK \
         FEATURES \
+        CUSTOM_ENV \
         PPL_REF \
         PPL_COMMIT_ID \
         PPL_CLONE_URL \
@@ -39,6 +41,7 @@ ppl--status-report() {
       _pp \
         IN \
         FEATURES \
+        CUSTOM_ENV \
         PPL_REF \
         PPL_COMMIT_ID \
         PPL_CLONE_URL \

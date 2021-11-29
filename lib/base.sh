@@ -17,8 +17,8 @@ START_MACRO() {
     set -x
   }
   
-  ARGS_FLAGS=(--no-skip)
-  PARSE_ARGS "$@"
+    ARGS_FLAGS=(--no-skip)
+    PARSE_ARGS "$@"
   
   local noSkip
   _get_arg noSkip --no-skip
@@ -49,10 +49,12 @@ START_MACRO() {
   
   _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_GLOBAL_FEATURES},${ENTANDO_OPT_FEATURES}"
 
-  _ppl_is_feature_enabled "$PPL_CURRENT_MACRO" || {
+  _ppl_is_feature_enabled "$PPL_CURRENT_MACRO" true || {
     _EXIT "Macro of id \"$PPL_CURRENT_MACRO\" is not enabled"
   }
-
+  
+  _ppl_setup_custom_environment "$ENTANDO_OPT_CUSTOM_ENV"
+  
   if _log_on_level DEBUG; then
     echo -e "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo "~~ ${comment}${PPL_CURRENT_MACRO} invoked on $(date +'%Y-%m-%d %H-%M-%S')"

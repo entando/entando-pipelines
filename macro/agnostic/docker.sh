@@ -56,6 +56,10 @@ ppl--docker.publish.INIT() {
   _ppl_get_current_project_artifact_id "$1"
   _ppl_get_current_project_version "$2"
   _NONNULL "${1}" "${2}"
+  
+  _ppl_is_feature_enabled "MVN-QUARKUS-NATIVE" && {
+    mvn package -Pjvm
+  }
 }
 
 ppl--docker.publish.LOGIN() {
@@ -73,6 +77,11 @@ ppl--docker.publish.BUILD_AND_PUSH_ALL() {
   while IFS= read -r build; do
     IFS=',' read -r dockerFile dockerImageAddress <<<"${build//=>/,}"
     _NONNULL dockerFile
+    
+    if [ "${dockerImageAddress:0:1}" = "[" ]; then
+      ENTANDO_OPT_DOCKER_BUILD_QUALIFIER_POSITION=${dockerImageAddress:1:-1}
+      dockerImageAddress=""
+    fi
     
     dockerFileExt="${dockerFile##*.}"
     
@@ -94,9 +103,10 @@ ppl--docker.publish.BUILD_AND_PUSH_ALL() {
     
     local finalAddr
     case "$ENTANDO_OPT_DOCKER_BUILD_QUALIFIER_POSITION" in
+      simple) finalAddr="$dockerOrg/${dockerImageName,,}:${dockerImageTag}";;
       after-name|"") finalAddr="$dockerOrg/${dockerImageName,,}${buildQualifier,,}:${dockerImageTag}";;
       after-tag) finalAddr="$dockerOrg/${dockerImageName,,}:${dockerImageTag}${buildQualifier,,}";;
-      *) _FATAL "Invalid image qualifier \"$ENTANDO_OPT_DOCKER_BUILD_QUALIFIER_POSITION\""
+      *) _FATAL "Invalid image qualifier position \"$ENTANDO_OPT_DOCKER_BUILD_QUALIFIER_POSITION\""
     esac
 
     __docker build . -t "$finalAddr" -f "$dockerFile"

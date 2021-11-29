@@ -19,6 +19,11 @@ and these main features:
  - Pull Requests formats validity controls (title, version etc..)
  - FeatureFlags and skip-labels to control pipeline features
 
+## Suppoted project types
+
+ - Maven
+ - NMP
+
  
 # How to use it
 
@@ -27,7 +32,11 @@ and these main features:
 ```
 bash <(curl -qsL "https://raw.githubusercontent.com/entando/entando-pipelines/{tag}/macro/install.sh")
 ```
-**NOTE:** Remember to replace the {tag} placeholder
+**NOTE:** 
+
+- Remember to replace the {tag} placeholder
+- check the directory "install" for the current workflows files used for the entando repositories
+
 
 ## Run a macro
 
@@ -62,18 +71,21 @@ _Note:_
 | name | description | values |
 | - | - | - |
 | `ENTANDO_OPT_LOG_LEVEL`  | The minimal log printing level | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR` |
-| `ENTANDO_OPT_PR_TITLE_FORMAT` | the PR title format to enforce | **[M]** `SINGLE`,`HIERARCHICAL`,`ANY` |
+| `ENTANDO_OPT_PR_TITLE_FORMAT` | the PR title format to enforce | **`[M]`** `SINGLE`,`HIERARCHICAL`,`ANY` |
 | `ENTANDO_OPT_REPO_BOM_URL`  | the URL of the entando core bom | |
 | `ENTANDO_OPT_SUDO` | sudo command to use | |
 | `ENTANDO_OPT_NO_COL` | toggles the color ascii codes | `true`,`false` |
 | `ENTANDO_OPT_STEP_DEBUG` | toggle the step debug in macros | `true`,`false` |
 | `ENTANDO_OPT_MAINLINE` | **`[1]`** defines the current mainline version | `major.minor` |
+| `ENTANDO_OPT_GLOBAL_FEATURES` | the list of features enabled globally | (see below) |
 | `ENTANDO_OPT_FEATURES` | the list of features enabled | (see below) |
+| `ENTANDO_OPT_CUSTOM_ENV` | a list of semicolon-delimited variables assignments **`[2]`** | `A=1;B=2` |
 
 Notes:
 
  - **`[M]`**: _Multiple values can be combined with the symbol_ `","`
  - **`[1]`**: _The "mainline version" is a constraint that prevents the merge of any PR that comes with a different **major** or **minor** version._
+ - **`[2]`**: _Suports backslash escaping_
  - _The sequence `###`, if found at the start of a value, is skipped and only the rest is considered. This is a trick that should be used to evade the CI/CD obfuscation for perfectly safe values (for instance "TRACE", should be written as "###TRACE")_
 
 # Defaults
@@ -103,9 +115,9 @@ If they are not, the code assumes these ones:
 
 ### Directives
 
- - Enable a feature: `+{FEATURE}`
- - Disable a feature: `-{FEATURE}`
- - Disable a feature once: `SKIP-{FEATURE}`
+ - Enable a feature: `+{FEATURE}` or `{FEATURE}` or `ENABLE-{FEATURE}`
+ - Disable a feature: `-{FEATURE}` or `DISABLE-{FEATURE}`
+ - Disable a feature once: `SKIP-{FEATURE}` (only labels)
  
 ### General
 

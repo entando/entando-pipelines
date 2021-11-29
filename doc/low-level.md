@@ -1,3 +1,6 @@
+
+---
+
 ### `_npm_get()`
 
 **Sets an npm package.json property**
@@ -13,6 +16,9 @@
 
 </details>
 
+
+---
+
 ### `_npm_set()`
 
 **Sets an npm package.json property**
@@ -27,6 +33,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_semver_parse()`
 
@@ -48,9 +57,15 @@
 
 </details>
 
+
+---
+
 ### `_semver_ex_parse()`
 
 **Extended version of _semver_parse that also supports 4 digit versions**
+
+
+---
 
 ### `_semver_add()`
 
@@ -73,6 +88,9 @@
 
 </details>
 
+
+---
+
 ### `_semver_set_tag()`
 
 **Updates or add a tag to a version string**
@@ -87,6 +105,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_semver_cmp()`
 
@@ -106,6 +127,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_print_callstack()`
 
@@ -127,6 +151,9 @@
 
 </details>
 
+
+---
+
 ### `print_current_function_name()`
 
 **Prints the current function name with decorations**
@@ -140,6 +167,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_pp()`
 
@@ -159,6 +189,9 @@
 
 </details>
 
+
+---
+
 ### `_pp_adjust_var()`
 
 **Adjust a variable for pretty printing**
@@ -173,6 +206,9 @@
 
 </details>
 
+
+---
+
 ### `_NONNULL()`
 
 **Validates for non-null a list of mandatory variables**
@@ -184,6 +220,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `__VERIFY_EXPRESSION()`
 
@@ -213,13 +252,22 @@
 
 </details>
 
+
+---
+
 ### `__VERIFY()`
 
 **See __VERIFY_EXPRESSION**
 
+
+---
+
 ### `DBGSHELL()`
 
 **Drops a shell that inherits the caller environment**
+
+
+---
 
 ### `_url_add_token()`
 
@@ -236,6 +284,9 @@
 
 </details>
 
+
+---
+
 ### `_extract_pr_title_prefix()`
 
 **Gets the prefix of the PR title**
@@ -249,6 +300,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `START_MACRO()`
 
@@ -266,6 +320,9 @@
 
 </details>
 
+
+---
+
 ### `_EXIT()`
 
 **Stops the execution with a success result and an info message**
@@ -281,6 +338,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_FATAL()`
 
@@ -302,9 +362,15 @@
 
 </details>
 
+
+---
+
 ### `_SOE()`
 
 **STOP ON ERROR**
+
+
+---
 
 ### `_set_var()`
 
@@ -328,6 +394,9 @@
 
 </details>
 
+
+---
+
 ### `_pkg_get()`
 
 **Install a packet**
@@ -344,6 +413,23 @@
 
 </details>
 
+
+---
+
+### `_pkg_apt_install()`
+
+**Installs a package given its apt package name**
+
+
+---
+
+### `_pkg_tar_install()`
+
+**Installs a package given a link to a tarboall**
+
+
+---
+
 ### `require_mandatory_command()`
 
 **Ensura a mandatory command is avaliable**
@@ -357,6 +443,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_pkg_is_command_available()`
 
@@ -374,6 +463,9 @@
 
 </details>
 
+
+---
+
 ### `__mvn_deploy()`
 
 **Runs a maven deploy over the received environment params**
@@ -388,17 +480,29 @@
 
 </details>
 
+
+---
+
 ### `__git()`
 
 **Runs an arbitrary git command and FATALS if it fails**
+
+
+---
 
 ### `__git_set_repo_defaults()`
 
 **Sets the repository defaults**
 
+
+---
+
 ### `__git_init()`
 
 **Runs a git init and sets the repository defaults**
+
+
+---
 
 ### `_git_full_clone()`
 
@@ -415,6 +519,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_git_set_commit_config()`
 
@@ -433,6 +540,9 @@
 
 </details>
 
+
+---
+
 ### `_git_auto_setup_commit_config()`
 
 **Sets the git commit config of the local repo**
@@ -449,6 +559,9 @@
 
 </details>
 
+
+---
+
 ### `_git_ref_to_version()`
 
 **Extract the tag(s) on the given gitref string**
@@ -463,9 +576,15 @@
 
 </details>
 
+
+---
+
 ### `_git_get_current_commit_id()`
 
 **Returns the commit id of the current local repo**
+
+
+---
 
 ### `_git_determine_highest_version()`
 
@@ -485,6 +604,9 @@
 
 </details>
 
+
+---
+
 ### `__git_ACTP()`
 
 **Add-Commit-Tag-Push**
@@ -500,6 +622,9 @@
 
 </details>
 
+
+---
+
 ### `__git_auto_checkout()`
 
 **Checkouts a branch**
@@ -513,9 +638,15 @@
 
 </details>
 
+
+---
+
 ### `_git_get_current_branch()`
 
 **Sets the receiver var with the the current git branch**
+
+
+---
 
 ### `__git_force_merge_branch()`
 
@@ -531,6 +662,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `__git_add_tag()`
 
@@ -549,6 +683,9 @@
 
 </details>
 
+
+---
+
 ### `__git_get_commit_tag()`
 
 **Extract the given commit tag**
@@ -566,6 +703,9 @@
 
 </details>
 
+
+---
+
 ### `__git_get_parent_pr()`
 
 **Extract the parent PR of the given commit**
@@ -573,6 +713,9 @@
 <details>
 
 ```
+ Options:
+ --tolerant  disables the "MUST-WORK" contraint of the double-underscore functions
+
  Params:
  $1  the output var
  $2  the commit reference
@@ -580,9 +723,15 @@
 
 </details>
 
+
+---
+
 ### `_git_commit_exists()`
 
 **Tells if a given commit reference exists on the repo**
+
+
+---
 
 ### `__docker()`
 
@@ -596,6 +745,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_pom_get_project_artifact_id()`
 
@@ -611,6 +763,9 @@
 
 </details>
 
+
+---
+
 ### `_pom_get_project_version()`
 
 **Extacts the version of a artifactId from a pom**
@@ -625,6 +780,9 @@
 
 </details>
 
+
+---
+
 ### `_pom_set_project_version()`
 
 **Sets the version of a artifactId from a pom**
@@ -638,6 +796,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_pom_get_project_property()`
 
@@ -654,6 +815,9 @@
 
 </details>
 
+
+---
+
 ### `_pom_set_project_property()`
 
 **Sets a property from a pom**
@@ -669,6 +833,9 @@
 
 </details>
 
+
+---
+
 ### `_pom_get_depman_artifact_version()`
 
 **Extacts the version of an artifact dependency of the dependency management section**
@@ -683,6 +850,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_pom_get()`
 
@@ -700,6 +870,9 @@
 
 </details>
 
+
+---
+
 ### `_pom_set()`
 
 **Sets a pom property**
@@ -716,6 +889,9 @@
 
 </details>
 
+
+---
+
 ### `_npm_get()`
 
 **Sets an npm package.json property**
@@ -731,6 +907,9 @@
 
 </details>
 
+
+---
+
 ### `_npm_set()`
 
 **Sets an npm package.json property**
@@ -745,6 +924,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_semver_parse()`
 
@@ -766,9 +948,15 @@
 
 </details>
 
+
+---
+
 ### `_semver_ex_parse()`
 
 **Extended version of _semver_parse that also supports 4 digit versions**
+
+
+---
 
 ### `_semver_add()`
 
@@ -791,6 +979,9 @@
 
 </details>
 
+
+---
+
 ### `_semver_set_tag()`
 
 **Updates or add a tag to a version string**
@@ -805,6 +996,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_semver_cmp()`
 
@@ -824,6 +1018,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_print_callstack()`
 
@@ -845,6 +1042,9 @@
 
 </details>
 
+
+---
+
 ### `print_current_function_name()`
 
 **Prints the current function name with decorations**
@@ -858,6 +1058,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_pp()`
 
@@ -877,6 +1080,9 @@
 
 </details>
 
+
+---
+
 ### `_pp_adjust_var()`
 
 **Adjust a variable for pretty printing**
@@ -891,6 +1097,9 @@
 
 </details>
 
+
+---
+
 ### `_NONNULL()`
 
 **Validates for non-null a list of mandatory variables**
@@ -902,6 +1111,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `__VERIFY_EXPRESSION()`
 
@@ -931,13 +1143,22 @@
 
 </details>
 
+
+---
+
 ### `__VERIFY()`
 
 **See __VERIFY_EXPRESSION**
 
+
+---
+
 ### `DBGSHELL()`
 
 **Drops a shell that inherits the caller environment**
+
+
+---
 
 ### `_url_add_token()`
 
@@ -954,6 +1175,9 @@
 
 </details>
 
+
+---
+
 ### `_extract_pr_title_prefix()`
 
 **Gets the prefix of the PR title**
@@ -967,6 +1191,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `START_MACRO()`
 
@@ -984,6 +1211,9 @@
 
 </details>
 
+
+---
+
 ### `_EXIT()`
 
 **Stops the execution with a success result and an info message**
@@ -999,6 +1229,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_FATAL()`
 
@@ -1020,9 +1253,15 @@
 
 </details>
 
+
+---
+
 ### `_SOE()`
 
 **STOP ON ERROR**
+
+
+---
 
 ### `_set_var()`
 
@@ -1046,6 +1285,9 @@
 
 </details>
 
+
+---
+
 ### `_pkg_get()`
 
 **Install a packet**
@@ -1062,6 +1304,23 @@
 
 </details>
 
+
+---
+
+### `_pkg_apt_install()`
+
+**Installs a package given its apt package name**
+
+
+---
+
+### `_pkg_tar_install()`
+
+**Installs a package given a link to a tarboall**
+
+
+---
+
 ### `require_mandatory_command()`
 
 **Ensura a mandatory command is avaliable**
@@ -1075,6 +1334,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_pkg_is_command_available()`
 
@@ -1092,6 +1354,9 @@
 
 </details>
 
+
+---
+
 ### `__mvn_deploy()`
 
 **Runs a maven deploy over the received environment params**
@@ -1106,17 +1371,29 @@
 
 </details>
 
+
+---
+
 ### `__git()`
 
 **Runs an arbitrary git command and FATALS if it fails**
+
+
+---
 
 ### `__git_set_repo_defaults()`
 
 **Sets the repository defaults**
 
+
+---
+
 ### `__git_init()`
 
 **Runs a git init and sets the repository defaults**
+
+
+---
 
 ### `_git_full_clone()`
 
@@ -1133,6 +1410,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_git_set_commit_config()`
 
@@ -1151,6 +1431,9 @@
 
 </details>
 
+
+---
+
 ### `_git_auto_setup_commit_config()`
 
 **Sets the git commit config of the local repo**
@@ -1167,6 +1450,9 @@
 
 </details>
 
+
+---
+
 ### `_git_ref_to_version()`
 
 **Extract the tag(s) on the given gitref string**
@@ -1181,9 +1467,15 @@
 
 </details>
 
+
+---
+
 ### `_git_get_current_commit_id()`
 
 **Returns the commit id of the current local repo**
+
+
+---
 
 ### `_git_determine_highest_version()`
 
@@ -1203,6 +1495,9 @@
 
 </details>
 
+
+---
+
 ### `__git_ACTP()`
 
 **Add-Commit-Tag-Push**
@@ -1218,6 +1513,9 @@
 
 </details>
 
+
+---
+
 ### `__git_auto_checkout()`
 
 **Checkouts a branch**
@@ -1231,9 +1529,15 @@
 
 </details>
 
+
+---
+
 ### `_git_get_current_branch()`
 
 **Sets the receiver var with the the current git branch**
+
+
+---
 
 ### `__git_force_merge_branch()`
 
@@ -1249,6 +1553,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `__git_add_tag()`
 
@@ -1267,6 +1574,9 @@
 
 </details>
 
+
+---
+
 ### `__git_get_commit_tag()`
 
 **Extract the given commit tag**
@@ -1284,6 +1594,9 @@
 
 </details>
 
+
+---
+
 ### `__git_get_parent_pr()`
 
 **Extract the parent PR of the given commit**
@@ -1291,6 +1604,9 @@
 <details>
 
 ```
+ Options:
+ --tolerant  disables the "MUST-WORK" contraint of the double-underscore functions
+
  Params:
  $1  the output var
  $2  the commit reference
@@ -1298,9 +1614,15 @@
 
 </details>
 
+
+---
+
 ### `_git_commit_exists()`
 
 **Tells if a given commit reference exists on the repo**
+
+
+---
 
 ### `__docker()`
 
@@ -1314,6 +1636,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_pom_get_project_artifact_id()`
 
@@ -1329,6 +1654,9 @@
 
 </details>
 
+
+---
+
 ### `_pom_get_project_version()`
 
 **Extacts the version of a artifactId from a pom**
@@ -1343,6 +1671,9 @@
 
 </details>
 
+
+---
+
 ### `_pom_set_project_version()`
 
 **Sets the version of a artifactId from a pom**
@@ -1356,6 +1687,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_pom_get_project_property()`
 
@@ -1372,6 +1706,9 @@
 
 </details>
 
+
+---
+
 ### `_pom_set_project_property()`
 
 **Sets a property from a pom**
@@ -1387,6 +1724,9 @@
 
 </details>
 
+
+---
+
 ### `_pom_get_depman_artifact_version()`
 
 **Extacts the version of an artifact dependency of the dependency management section**
@@ -1401,6 +1741,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_pom_get()`
 
@@ -1418,6 +1761,9 @@
 
 </details>
 
+
+---
+
 ### `_pom_set()`
 
 **Sets a pom property**
@@ -1434,6 +1780,9 @@
 
 </details>
 
+
+---
+
 ### `_git_full_clone()`
 
 **Clones a repository and the tags**
@@ -1449,6 +1798,9 @@
 ```
 
 </details>
+
+
+---
 
 ### `_git_set_commit_config()`
 
@@ -1467,6 +1819,9 @@
 
 </details>
 
+
+---
+
 ### `_git_auto_setup_commit_config()`
 
 **Sets the git commit config of the local repo**
@@ -1483,6 +1838,9 @@
 
 </details>
 
+
+---
+
 ### `_git_ref_to_version()`
 
 **Extract the tag(s) on the given gitref string**
@@ -1497,9 +1855,15 @@
 
 </details>
 
+
+---
+
 ### `_git_get_current_commit_id()`
 
 **Returns the commit id of the current local repo**
+
+
+---
 
 ### `_git_determine_highest_version()`
 
@@ -1519,9 +1883,15 @@
 
 </details>
 
+
+---
+
 ### `_git_get_current_branch()`
 
 **Sets the receiver var with the the current git branch**
+
+
+---
 
 ### `_git_commit_exists()`
 

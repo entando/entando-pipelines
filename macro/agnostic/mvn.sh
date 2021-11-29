@@ -9,67 +9,92 @@
 # $1: action to apply
 #
 # Actions:
-# - FULL-BUILD      executes a full and clean npm build+test
-# - PUBLISH         publishes the maven artifact to the proper artifact repository
-#                   in the process, sets on it the proper version name and rebuilds the artifact
-# - SCAN-MVN-SONAR      Executes a full sonar scan, including the coverage report
+# - FULL-BUILD        executes a full and clean npm build+test
+# - PUBLISH           publishes the maven artifact for development
+#                     in the process, sets on it the proper version name and rebuilds the artifact
+# - GA-PUBLICATION    publishes the maven artifact for general availability
+#                     doesn't alter the sources like PUBLISH
+# - SCAN-MVN-SONAR    Executes a full sonar scan, including the coverage report
+# - SCAN-MVN-OWASP    Executes a full owasp scan
 #
 ppl--mvn() {
   (
     START_MACRO "MVN" "$@"
 
-    local action arg2
+    local action
     _get_arg action 1
-    _get_arg arg2 2
 
     __ppl_enter_local_clone_dir
     __exist -f "pom.xml"
 
     case "$action" in
+      "FULL-BUILD")
+        _log_i "Building and testing"
+        
+        _ppl_is_feature_action "INTEGRATION-TESTS" "D" && {
+          _log_i "INTEGRATION TESTS SKIPPED"
+          export ENTANDO_OPT_SKIP_INTEGRATION_TESTS=true
+        }
+        
+        if _ppl_is_feature_enabled "MVN-VERIFY"; then
+          _log_i "Build mode: MVN-VERIFY"
+
+          __mvn_exec -B verify
+        elif _ppl_is_feature_enabled "MVN-INSTALL"; then
+          _log_i "Build mode: MVN-INSTALL"
+          
+          __mvn_exec -B install
+        else
+          _log_i "Build mode: STANDARD"
+          
+          __mvn_exec clean -B test \
+            ${ENTANDO_OPT_SONAR_PROJECT_KEY:+-Dsonar.projectKey="$ENTANDO_OPT_SONAR_PROJECT_KEY"} \
+            org.jacoco:jacoco-maven-plugin:prepare-agent \
+            org.jacoco:jacoco-maven-plugin:report \
+            org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Ppre-deployment-verification -Ppost-deployment-verification \
+          ;
+        fi
+        
+        _SOE
+        
+        _ppl_is_feature_enabled "MVN-QUARKUS-NATIVE" && {
+          _log_i "Executing the quarkus native packaging"
+          mvn package -Pjvm
+        }
+        
+        true
+        
+        ;;
       "SCAN-MVN-SONAR")
         _log_i "Starting the sonar analysis"
         _NONNULL SONAR_TOKEN
         
-         __mvn_exec -B verify \
+        _ppl_is_feature_action "INTEGRATION-TESTS" "D" && {
+          _log_i "INTEGRATION TESTS SKIPPED"
+          export ENTANDO_OPT_SKIP_INTEGRATION_TESTS=true
+        }
+        
+        __mvn_exec -B verify ${ENTANDO_OPT_SONAR_PROJECT_KEY:+-Dsonar.projectKey="$ENTANDO_OPT_SONAR_PROJECT_KEY"} \
           org.jacoco:jacoco-maven-plugin:prepare-agent \
           org.jacoco:jacoco-maven-plugin:report \
           org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
           -Ppre-deployment-verification -Ppost-deployment-verification \
         ;
-
+        
         local RV="$?"
         [ "$RV" -ne 0 ] && {
           #~ ON ERROR
           _ppl-set-persistent-var "ERROR_${PPL_CURRENT_MACRO}" true
         }
+
         return "$RV"
-        ;;
-      "BUILD-AND-TEST")
-        _log_i "Building and testing with group \"$arg2\""
-        __mvn_exec -B test -Dgroups="$arg2"
-
-        #mvn clean package -DskipPostDeploymentTests=false -DskipPreDeploymentTests=false
-        #__mvn_exec clean test -Ppre-deployment-verification
-        ;;
-      "FULL-BUILD")
-        _log_i "Building and testing"
-
-         __mvn_exec clean -B test \
-          org.jacoco:jacoco-maven-plugin:prepare-agent \
-          org.jacoco:jacoco-maven-plugin:report \
-          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-          -Ppre-deployment-verification -Ppost-deployment-verification \
-        ;
-        
-        ;;
-      "BUILD")
-        _log_i "Building with group \"$arg2\""
-        __mvn_exec package -Dmaven.test.skip=true -Dgroups="$arg2"
-        #__mvn_exec clean package -DskipPostDeploymentTests=true -DskipPreDeploymentTests=true -Dmaven.test.skip=true
         ;;
       "SCAN-MVN-OWASP")
         _log_i "Starting the owasp analysis"
+        
         __mvn_exec verify -Powasp-dependency-check
+        
         ;;
       "PUBLISH")
         case "$PPL_REF_NAME" in
@@ -100,4 +125,11 @@ ppl--mvn() {
         ;;
     esac
   )
+}
+
+ppl--mvn.target() {
+  case "$1" in
+    SAVE) cp -R target "target.old.2f9b531a-a57c-45b0-a55f-01a162b5d470";;
+    RESTORE) rm target; mv "target.old.2f9b531a-a57c-45b0-a55f-01a162b5d470" target;;
+  esac
 }
