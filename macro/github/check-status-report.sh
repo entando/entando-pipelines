@@ -19,6 +19,7 @@ ppl--status-report() {
     LINK="$PPL_PR_HTML_URL"
     FEATURES="$PPL_FEATURES"
     CUSTOM_ENV="$ENTANDO_OPT_CUSTOM_ENV"
+    OKD_LOGIN_ENABLED="$ENTANDO_OPT_OKD_LOGIN"
     [ "${FEATURES:0:1}" = "," ] && FEATURES="${FEATURES:1}"
     [ "${FEATURES: -1}" = "," ] && FEATURES="${FEATURES:0:-1}"
     
@@ -27,6 +28,7 @@ ppl--status-report() {
         IN \
         LINK \
         FEATURES \
+        OKD_LOGIN_ENABLED \
         CUSTOM_ENV \
         PPL_REF \
         PPL_COMMIT_ID \
@@ -41,6 +43,7 @@ ppl--status-report() {
       _pp \
         IN \
         FEATURES \
+        OKD_LOGIN_ENABLED \
         CUSTOM_ENV \
         PPL_REF \
         PPL_COMMIT_ID \

@@ -183,8 +183,9 @@
                      in the process, sets on it the proper version name and rebuilds the artifact
  - GA-PUBLICATION    publishes the maven artifact for general availability
                      doesn't alter the sources like PUBLISH
- - SCAN-MVN-SONAR    Executes a full sonar scan, including the coverage report
- - SCAN-MVN-OWASP    Executes a full owasp scan
+ - SCAN-MVN-SONAR          Executes a full sonar scan, including the coverage report
+ - SCAN-MVN-OWASP          Executes a full owasp scan
+ - SCAN-MVN-PREVIEW-TESTS  Executes the tests designed to run on a preview environment
 ```
 
 </details>

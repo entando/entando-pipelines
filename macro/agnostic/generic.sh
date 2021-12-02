@@ -39,7 +39,7 @@ ppl--generic() {
       esac;;
     SCAN-NPM-*)
       ppl--npm "$action" "$@";;
-    SCAN-MVN-SONAR|SCAN-MVN-OWASP)
+    SCAN-MVN-SONAR|SCAN-MVN-OWASP|SCAN-MVN-OWASP)
       ppl--mvn "$action" "$@";;
     SCAN-MVN-SNYK)
       ppl--scan "snyk" "$@";;

@@ -13,6 +13,12 @@ _pkg_get() {
   local P="-"
   
   while true; do
+    TAR_INSTALL_URL=""
+    if [ "$1" == "--tar-install" ]; then
+      TAR_INSTALL_URL="$2"
+      shift 2
+    fi
+
     P="$1"
     [ -z "$P" ] && break
     shift
@@ -29,19 +35,45 @@ _pkg_get() {
     
     _log_t "Installing packet \"$P\".."
     
-    if ${ENTANDO_OPT_SUDO:+"$ENTANDO_OPT_SUDO"} apt-get install -y "$P" 1> /dev/null; then
-      if [ -n "$chk" ]; then
-        if ! command -v "$chk" >/dev/null; then
-          _FATAL "Installation of packet \"$P\" failed"
-        fi
-      fi
-      _log_d "Packet \"$P\" installed"
+    if [ -n "$TAR_INSTALL_URL" ]; then
+      _pkg_tar_install "$TAR_INSTALL_URL" "${chk:-$P}"
     else
-      FATAL "Installation of packet \"$P\" failed"
+      _pkg_apt_install "$P"
     fi
+    
+    [ "$?" != "0" ] && FATAL "Installation of packet \"$P\" failed"
+    
+    if [ -n "$chk" ]; then
+      if ! command -v "$chk" >/dev/null; then
+        _FATAL "Installation of packet \"$P\" failed"
+      fi
+    fi
+    _log_d "Packet \"$P\" installed"
   done
   
   return 0
+}
+
+# Installs a package given its apt package name
+#
+_pkg_apt_install() {
+  ${ENTANDO_OPT_SUDO:+"$ENTANDO_OPT_SUDO"} apt-get install -y "$P" 1> /dev/null
+}
+
+# Installs a package given a link to a tarboall
+#
+_pkg_tar_install() {
+  local url opt1 opt2 opt3
+  # shellcheck disable=SC2162
+  IFS=';' read url opt1 opt2 opt3 <<< "$1"
+  (
+    # NOTE: this form autodetects compressed tars
+    tar xf <(
+      curl -s ${opt1:+"$opt1"} ${opt2:+"$opt2"} ${opt3:+"$opt3"} "$url"
+    )
+    ${ENTANDO_OPT_SUDO:+"$ENTANDO_OPT_SUDO"} mv "$2" "/usr/local/bin/$2"
+    chmod +x "/usr/local/bin/$2"
+  )
 }
 
 # Ensura a mandatory command is avaliable

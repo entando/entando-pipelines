@@ -41,3 +41,35 @@ _ppl_setup_custom_environment() {
     fi
   done
 }
+
+# Logins to an OKD instance given the related OKD variables
+#
+# Required environment variables:
+#  ENTANDO_OPT_OKD_LOGIN_URL        the url of the OKD instance
+#  ENTANDO_OPT_OKD_LOGIN_TOKEN      the tocken to use for the login operation
+#  ENTANDO_OPT_OKD_LOGIN_NAMESPACE  the namespace to use
+#
+# Optional environment variables:
+#   ENTANDO_OPT_OKD_LOGIN_INSECURE  forces an TLS-insecure login (default: false)
+#   ENTANDO_OPT_OKD_CLI_URL         the URL from which the download tool should be downloaded
+#                                   Note that this is a semicolon-delimited list, where the first element
+#                                   is the url and the others are the optional curl options
+#
+_ppl_okd_login() {
+  _NONNULL ENTANDO_OPT_OKD_LOGIN_URL ENTANDO_OPT_OKD_LOGIN_TOKEN ENTANDO_OPT_OKD_LOGIN_NAMESPACE
+  
+  _pkg_get --tar-install "$ENTANDO_OPT_OKD_CLI_URL" "oc" -c "oc"
+  
+  if [ "${ENTANDO_OPT_OKD_LOGIN_INSECURE:-}" == "true" ]; then
+    local INSECURE=true
+  else
+    local INSECURE=false
+  fi
+  
+  oc login --insecure-skip-tls-verify="$INSECURE" --token="$ENTANDO_OPT_OKD_LOGIN_TOKEN" --server="$ENTANDO_OPT_OKD_LOGIN_URL" || {
+    _FATAL "Unable to login to \"$ENTANDO_OPT_OKD_LOGIN_URL\""
+  }
+  oc project "$ENTANDO_OPT_OKD_LOGIN_NAMESPACE" || {
+    _FATAL "Unable to switch to namespace \"$ENTANDO_OPT_OKD_LOGIN_NAMESPACE\""
+  }
+}

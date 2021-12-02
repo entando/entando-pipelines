@@ -74,6 +74,20 @@
 
 ---
 
+### `_ppl-set-return-var()`
+
+**Set the current macro error indicator and the current exit status with the value provided**
+
+
+---
+
+### `_ppl-pr-has-label()`
+
+**Tells if the PR has a label given its number**
+
+
+---
+
 ### `_ppl-load-context()`
 
 **Parses the pipelines environment and loads accordingly**
@@ -412,6 +426,30 @@
  - LEGAL:   _ppp_setup_custom_environment 'A=1;B=hey there;C=true'
  - ILLEGAL: _ppp_setup_custom_environment 'A=1;B="hey;there";C=true'
  - LEGAL:   _ppp_setup_custom_environment 'A=1;B=hey\;there;C=true'
+```
+
+</details>
+
+
+---
+
+### `_ppl_okd_login()`
+
+**Logins to an OKD instance given the related OKD variables**
+
+<details>
+
+```
+ Required environment variables:
+  ENTANDO_OPT_OKD_LOGIN_URL        the url of the OKD instance
+  ENTANDO_OPT_OKD_LOGIN_TOKEN      the tocken to use for the login operation
+  ENTANDO_OPT_OKD_LOGIN_NAMESPACE  the namespace to use
+
+ Optional environment variables:
+   ENTANDO_OPT_OKD_LOGIN_INSECURE  forces an TLS-insecure login (default: false)
+   ENTANDO_OPT_OKD_CLI_URL         the URL from which the download tool should be downloaded
+                                   Note that this is a semicolon-delimited list, where the first element
+                                   is the url and the others are the optional curl options
 ```
 
 </details>

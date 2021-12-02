@@ -96,6 +96,18 @@ _ppl-set-persistent-var() {
   echo "::set-output name=$var_name::$var_value"
 }
 
+# Set the current macro error indicator and the current exit status with the value provided
+#
+_ppl-set-return-var() {
+  [ "$1" -ne 0 ] && {
+    #~ ON ERROR
+    _ppl-set-persistent-var "ERROR_${PPL_CURRENT_MACRO}" true
+  }
+  return "$1"
+}
+
+# Tells if the PR has a label given its number
+#
 _ppl-pr-has-label() {
   _ppl_must_have_env
   if _itmlst_contains "$PPL_PR_LABELS" "$1"; then

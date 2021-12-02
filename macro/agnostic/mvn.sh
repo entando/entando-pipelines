@@ -14,8 +14,8 @@
 #                     in the process, sets on it the proper version name and rebuilds the artifact
 # - GA-PUBLICATION    publishes the maven artifact for general availability
 #                     doesn't alter the sources like PUBLISH
-# - SCAN-MVN-SONAR    Executes a full sonar scan, including the coverage report
-# - SCAN-MVN-OWASP    Executes a full owasp scan
+# - SCAN-MVN-SONAR          Executes a full sonar scan, including the coverage report
+# - SCAN-MVN-OWASP          Executes a full owasp scan
 #
 ppl--mvn() {
   (
@@ -31,6 +31,10 @@ ppl--mvn() {
       "FULL-BUILD")
         _log_i "Building and testing"
         
+        if [ "$ENTANDO_OPT_OKD_LOGIN" == "true" ]; then
+          _ppl_okd_login
+        fi
+
         _ppl_is_feature_action "INTEGRATION-TESTS" "D" && {
           _log_i "INTEGRATION TESTS SKIPPED"
           export ENTANDO_OPT_SKIP_INTEGRATION_TESTS=true
@@ -69,32 +73,25 @@ ppl--mvn() {
       "SCAN-MVN-SONAR")
         _log_i "Starting the sonar analysis"
         _NONNULL SONAR_TOKEN
+        (
+          _ppl_is_feature_action "INTEGRATION-TESTS" "D" && {
+            _log_i "INTEGRATION TESTS SKIPPED"
+            export ENTANDO_OPT_SKIP_INTEGRATION_TESTS=true
+          }
+          
+          __mvn_exec -B verify ${ENTANDO_OPT_SONAR_PROJECT_KEY:+-Dsonar.projectKey="$ENTANDO_OPT_SONAR_PROJECT_KEY"} \
+            org.jacoco:jacoco-maven-plugin:prepare-agent \
+            org.jacoco:jacoco-maven-plugin:report \
+            org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Ppre-deployment-verification -Ppost-deployment-verification \
+          ;
+        )
         
-        _ppl_is_feature_action "INTEGRATION-TESTS" "D" && {
-          _log_i "INTEGRATION TESTS SKIPPED"
-          export ENTANDO_OPT_SKIP_INTEGRATION_TESTS=true
-        }
-        
-        __mvn_exec -B verify ${ENTANDO_OPT_SONAR_PROJECT_KEY:+-Dsonar.projectKey="$ENTANDO_OPT_SONAR_PROJECT_KEY"} \
-          org.jacoco:jacoco-maven-plugin:prepare-agent \
-          org.jacoco:jacoco-maven-plugin:report \
-          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-          -Ppre-deployment-verification -Ppost-deployment-verification \
-        ;
-        
-        local RV="$?"
-        [ "$RV" -ne 0 ] && {
-          #~ ON ERROR
-          _ppl-set-persistent-var "ERROR_${PPL_CURRENT_MACRO}" true
-        }
-
-        return "$RV"
+        _ppl-set-return-var "$?"
         ;;
       "SCAN-MVN-OWASP")
         _log_i "Starting the owasp analysis"
-        
         __mvn_exec verify -Powasp-dependency-check
-        
         ;;
       "PUBLISH")
         case "$PPL_REF_NAME" in

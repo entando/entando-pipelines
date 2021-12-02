@@ -416,6 +416,20 @@
 
 ---
 
+### `_pkg_apt_install()`
+
+**Installs a package given its apt package name**
+
+
+---
+
+### `_pkg_tar_install()`
+
+**Installs a package given a link to a tarboall**
+
+
+---
+
 ### `require_mandatory_command()`
 
 **Ensura a mandatory command is avaliable**
@@ -1289,6 +1303,20 @@
 ```
 
 </details>
+
+
+---
+
+### `_pkg_apt_install()`
+
+**Installs a package given its apt package name**
+
+
+---
+
+### `_pkg_tar_install()`
+
+**Installs a package given a link to a tarboall**
 
 
 ---
