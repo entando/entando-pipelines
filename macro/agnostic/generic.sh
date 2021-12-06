@@ -11,7 +11,9 @@
 # Actions:
 #  - FULL-BUILD   see equivalent on ppl--mvn|ppl--npm
 #  - PUBLISH      see equivalent on ppl--mvn|ppl--npm
-#  - SCAN-NPM-*   see equivalent on ppl--npm
+#  - MTX-MVN-SCAN-*   see equivalent on ppl--npm
+#  - MTX-NPM-SCAN-*   see equivalent on ppl--npm
+#  - MTX-SCAN-SNYK    runs a snyk scan (see ppl--scan)
 #
 ppl--generic() {
   local action project_type
@@ -37,14 +39,14 @@ ppl--generic() {
         "MVN") ppl--mvn PUBLISH "$@";;
         "NPM") ppl--npm PUBLISH "$@";;
       esac;;
-    SCAN-NPM-*)
+    MTX-NPM-SCAN-*)
       ppl--npm "$action" "$@";;
-    SCAN-MVN-SONAR|SCAN-MVN-OWASP|SCAN-MVN-OWASP)
+    MTX-MVN-SCAN-SONAR|MTX-MVN-SCAN-OWASP|MTX-MVN-POST-DEPLOYMENT-TESTS)
       ppl--mvn "$action" "$@";;
-    SCAN-MVN-SNYK)
+    MTX-SCAN-SNYK)
       ppl--scan "snyk" "$@";;
     *)
-      _FATAL "Illegal scan macro action \"$action\""
+      _FATAL "Invalid macro action \"$action\""
       ;;
   esac
 }

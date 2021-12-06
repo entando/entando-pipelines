@@ -397,6 +397,48 @@
 
 ---
 
+### `kube.oc.wait_for_resource()`
+
+**Waits for a condition on given resource**
+
+<details>
+
+```
+ $1: max wait
+ $2: condition (until-present, until-not-present)
+ $3: resource type
+ $4: resource name
+```
+
+</details>
+
+
+---
+
+### `kube.oc-login()`
+
+**Logins to an OKD instance given the related OKD variables**
+
+<details>
+
+```
+ Required environment variables:
+  ENTANDO_OPT_OKD_LOGIN_URL        the url of the OKD instance
+  ENTANDO_OPT_OKD_LOGIN_TOKEN      the tocken to use for the login operation
+  ENTANDO_OPT_OKD_LOGIN_NAMESPACE  the namespace to use
+
+ Optional environment variables:
+   ENTANDO_OPT_OKD_LOGIN_INSECURE  forces an TLS-insecure login (default: false)
+   ENTANDO_OPT_OKD_CLI_URL         the URL from which the download tool should be downloaded
+                                   Note that this is a semicolon-delimited list, where the first element
+                                   is the url and the others are the optional curl options
+```
+
+</details>
+
+
+---
+
 ### `_pkg_get()`
 
 **Install a packet**
@@ -1281,6 +1323,48 @@
  Params:
  - $1: variable to set
  - $2: value
+```
+
+</details>
+
+
+---
+
+### `kube.oc.wait_for_resource()`
+
+**Waits for a condition on given resource**
+
+<details>
+
+```
+ $1: max wait
+ $2: condition (until-present, until-not-present)
+ $3: resource type
+ $4: resource name
+```
+
+</details>
+
+
+---
+
+### `kube.oc-login()`
+
+**Logins to an OKD instance given the related OKD variables**
+
+<details>
+
+```
+ Required environment variables:
+  ENTANDO_OPT_OKD_LOGIN_URL        the url of the OKD instance
+  ENTANDO_OPT_OKD_LOGIN_TOKEN      the tocken to use for the login operation
+  ENTANDO_OPT_OKD_LOGIN_NAMESPACE  the namespace to use
+
+ Optional environment variables:
+   ENTANDO_OPT_OKD_LOGIN_INSECURE  forces an TLS-insecure login (default: false)
+   ENTANDO_OPT_OKD_CLI_URL         the URL from which the download tool should be downloaded
+                                   Note that this is a semicolon-delimited list, where the first element
+                                   is the url and the others are the optional curl options
 ```
 
 </details>

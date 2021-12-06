@@ -11,17 +11,17 @@
 # Actions:
 # - FULL-BUILD      executes a full and clean npm build in full respect of the lock file (which in fact is required)
 #                   Options for FULL-BUILD:
-#                   --public-url                    the path on which app-builder is exposed (default: /app-builder)
-#                   --domain                        the path of the main application (default: /entando-de-app)
-#                   --admin-console-integration     flag for the admin console integration enabling (default: false)
+#                     -public-url                    the path on which app-builder is exposed (default: /app-builder)
+#                     --domain                        the path of the main application (default: /entando-de-app)
+#                     --admin-console-integration     flag for the admin console integration enabling (default: false)
 # - PUBLISH         prepares the repo for publication by setting on it the proper version name
-# - SCAN-NPM-*      see ppl--npm.RUN-SCAN
+# - MTX-NPM-SCAN-*  see ppl--npm.RUN-SCAN
 #
 ppl--npm() {
   (
     START_MACRO "NPM" "$@"
     
-    [ -n "$ENTANDO_OPT_REQUIRED_NODE_VERSION" ] && {   
+    [ -n "$ENTANDO_OPT_REQUIRED_NODE_VERSION" ] && {
       _ppl_validate_command_version "node" "node -v" "$ENTANDO_OPT_REQUIRED_NODE_VERSION"
     }
     
@@ -35,9 +35,9 @@ ppl--npm() {
     case "$action" in
       "FULL-BUILD") ppl--npm.FULL-BUILD;;
       "PUBLISH") ppl---npm.PUBLISH;;
-      "SCAN-NPM-LINT") ppl--npm.RUN-SCAN lint;;
-      "SCAN-NPM-SASS") ppl--npm.RUN-SCAN sass-lint;;
-      "SCAN-NPM-COVERAGE") ppl--npm.RUN-SCAN coverage;;
+      "MTX-NPM-SCAN-LINT") ppl--npm.RUN-SCAN lint;;
+      "MTX-NPM-SCAN-SASS") ppl--npm.RUN-SCAN sass-lint;;
+      "MTX-NPM-SCAN-COVERAGE") ppl--npm.RUN-SCAN coverage;;
       *) __npm_exec "$@" ;;
     esac
   )
@@ -62,7 +62,6 @@ ppl--npm.FULL-BUILD() {
     __npm_exec run build --production
   )
 }
-
 
 ppl---npm.PUBLISH() {
   case "$PPL_REF_NAME" in

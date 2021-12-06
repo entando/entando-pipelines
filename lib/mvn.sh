@@ -2,6 +2,7 @@
 
 __mvn_exec() {
   local SIMPLE=""; [ "$1" = "--ppl-simple" ] && { SIMPLE="$1"; shift; }
+  local TS=""; [ "$1" = "--ppl-timestamp" ] && { TS="$1"; shift; }
   local MVN="mvn"
   [ -f "./mvnw" ] && MVN="./mvnw"
   
@@ -9,6 +10,7 @@ __mvn_exec() {
   
   _exec_cmd \
     ${SIMPLE:+"$SIMPLE"} \
+    ${TS:+"$TS"} \
     --hide "Progress.* kB" \
     --hide "Error message = null" \
     --pe \

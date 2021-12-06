@@ -36,7 +36,7 @@ ppl--bom() {
         ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM "$projectArtifactId" "$projectVersion" "$PPL_TOKEN_OVERRIDE" "$bomQualifier"
         ;;
       *)
-        _FATAL "Illegal bom action \"$action\""
+        _FATAL "Invalid bom action \"$action\""
         ;;
     esac
   )

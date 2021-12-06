@@ -46,7 +46,7 @@ ppl--docker() {
         ppl--docker.publish.BUILD_AND_PUSH_ALL "$builds" "$projectArtifactId" "$projectVersion"
         ;;
       *)
-        _FATAL "Illegal docker macro action \"$action\""
+        _FATAL "Invalid docker macro action \"$action\""
         ;;
     esac
   )
@@ -58,7 +58,7 @@ ppl--docker.publish.INIT() {
   _NONNULL "${1}" "${2}"
   
   _ppl_is_feature_enabled "MVN-QUARKUS-NATIVE" && {
-    mvn package -Pjvm
+    _mvn_exec package -B -Pjvm
   }
 }
 

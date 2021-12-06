@@ -304,6 +304,12 @@ _str_quote() {
   fi
 }
 
+# prints an escaped string given the a source string and the char to escape
+#
+_str_escape_char() {
+  echo "${1//$2/\\$2}"
+}
+
 # Decodes an ENTANDO_OPT variable encoded with a triple-hash prefix to evade the censoring
 #
 # Params:
@@ -442,22 +448,39 @@ _summarize_stream() {
 # $@ the full command line
 # 
 # Options
-# --hide regex  suppress the given regex from the output, can be repeated up to 3 times
-# --pe          see _summarize_stream
+# --ppl-simple    no summarization is executed
+# --ppl-timestamp a timestamp is added to the output lines
+# --hide regex    suppress the given regex from the output, can be repeated up to 4 times
+# --pe            see _summarize_stream
 #
 _exec_cmd() {
   local SIMPLE=false; [ "$1" = "--ppl-simple" ] && { SIMPLE=true; shift; }
-  local HIDE1=""; [ "$1" = "--hide" ] && { HIDE1="$2"; shift 2; }
-  local HIDE2=""; [ "$1" = "--hide" ] && { HIDE2="$2"; shift 2; }
-  local HIDE3=""; [ "$1" = "--hide" ] && { HIDE3="$2"; shift 2; }
+  local TS=false; [ "$1" = "--ppl-timestamp" ] && { TS=true; shift; }
+  local F1=""; [ "$1" = "--hide" ] && { F1="$(_str_quote "$2")"; shift 2; }
+  local F2=""; [ "$1" = "--hide" ] && { F2="$(_str_quote "$2")"; shift 2; }
+  local F3=""; [ "$1" = "--hide" ] && { F3="$(_str_quote "$2")"; shift 2; }
+  local F4=""; [ "$1" = "--hide" ] && { F4="$(_str_quote "$2")"; shift 2; }
   local PE=''; [ "$1" = "--pe" ] && { PE="--pe"; shift; }
   local PO=''; [ "$1" = "--po" ] && { PO="$2"; shift 2; }
+  # shellcheck disable=SC2016
+  {
+    CMD='while (<STDIN>) {'$'\n'
+    [ -n "$F1" ] && CMD+='  if (index($_, '"$F1"') != -1) { next; }'$'\n'
+    [ -n "$F2" ] && CMD+='  if (index($_, '"$F2"') != -1) { next; }'$'\n'
+    [ -n "$F3" ] && CMD+='  if (index($_, '"$F3"') != -1) { next; }'$'\n'
+    [ -n "$F4" ] && CMD+='  if (index($_, '"$F4"') != -1) { next; }'$'\n'
+    if $TS; then
+      CMD+='  my ($S,$M,$H,$d,$m,$y,$wd,$yd,$id)=localtime(time);'$'\n';
+      CMD+='  my $TS = sprintf ( "%04d-%02d-%02d_%02d:%02d:%02d", $y+1900, $m+1,$d,$H,$M,$S);'$'\n';
+      CMD+='  print($TS . " | " . $_);'$'\n'
+    else
+      CMD+='  print($_);'$'\n'
+    fi
+    CMD+='}'$'\n'
+  }
   
-  local H1="cat" H2="cat" H3="cat" HH1 HH2 HH3
-  if [ -n "$HIDE1" ]; then H1="grep -v"; HH1="$(_str_quote -s "$HIDE1")"; fi
-  if [ -n "$HIDE2" ]; then H2="grep -v"; HH2="$(_str_quote -s "$HIDE2")"; fi
-  if [ -n "$HIDE3" ]; then H3="grep -v"; HH3="$(_str_quote -s "$HIDE3")"; fi
-
+  echo "$CMD"  > /tmp/t
+  
   (
     local RVFILE="$(mktemp)"
     if "$SIMPLE"; then
@@ -465,9 +488,9 @@ _exec_cmd() {
       trap "rm \"$RVFILE\"" exit
       (
         # shellcheck disable=SC2068
-        $@ 2>&1
+        $@ 2>&1 | perl -e "$CMD"
         echo "$?" > "$RVFILE"
-      ) | $H1 ${HH1:+"$HH1"} | $H2 ${HH2:+"$HH2"} | $H3 ${HH3:+"$HH3"}
+      )
     else
       if [ -n "$PO" ]; then
         local TMPFILE="$PO"
@@ -480,10 +503,10 @@ _exec_cmd() {
       fi
       
       _summarize_stream --lf ${PE:+"$PE"} -f "$TMPFILE" "$1" < <(
-          # shellcheck disable=SC2068
-          $@ 2>&1
-          echo "$?" > "$RVFILE"
-      ) | $H1 ${HH1:+"$HH1"} | $H2 ${HH2:+"$HH2"} | $H3 ${HH3:+"$HH3"}
+        # shellcheck disable=SC2068
+        $@ 2>&1 | perl -e "$CMD"
+        echo "$?" > "$RVFILE"
+      )
     fi
 
     local RV="$(cat "$RVFILE")"
@@ -620,7 +643,8 @@ _ppl_is_feature_enabled() {
     I*)
       _log_w "Skip directives (SKIP-$1) are not allowed in "
               "\"ENTANDO_OPT_FEATURES\" or \"ENTANDO_OPT_GLOBAL_FEATURES\" => ignored"
-      return "$2"
+      [ "$2" == "true" ] && return 0
+      return 9
       ;;
     "") return 3;;
   esac

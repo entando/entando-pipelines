@@ -27,7 +27,7 @@ ppl--release() {
       "tag-snapshot-version") ppl--release.tag-snapshot-version "v";;
       "tag-release-version") ppl--release.prepare-final-release;;
       *)
-        _FATAL "Illegal action \"$action\" provided"
+        _FATAL "Invalid action \"$action\" provided"
         ;;
     esac
   )
@@ -59,7 +59,7 @@ ppl--release.tag-snapshot-version() {
   
   _git_commit_exists "$PPL_COMMIT_ID" || {
     _FATAL "Unable to find the reference commit on this repo, " \
-           "may be you re-execute an old run?"
+           "may be you re-executed an old run?"
   }
   
   __git_add_tag -f "$snapshotVersionTag" "$PPL_RUN_ID" "$PPL_COMMIT_ID"
@@ -71,7 +71,6 @@ ppl--release.tag-snapshot-version() {
 ppl--release._determine_snapshot_version_name() {
   local _tmp_ver_ _tmp_qual_
 
-  
   if [ -n "$PPL_BASE_REF" ]; then
     # ON THE PR BRANCH
     _NONNULL PPL_PR_TITLE_PREFIX
