@@ -94,7 +94,7 @@ test_setup-feature-list.with-prefix() {
     local RES="$(
       ppl--setup-features-list "FEATURE_LIST" --prefix "FEA-" --exclude "FEA-EXP-"
     )"
-
+    
     ASSERT RES =~ "::set-output name=FEATURE_LIST::\['FEA-G','FEA-C'\]"
     
     true

@@ -72,13 +72,13 @@
  $1: action to apply
 
  Actions:
- - FULL-BUILD      executes a full and clean npm build in full respect of the lock file (which in fact is required)
-                   Options for FULL-BUILD:
-                   --public-url                    the path on which app-builder is exposed (default: /app-builder)
-                   --domain                        the path of the main application (default: /entando-de-app)
-                   --admin-console-integration     flag for the admin console integration enabling (default: false)
- - PUBLISH         prepares the repo for publication by setting on it the proper version name
- - SCAN-NPM-*      see ppl--npm.RUN-SCAN
+ - FULL-BUILD           Executes a full and clean npm build in full respect of the lock file (which in fact is required)
+                        Options for FULL-BUILD:
+                          -public-url                    the path on which app-builder is exposed (default: /app-builder)
+                          --domain                        the path of the main application (default: /entando-de-app)
+                          --admin-console-integration     flag for the admin console integration enabling (default: false)
+ - PUBLISH              Prepares the repo for publication by setting on it the proper version name
+ - MTX-NPM-SCAN-{type}  Runs a type of npm scan (LINT, SASS-LINT, COVERAGE)
 ```
 
 </details>
@@ -140,8 +140,26 @@
  $1: the release action to apply
 
  Actions:
- - tag-snapshot-version:   applies the snapshot tag to the current commit
- - tag-release-version     applies the final release tag to the current commit
+ - tag-snapshot-version:         applies the snapshot tag to the current commit
+ - tag-pseudo-snapshot-version:  applies a tag similar to the snapshot tag but that doesn't triggers workflows
+ - tag-release-version           applies the final release tag to the current commit
+```
+
+</details>
+
+
+---
+
+### `ppl--release._determine_snapshot_version_name()`
+
+**Determine the current snapshot version names**
+
+<details>
+
+```
+ Supported Conditions:
+ - On a PR creation/update commit
+ - On a PR merge commit
 ```
 
 </details>
@@ -183,9 +201,9 @@
                      in the process, sets on it the proper version name and rebuilds the artifact
  - GA-PUBLICATION    publishes the maven artifact for general availability
                      doesn't alter the sources like PUBLISH
- - SCAN-MVN-SONAR          Executes a full sonar scan, including the coverage report
- - SCAN-MVN-OWASP          Executes a full owasp scan
- - SCAN-MVN-PREVIEW-TESTS  Executes the tests designed to run on a preview environment
+ - MTX-MVN-SCAN-SONAR          Executes a full sonar scan, including the coverage report
+ - MTX-MVN-SCAN-OWASP          Executes a full owasp scan
+ - MTX-MVN-POST-DEPLOYMENT-TESTS  Executes the tests designed to run on a preview environment
 ```
 
 </details>
@@ -275,7 +293,9 @@
  Actions:
   - FULL-BUILD   see equivalent on ppl--mvn|ppl--npm
   - PUBLISH      see equivalent on ppl--mvn|ppl--npm
-  - SCAN-NPM-*   see equivalent on ppl--npm
+  - MTX-MVN-SCAN-*   see equivalent on ppl--npm
+  - MTX-NPM-SCAN-*   see equivalent on ppl--npm
+  - MTX-SCAN-SNYK    runs a snyk scan (see ppl--scan)
 ```
 
 </details>

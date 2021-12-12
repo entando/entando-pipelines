@@ -47,7 +47,10 @@ START_MACRO() {
   
   _ppl-load-context "$PPL_CONTEXT"
   
-  _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_GLOBAL_FEATURES},${ENTANDO_OPT_FEATURES}"
+  _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_FEATURES}"
+  _ppl_is_feature_enabled "INHERIT-GLOBAL-FEATURES" true && {
+    _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_GLOBAL_FEATURES},${ENTANDO_OPT_FEATURES}"
+  }
 
   _ppl_is_feature_enabled "$PPL_CURRENT_MACRO" true || {
     _EXIT "Macro of id \"$PPL_CURRENT_MACRO\" is not enabled"

@@ -12,7 +12,7 @@
 test_npm() {
   print_current_function_name "RUNNING TEST> " ".."
 
-  _pkg_get "jq" -c jq
+  _pkg_get "jq"
 
   _git_full_clone --as-work-area "file://$TEST__WORK_DIR/repo-mocks/app-builder"
   

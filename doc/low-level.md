@@ -397,18 +397,61 @@
 
 ---
 
+### `kube.oc.wait_for_resource()`
+
+**Waits for a condition on given resource**
+
+<details>
+
+```
+ $1: max wait
+ $2: condition (until-present, until-not-present)
+ $3: resource type
+ $4: resource name
+```
+
+</details>
+
+
+---
+
+### `kube.oc-login()`
+
+**Logins to an OKD instance given the related OKD variables**
+
+<details>
+
+```
+ Required environment variables:
+  ENTANDO_OPT_OKD_LOGIN_URL        the url of the OKD instance
+  ENTANDO_OPT_OKD_LOGIN_TOKEN      the tocken to use for the login operation
+  ENTANDO_OPT_OKD_LOGIN_NAMESPACE  the namespace to use
+
+ Optional environment variables:
+   ENTANDO_OPT_OKD_LOGIN_INSECURE  forces a TLS-insecure login (default: false)
+   ENTANDO_OPT_OKD_CLI_URL         the URL from which the download tool should be downloaded
+                                   Note that this is a semicolon-delimited list, where the first element
+                                   is the url and the others are the optional curl options
+```
+
+</details>
+
+
+---
+
 ### `_pkg_get()`
 
-**Install a packet**
+**Installs a command given its package name**
 
 <details>
 
 ```
  Params:
- $1: name of the packet
+ $1: name of the package
 
  Options:
- -c command: installation check based on command presence
+ -c command          command to check if != package name
+ --tar-install url   installation based on the url of the executable archive
 ```
 
 </details>
@@ -425,14 +468,27 @@
 
 ### `_pkg_tar_install()`
 
-**Installs a package given a link to a tarboall**
+**Installs a package given a link to a tarball**
+
+<details>
+
+```
+ $1: semicolon-delimited list containing:
+     position #1     the url
+     position #2..4  3 additional args for the curl command
+
+ this limited syntax was implemented mostly to allow specifying "--insecure"
+ note that all the args are individually quoted
+```
+
+</details>
 
 
 ---
 
 ### `require_mandatory_command()`
 
-**Ensura a mandatory command is avaliable**
+**Ensures that a mandatory command is avaliable**
 
 <details>
 
@@ -459,6 +515,25 @@
 
  Options:
  [-m] if provided failing finding the command is fatal
+```
+
+</details>
+
+
+---
+
+### `__mvn_exec()`
+
+**Successfully runs a maven command or fatals.**
+
+<details>
+
+```
+ Unless otherise specified it summarize the output.
+
+ Special Options:
+ --ppl-simple:     doesn't summarize the output
+ --ppl-timestamp:  adds a timestamp to every output line
 ```
 
 </details>
@@ -694,7 +769,8 @@
 
 ```
  Options:
- --pr-tag filters for snapshot tags
+ --snapshot-tag filters for snapshot tags
+ --pseudo-snapshot-tag filters for pseudo snapshot tags
 
  Params:
  $1  the output var
@@ -1288,18 +1364,61 @@
 
 ---
 
+### `kube.oc.wait_for_resource()`
+
+**Waits for a condition on given resource**
+
+<details>
+
+```
+ $1: max wait
+ $2: condition (until-present, until-not-present)
+ $3: resource type
+ $4: resource name
+```
+
+</details>
+
+
+---
+
+### `kube.oc-login()`
+
+**Logins to an OKD instance given the related OKD variables**
+
+<details>
+
+```
+ Required environment variables:
+  ENTANDO_OPT_OKD_LOGIN_URL        the url of the OKD instance
+  ENTANDO_OPT_OKD_LOGIN_TOKEN      the tocken to use for the login operation
+  ENTANDO_OPT_OKD_LOGIN_NAMESPACE  the namespace to use
+
+ Optional environment variables:
+   ENTANDO_OPT_OKD_LOGIN_INSECURE  forces a TLS-insecure login (default: false)
+   ENTANDO_OPT_OKD_CLI_URL         the URL from which the download tool should be downloaded
+                                   Note that this is a semicolon-delimited list, where the first element
+                                   is the url and the others are the optional curl options
+```
+
+</details>
+
+
+---
+
 ### `_pkg_get()`
 
-**Install a packet**
+**Installs a command given its package name**
 
 <details>
 
 ```
  Params:
- $1: name of the packet
+ $1: name of the package
 
  Options:
- -c command: installation check based on command presence
+ -c command          command to check if != package name
+ --tar-install url   installation based on the url of the executable archive
 ```
 
 </details>
@@ -1316,14 +1435,27 @@
 
 ### `_pkg_tar_install()`
 
-**Installs a package given a link to a tarboall**
+**Installs a package given a link to a tarball**
+
+<details>
+
+```
+ $1: semicolon-delimited list containing:
+     position #1     the url
+     position #2..4  3 additional args for the curl command
+
+ this limited syntax was implemented mostly to allow specifying "--insecure"
+ note that all the args are individually quoted
+```
+
+</details>
 
 
 ---
 
 ### `require_mandatory_command()`
 
-**Ensura a mandatory command is avaliable**
+**Ensures that a mandatory command is avaliable**
 
 <details>
 
@@ -1350,6 +1482,25 @@
 
  Options:
  [-m] if provided failing finding the command is fatal
+```
+
+</details>
+
+
+---
+
+### `__mvn_exec()`
+
+**Successfully runs a maven command or fatals.**
+
+<details>
+
+```
+ Unless otherise specified it summarize the output.
+
+ Special Options:
+ --ppl-simple:     doesn't summarize the output
+ --ppl-timestamp:  adds a timestamp to every output line
 ```
 
 </details>
@@ -1585,7 +1736,8 @@
 
 ```
  Options:
- --pr-tag filters for snapshot tags
+ --snapshot-tag filters for snapshot tags
+ --pseudo-snapshot-tag filters for pseudo snapshot tags
 
  Params:
  $1  the output var

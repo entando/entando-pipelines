@@ -24,8 +24,8 @@ ppl--docker() {
     __ppl_enter_local_clone_dir
     
     case "$(__ppl_determine_current_project_type --print)" in
-      "MVN") _pkg_get "xmlstarlet" -c "xmlstarlet";;
-      "NPM") _pkg_get "jq" -c "jq";;
+      "MVN") _pkg_get "xmlstarlet";;
+      "NPM") _pkg_get "jq";;
       *) _FATAL  "Unable to detect the project type"
     esac
     
@@ -46,7 +46,7 @@ ppl--docker() {
         ppl--docker.publish.BUILD_AND_PUSH_ALL "$builds" "$projectArtifactId" "$projectVersion"
         ;;
       *)
-        _FATAL "Illegal docker macro action \"$action\""
+        _FATAL "Invalid docker macro action \"$action\""
         ;;
     esac
   )
@@ -58,7 +58,7 @@ ppl--docker.publish.INIT() {
   _NONNULL "${1}" "${2}"
   
   _ppl_is_feature_enabled "MVN-QUARKUS-NATIVE" && {
-    mvn package -Pjvm
+    __mvn_exec package -B -Pjvm
   }
 }
 

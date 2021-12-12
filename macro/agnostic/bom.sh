@@ -20,7 +20,7 @@ ppl--bom() {
   (
     START_MACRO "BOM" "$@"
 
-    _pkg_get "xmlstarlet" -c "xmlstarlet"
+    _pkg_get "xmlstarlet"
     
     local action
     _get_arg action 1
@@ -36,7 +36,7 @@ ppl--bom() {
         ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM "$projectArtifactId" "$projectVersion" "$PPL_TOKEN_OVERRIDE" "$bomQualifier"
         ;;
       *)
-        _FATAL "Illegal bom action \"$action\""
+        _FATAL "Invalid bom action \"$action\""
         ;;
     esac
   )

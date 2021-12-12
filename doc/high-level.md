@@ -433,24 +433,62 @@
 
 ---
 
-### `_ppl_okd_login()`
+### `_ppl_run_post-deployment-test_setup_script()`
 
-**Logins to an OKD instance given the related OKD variables**
+**Runs a the preview environment provisioning script**
 
 <details>
 
 ```
- Required environment variables:
-  ENTANDO_OPT_OKD_LOGIN_URL        the url of the OKD instance
-  ENTANDO_OPT_OKD_LOGIN_TOKEN      the tocken to use for the login operation
-  ENTANDO_OPT_OKD_LOGIN_NAMESPACE  the namespace to use
-
- Optional environment variables:
-   ENTANDO_OPT_OKD_LOGIN_INSECURE  forces an TLS-insecure login (default: false)
-   ENTANDO_OPT_OKD_CLI_URL         the URL from which the download tool should be downloaded
-                                   Note that this is a semicolon-delimited list, where the first element
-                                   is the url and the others are the optional curl options
+ Params:
+ $1 the test namespace to use
+ $2 the project name
+ $3 the project version
 ```
 
 </details>
+
+
+---
+
+### `_ppl_provision_helm_preview_environment()`
+
+**Creates a preview environment by using helm charts present in the dir**
+
+<details>
+
+```
+ Params:
+ $1: receiver of the effective test namespace
+ $2: proposed test namespace (defaults to ENTANDO_OPT_TEST_NAMESPACE)
+```
+
+</details>
+
+
+---
+
+### `_ppl_set_provisioning_placeholders_in_files()`
+
+**Sets a set of well-known provisioning parameters in a given file**
+
+<details>
+
+```
+ Params:
+ $1: list of files to set, separed by semicolon
+ $2: Project name
+ $3: Project version
+ $4: Namespace to use for testing
+ $5: Hostname suffix
+```
+
+</details>
+
+
+---
+
+### `_ppl_autoset_snapshot_version()`
+
+**Sets the the project snapshot version according with the current pr information**
 

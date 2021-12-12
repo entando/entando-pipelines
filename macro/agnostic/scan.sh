@@ -25,10 +25,10 @@ ppl--scan() {
     case "$action" in
       snyk)
         ppl--scan.PREREQUIREMENTS
-        ppl--scan.SCAN
+        
         ;;
       *)
-        _FATAL "Illegal scan macro action \"$action\""
+        _FATAL "Invalid scan macro action \"$action\""
         ;;
     esac
   )
@@ -38,7 +38,7 @@ ppl--scan.PREREQUIREMENTS() {
   _pkg_get nodejs -c node
   _pkg_get npm -c npm
   _pkg_is_command_available || {
-    ${ENTANDO_OPT_SUDO:+"$ENTANDO_OPT_SUDO"} npm install -g snyk 1>/dev/null
+    ${ENTANDO_OPT_SUDO:+"$ENTANDO_OPT_SUDO" -n} npm install -g snyk 1>/dev/null
   }
   _pkg_is_command_available -m snyk
 }
