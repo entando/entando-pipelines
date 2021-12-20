@@ -1,0 +1,43 @@
+version: '2.1'
+
+services:
+  keycloak:
+    image: entando/keycloak
+    hostname: keycloak
+    environment:
+      KEYCLOAK_USER: test-entando-idp-admin
+      KEYCLOAK_PASSWORD: test-entando-idp-admin-password
+      DB_VENDOR: h2
+      PROXY_ADDRESS_FORWARDING: "true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 3s
+      timeout: 10s
+      retries: 30
+
+  postgresql:
+    container_name: postgresql
+    image: postgres:14
+    environment:
+      POSTGRES_USER: "test_entando_db_admin"
+      POSTGRES_PASSWORD: "test_entando_db_admin_password"
+    ports:
+      - "5432:5432"
+    volumes: 
+      - ./postgres_init.sql:/docker-entrypoint-initdb.d/postgres_init.sql
+
+  mysql:
+    container_name: mysql
+    hostname: database
+    image: "mysql:8"
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_USER: "test_entando_db_admin"
+      MYSQL_PASSWORD: "test_entando_db_admin_password"
+      MYSQL_ROOT_PASSWORD: "test_entando_db_admin_password"
+    healthcheck:
+      test: "/usr/bin/mysql --user=root --password=test-entando-db-admin-password --execute \"select 1;\""
+      interval: 3s
+      timeout: 1s
+      retries: 10

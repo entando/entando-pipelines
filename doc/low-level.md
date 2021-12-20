@@ -825,6 +825,22 @@
 
 ---
 
+### `__docker-compose()`
+
+**Runs a docker-compose operation**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the docker-compose command
+```
+
+</details>
+
+
+---
+
 ### `_pom_get_project_artifact_id()`
 
 **Extacts the artifactId from a pom**
@@ -1785,6 +1801,22 @@
 ```
  Params:
  $@: all params are forwarded to the docker command
+```
+
+</details>
+
+
+---
+
+### `__docker-compose()`
+
+**Runs a docker-compose operation**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the docker-compose command
 ```
 
 </details>

@@ -58,6 +58,8 @@ START_MACRO() {
   
   _ppl_setup_custom_environment "$ENTANDO_OPT_CUSTOM_ENV"
   
+  PPL_NONCE="$(tr -dc A-Za-z0-9 </dev/urandom | head -c 13 ; echo '')"
+  
   if _log_on_level DEBUG; then
     echo -e "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo "~~ ${comment}${PPL_CURRENT_MACRO} invoked on $(date +'%Y-%m-%d %H-%M-%S')"

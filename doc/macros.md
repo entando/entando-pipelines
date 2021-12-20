@@ -167,6 +167,25 @@
 
 ---
 
+### `ppl--env()`
+
+**MACRO OPERATIONS RELATED TO TEST ENVIRONMENT**
+
+<details>
+
+```
+ Params:
+ $1: action to apply
+
+ Actions
+ - prepare-basic-environment  run an environment with the basic test requirements
+```
+
+</details>
+
+
+---
+
 ### `ppl--pr-preflight-checks()`
 
 **EXECUTES PRELIMINAR CHECKS ABOUT THE CURRENT PR**

@@ -38,3 +38,23 @@ _docker_parse_image_address() {
   [ -n "$2" ] && _set_var "$2" "${BASH_REMATCH[1]}"
   [ -n "$3" ] && _set_var "$3" "${BASH_REMATCH[2]}"
 }
+
+# Runs a docker-compose operation
+#
+# Params:
+# $@: all params are forwarded to the docker-compose command
+#
+__docker-compose() {
+  _log_d "Running docker-compose $1.."
+
+  if [ "$TEST__EXECUTION" != "true" ]; then
+    if docker "$@"; then
+      _log_d "docker-compose execution was successful"
+    else
+      _FATAL "Error executing docker-compose"
+    fi
+  else
+    echo "[DOCO] docker-compose $*" >> "$TEST__TECHNICAL_LOG_FILE"
+    true
+  fi
+}
