@@ -78,24 +78,44 @@ test_setup-feature-list.with-list() {
   )
 }
 
-#TEST:lib
-test_setup-feature-list.with-prefix() {
+#TEST:list
+test_setup-feature-list.with-prefix-simple() {
   print_current_function_name "RUNNING TEST> "  ".."
   (
     TEST.mock.context "github-context-sample-01.json"
     
     # shellcheck disable=SC2034
     TEST__APPLY_OVERRIDES() {
-      ENTANDO_OPT_FEATURES="FEA-C,FEA-D,+FEA-EXP-C"
+      ENTANDO_OPT_FEATURES="-INHERIT-GLOBAL-FEATURES,MTX-SCAN-SNYK"
+    }
+    
+    # shellcheck disable=SC2034
+    local RES="$(
+      ppl--setup-features-list "SCAN_MATRIX" --prefix "MTX-MVN-,MTX-SCAN-"
+    )"
+    
+    true
+  )
+}
+
+#TEST:list
+test_setup-feature-list.with-prefix-with-exclusion() {
+  print_current_function_name "RUNNING TEST> "  ".."
+  (
+    TEST.mock.context "github-context-sample-01.json"
+    
+    # shellcheck disable=SC2034
+    TEST__APPLY_OVERRIDES() {
+      ENTANDO_OPT_FEATURES="FEA-C,FEA-D,+FEA-EXP-C,+ZZA-TEST"
       ENTANDO_OPT_GLOBAL_FEATURES="+FEA-G,-FEA-D"
     }
     
     # shellcheck disable=SC2034
     local RES="$(
-      ppl--setup-features-list "FEATURE_LIST" --prefix "FEA-" --exclude "FEA-EXP-"
+      ppl--setup-features-list "FEATURE_LIST" --prefix "FEA-,ZZA-" --exclude "FEA-EXP-"
     )"
-
-    ASSERT RES =~ "::set-output name=FEATURE_LIST::\['FEA-G','FEA-C'\]"
+    
+    ASSERT RES =~ "::set-output name=FEATURE_LIST::\['FEA-G','FEA-C','ZZA-TEST'\]"
     
     true
   )

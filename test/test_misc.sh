@@ -176,6 +176,9 @@ test_str() {
   ASSERT RES = '"Started publication as 101"'
   RES="$(_str_quote -s "Started publication as 101")"
   ASSERT RES = 'Started publication as 101'
+  
+  RES="$(_str_escape_char "sdasda/Dsdaas" "/")"
+  ASSERT RES = 'sdasda\/Dsdaas'
 }
 
 #TEST:lib
@@ -212,6 +215,9 @@ test_stream_utils() {
 test_exec_cmd() {
   local RES
   
+  # STARDARD EXECUTION
+  # Both the summary and the full ourput are printed
+  
   (
     _TEXT__EXEC_CMD_SAMPLE() {  
       for ((i=0;i<100;i++)); do
@@ -222,42 +228,48 @@ test_exec_cmd() {
         echo "Error message = null (${i}/a)"
         echo "Error message = null (${i}/b)"
       done
-      return 1
+      return 55
     }
+    
+    #~~~
 
     local TMPFILE="$(mktemp)"
     # shellcheck disable=SC2064
     trap "rm \"$TMPFILE\"" exit
-
+    
     RES="$(_exec_cmd \
       --hide "Progress.* kB" \
       --hide "Error message = null" \
       --pe \
       --po "$TMPFILE" \
       "_TEXT__EXEC_CMD_SAMPLE"
+
+      ASSERT -v RESCODE "$?" = 55
     )"
-    
+
     N1="$(echo "$RES" | grep -c "Line")"
     N2="$(echo "$RES" | grep -c "Important Error")"
     N3="$(echo "$RES" | grep -c -E "^\s+at\s")"
     N4="$(echo "$RES" | grep -c "Error message")"
     N5="$(echo "$RES" | grep -c "Progress")"
     
-    ASSERT -v RES "$N1" = 100
-    ASSERT -v RES "$N2" = 200
-    ASSERT -v RES "$N3" = 100
-    ASSERT -v RES "$N4" = 200
-    ASSERT -v RES "$N5" = 100
+    # Both summarised and full log are printed
+    
+    ASSERT -v RES "$N1" = 100       # Standard lines are only printed in the full log 
+    ASSERT -v RES "$N2" = 200       # Error lines if not explicitly filtered appears on both
+    ASSERT -v RES "$N3" = 100       # "  at" strings following an error shares the same visibility
+    ASSERT -v RES "$N4" = 0         # Even error lines when explicitly filtered are hidden
+    ASSERT -v RES "$N5" = 100       # Filtered lines only on the full log
     
     N1="$(grep -c "Line" "$TMPFILE")"
     N2="$(grep -c "Important Error" "$TMPFILE")"
     N3="$(grep -c "Error message" "$TMPFILE")"
     N4="$(grep -c "Progress" "$TMPFILE")"
     
-    ASSERT -v RES "$N1" = 100
-    ASSERT -v RES "$N2" = 100
-    ASSERT -v RES "$N3" = 200
-    ASSERT -v RES "$N4" = 100
+    ASSERT -v RES "$N1" = 100       # In nor filtered, normal lines are printed in the file log
+    ASSERT -v RES "$N2" = 100       # In nor filtered, error lines are printed in the file log
+    ASSERT -v RES "$N3" = 0         # when filtered, error lines are not printed in the file log
+    ASSERT -v RES "$N4" = 100       # when filtered, normal lines are not printed in the file log
 
   ) || _SOE
 }
@@ -278,14 +290,21 @@ test_versioning() {
 
 #TEST:lib
 test__features() {
+  print_current_function_name "RUNNING TEST> "  ".."
+  
   # shellcheck disable=SC2034
   PPL_PARSED_CONTEXT="[test]"
   # shellcheck disable=SC2034
-  PPL_FEATURES="SCAN-MVN-SNYK,SCAN-MVN-OWASP,DISABLE-INTEGRATION-TESTS,MVN-QUARKUS-NATIVE"
+  PPL_FEATURES="MTX-SCAN-SNYK,MTX-MVN-SCAN-OWASP,DISABLE-INTEGRATION-TESTS,MVN-QUARKUS-NATIVE"
   _ppl_is_feature_enabled "MVN-QUARKUS-NATIVE" || {
     _FATAL -99 "Feature was configured but is has not been detected" 1>&2
   }
   _ppl_is_feature_enabled "MVN-VERIFY" && {
+    _FATAL -99 "Feature was detected but was not actually configured" 1>&2
+  }
+  # shellcheck disable=SC2034
+  PPL_FEATURES="-INHERIT-GLOBAL-FEATURES"
+  _ppl_is_feature_enabled "INHERIT-GLOBAL-FEATURES" true && {
     _FATAL -99 "Feature was detected but was not actually configured" 1>&2
   }
   true
@@ -293,12 +312,31 @@ test__features() {
 
 #TEST:lib
 test__ppl_setup_custom_environment() {
+  print_current_function_name "RUNNING TEST> "  ".."
+  
   # shellcheck disable=SC2034
   local Z="_Z" K="_K"
   _ppl_setup_custom_environment "X=XX;Y=YY;Z=ZZ;W=W\;W"
   RES="$(bash -c 'echo "$X/$Y/$Z/$K/$W"')"
   echo "$RES"
   ASSERT RES = "XX/YY/ZZ//W;W"
+}
+
+#TEST:lib
+test__ppl_extract_branch_name_from_ref() {
+  print_current_function_name "RUNNING TEST> "  ".."
+
+  local RES
+  _ppl_extract_branch_name_from_ref RES "refs/pull/167/merge"
+  ASSERT RES = ""
+  _ppl_extract_branch_name_from_ref RES "refs/heads/develop"
+  ASSERT RES = "develop"
+  _ppl_extract_branch_name_from_ref RES "refs/tags/v7.0.0-ENG-3002-PR-166"
+  ASSERT RES = "v7.0.0-ENG-3002-PR-166"
+  _ppl_extract_branch_name_from_ref RES "refs/heads/release/1.2.3"
+  ASSERT RES = "release/1.2.3"
+  _ppl_extract_branch_name_from_ref RES "refs/tags/TEST/v7.0.0-ENG-3002-PR-166"
+  ASSERT RES = "TEST/v7.0.0-ENG-3002-PR-166"
 }
 
 true

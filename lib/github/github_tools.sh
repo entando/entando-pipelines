@@ -206,7 +206,7 @@ _ppl-load-context() {
     return 0
   }
 
-  _pkg_get "jq" -c "jq"
+  _pkg_get "jq"
 
   local Q="["
   Q+=".repository,"
@@ -260,6 +260,7 @@ _ppl-load-context() {
     <<< "$RES"
 
     PPL_PR_TITLE="$(echo "$PPL_PR_TITLE" | base64 -d)"
+    [ "$PPL_PR_TITLE" = "null" ] && PPL_PR_TITLE=""
 
     # TEST__EXECUTION OVERRIDES
     _ppl-apply-overrides
@@ -271,8 +272,18 @@ _ppl-load-context() {
       __jq ".event.pull_request.labels | map(.name)? | join(\",\")?" -r <<< "$CTX" 2> /dev/null
     )"
     PPL_PR_LABELS="${PPL_PR_LABELS//\"/}"
-    PPL_REF_NAME="${PPL_REF##*/}"
+    
+    _ppl_extract_branch_name_from_ref PPL_REF_NAME "$PPL_REF"
+  
+    PPL_ON_RELEASE_PR_BRANCH=false
+    PPL_ON_RELEASE_MAIN_BRANCH=false
+    if [[ "$PPL_BASE_REF" =~ ^"release/" ]]; then
+      PPL_ON_RELEASE_PR_BRANCH=true
+    elif [[ "$PPL_REF" =~ ^"release/" ]]; then
+      PPL_ON_RELEASE_MAIN_BRANCH=true
+    fi
   }
+
   
   PPL_COMMIT_ID="${PPL_PR_SHA:-$PPL_SHA}"
   
@@ -366,12 +377,12 @@ _ppl-print-file-paginated() {
   local n=1 ln
   _ppl-stdout-group start "FULL $3 from line $n"
   while read -r ln; do
-    ((n++))
-    if [ "$((n % $2))" = 0 ]; then
+    if [[ "$n" -gt 1 && "$((n % $2))" = 1 ]]; then
       _ppl-stdout-group stop
       _ppl-stdout-group start "FULL $3 from line $n"
     fi
     echo "$ln"
+    ((n++))
   done <"$1"
   _ppl-stdout-group stop
 }

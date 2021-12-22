@@ -92,10 +92,7 @@ jobs:
       #~ BUILD
       - name: "FULL BUILD"
         run: |
-          ~/ppl-run \
-            .. generic FULL-BUILD --lcd "$LOCAL_CLONE_DIR" \
-            .. release tag-snapshot-version --lcd "$LOCAL_CLONE_DIR" \
-          ;
+          ~/ppl-run generic FULL-BUILD --lcd "$LOCAL_CLONE_DIR"
 
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

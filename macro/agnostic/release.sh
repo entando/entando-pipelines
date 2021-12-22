@@ -9,14 +9,15 @@
 # $1: the release action to apply
 #
 # Actions:
-# - tag-snapshot-version:   applies the snapshot tag to the current commit
-# - tag-release-version     applies the final release tag to the current commit
+# - tag-snapshot-version:         applies the snapshot tag to the current commit
+# - tag-pseudo-snapshot-version:  applies a tag similar to the snapshot tag but that doesn't triggers workflows
+# - tag-release-version           applies the final release tag to the current commit
 #
 ppl--release() {
   (
     START_MACRO "RELEASE" "$@"
 
-    _pkg_get "xmlstarlet" -c "xmlstarlet"
+    _pkg_get "xmlstarlet"
 
     __ppl_enter_local_clone_dir
     
@@ -25,9 +26,10 @@ ppl--release() {
 
     case "$action" in
       "tag-snapshot-version") ppl--release.tag-snapshot-version "v";;
+      "tag-pseudo-snapshot-version") ppl--release.tag-snapshot-version "p";;
       "tag-release-version") ppl--release.prepare-final-release;;
       *)
-        _FATAL "Illegal action \"$action\" provided"
+        _FATAL "Invalid action \"$action\" provided"
         ;;
     esac
   )
@@ -59,7 +61,7 @@ ppl--release.tag-snapshot-version() {
   
   _git_commit_exists "$PPL_COMMIT_ID" || {
     _FATAL "Unable to find the reference commit on this repo, " \
-           "may be you re-execute an old run?"
+           "may be you re-executed an old run?"
   }
   
   __git_add_tag -f "$snapshotVersionTag" "$PPL_RUN_ID" "$PPL_COMMIT_ID"
@@ -68,18 +70,34 @@ ppl--release.tag-snapshot-version() {
   _ppl-pr-submit-comment "$pr_num" "Requested publication of snapshot version \`${snapshotVersionName}\`"
 }
 
+# Determine the current snapshot version names
+#
+# Supported Conditions:
+# - On a PR creation/update commit
+# - On a PR merge commit
+#
 ppl--release._determine_snapshot_version_name() {
-  local _tmp_ver_ _tmp_qual_
-
+  local _tmp_ver_ _tmp_qual_ _tmp_fix_tag_=""
   
   if [ -n "$PPL_BASE_REF" ]; then
     # ON THE PR BRANCH
     _NONNULL PPL_PR_TITLE_PREFIX
     _ppl_get_current_project_version _tmp_ver_
+
+    if $PPL_ON_RELEASE_PR_BRANCH; then
+      # ON THE RELEASE PR BRANCH
+      _semver_ex_parse maj min ptc "" _tmp_fix_tag_ "v10.9.8-fix.1"
+      if [ "${_tmp_fix_tag_:0:3}" = "fix" ]; then
+        _tmp_fix_tag_="${_tmp_fix_tag_}-"
+      elif [ "$_tmp_fix_tag_" != "" ]; then
+        _FATAL "A null version tag or a fix version tag is required in release braanching"
+      fi
+    fi
+    
     _ppl_extract_artifact_qualifier_from_pr_title _tmp_qual_ "$PPL_PR_TITLE_PREFIX"
-    _semver_set_tag _tmp_ver_ "$_tmp_ver_" "$_tmp_qual_-PR-$PPL_PR_NUM"
+    _semver_set_tag _tmp_ver_ "$_tmp_ver_" "$_tmp_fix_tag_$_tmp_qual_-PR-$PPL_PR_NUM"
   else
-    # ON THE DEVELOPMENT BRANCH
+    # ON THE BASE BRANCH
     __git_get_commit_tag --snapshot-tag _tmp_ver_ "$PPL_COMMIT_ID"
     
     if [[ -n "$_tmp_ver_" ]]; then
@@ -90,6 +108,7 @@ ppl--release._determine_snapshot_version_name() {
       local pr_parent
       __git_get_parent_pr pr_parent "$PPL_COMMIT_ID"
       __git_get_commit_tag --snapshot-tag _tmp_ver_ "$pr_parent"
+      [ -z "$_tmp_ver_" ] && __git_get_commit_tag --pseudo-snapshot-tag _tmp_ver_ "$pr_parent"
     fi
 
     _tmp_ver_="${_tmp_ver_:1}"    # strips the tag version prefix
@@ -124,7 +143,7 @@ ppl-release._handle_direct_commits() {
         _log_i "Direct commit to base branch tolerated due to \"TOLERATE-DIRECT-COMMITS\" feature flag"
         return 1
       else
-        _FATAL "Only PR merges can be snapshot-tagged the base branch"
+        _FATAL "Only PR merges can be snapshot-tagged on the base branch"
       fi
     fi
   fi  

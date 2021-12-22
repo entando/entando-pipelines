@@ -293,7 +293,8 @@ __git_add_tag() {
 # Extract the given commit tag
 # 
 # Options:
-# --pr-tag filters for snapshot tags
+# --snapshot-tag filters for snapshot tags
+# --pseudo-snapshot-tag filters for pseudo snapshot tags
 #
 # Params:
 # $1  the output var
@@ -301,7 +302,10 @@ __git_add_tag() {
 #
 __git_get_commit_tag() {
   local _tmp_
-  if [ "$1" = "--snapshot-tag" ]; then
+  if [ "$1" = "--pseudo-snapshot-tag" ]; then
+    _tmp_="$(git describe --tags --abbrev=0 --exact-match --match "p*-PR-*" "$3" 2>/dev/null)"
+    _set_var "$2" "$_tmp_"
+  elif [ "$1" = "--snapshot-tag" ]; then
     _tmp_="$(git describe --tags --abbrev=0 --exact-match --match "v*-PR-*" "$3" 2>/dev/null)"
     _set_var "$2" "$_tmp_"
   else

@@ -8,7 +8,7 @@
   . "$PROJECT_DIR/lib/github/github_tools.sh"
 }
 
-#TEST:libx
+#TEST:lib
 test_github_tools() {
   print_current_function_name "RUNNING TEST> "  ".."
   (
@@ -20,7 +20,7 @@ test_github_tools() {
     ASSERT PPL_BASE_REF = "develop"
     ASSERT PPL_HEAD_REF = "github-actions-pipeline-exp2"
     ASSERT PPL_REF = "refs/pull/154/merge"
-    ASSERT PPL_REF_NAME = "merge"
+    ASSERT PPL_REF_NAME = ""
     ASSERT PPL_COMMIT_ID = "21aa52f7f1adcadea778314255b528ec8c0c7a41"
     ASSERT PPL_REPO_NAME = "entando-engine"
     ASSERT PPL_CLONE_URL = "https://github.com/entando/entando-engine.git"

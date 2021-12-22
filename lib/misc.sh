@@ -304,6 +304,12 @@ _str_quote() {
   fi
 }
 
+# prints an escaped string given the a source string and the char to escape
+#
+_str_escape_char() {
+  echo "${1//$2/\\$2}"
+}
+
 # Decodes an ENTANDO_OPT variable encoded with a triple-hash prefix to evade the censoring
 #
 # Params:
@@ -442,22 +448,39 @@ _summarize_stream() {
 # $@ the full command line
 # 
 # Options
-# --hide regex  suppress the given regex from the output, can be repeated up to 3 times
-# --pe          see _summarize_stream
+# --ppl-simple    no summarization is executed
+# --ppl-timestamp a timestamp is added to the output lines
+# --hide regex    suppress the given regex from the output, can be repeated up to 4 times
+# --pe            see _summarize_stream
 #
 _exec_cmd() {
   local SIMPLE=false; [ "$1" = "--ppl-simple" ] && { SIMPLE=true; shift; }
-  local HIDE1=""; [ "$1" = "--hide" ] && { HIDE1="$2"; shift 2; }
-  local HIDE2=""; [ "$1" = "--hide" ] && { HIDE2="$2"; shift 2; }
-  local HIDE3=""; [ "$1" = "--hide" ] && { HIDE3="$2"; shift 2; }
+  local TS=false; [ "$1" = "--ppl-timestamp" ] && { TS=true; shift; }
+  local F1=""; [ "$1" = "--hide" ] && { F1="$(_str_quote "$2")"; shift 2; }
+  local F2=""; [ "$1" = "--hide" ] && { F2="$(_str_quote "$2")"; shift 2; }
+  local F3=""; [ "$1" = "--hide" ] && { F3="$(_str_quote "$2")"; shift 2; }
+  local F4=""; [ "$1" = "--hide" ] && { F4="$(_str_quote "$2")"; shift 2; }
   local PE=''; [ "$1" = "--pe" ] && { PE="--pe"; shift; }
   local PO=''; [ "$1" = "--po" ] && { PO="$2"; shift 2; }
+  # shellcheck disable=SC2016
+  {
+    CMD='while (<STDIN>) {'$'\n'
+    [ -n "$F1" ] && CMD+='  if (index($_, '"$F1"') != -1) { next; }'$'\n'
+    [ -n "$F2" ] && CMD+='  if (index($_, '"$F2"') != -1) { next; }'$'\n'
+    [ -n "$F3" ] && CMD+='  if (index($_, '"$F3"') != -1) { next; }'$'\n'
+    [ -n "$F4" ] && CMD+='  if (index($_, '"$F4"') != -1) { next; }'$'\n'
+    if $TS; then
+      CMD+='  my ($S,$M,$H,$d,$m,$y,$wd,$yd,$id)=localtime(time);'$'\n';
+      CMD+='  my $TS = sprintf ( "%04d-%02d-%02d_%02d:%02d:%02d", $y+1900, $m+1,$d,$H,$M,$S);'$'\n';
+      CMD+='  print($TS . " | " . $_);'$'\n'
+    else
+      CMD+='  print($_);'$'\n'
+    fi
+    CMD+='}'$'\n'
+  }
   
-  local H1="cat" H2="cat" H3="cat" HH1 HH2 HH3
-  if [ -n "$HIDE1" ]; then H1="grep -v"; HH1="$(_str_quote -s "$HIDE1")"; fi
-  if [ -n "$HIDE2" ]; then H2="grep -v"; HH2="$(_str_quote -s "$HIDE2")"; fi
-  if [ -n "$HIDE3" ]; then H3="grep -v"; HH3="$(_str_quote -s "$HIDE3")"; fi
-
+  echo "$CMD"  > /tmp/t
+  
   (
     local RVFILE="$(mktemp)"
     if "$SIMPLE"; then
@@ -467,7 +490,7 @@ _exec_cmd() {
         # shellcheck disable=SC2068
         $@ 2>&1
         echo "$?" > "$RVFILE"
-      ) | $H1 ${HH1:+"$HH1"} | $H2 ${HH2:+"$HH2"} | $H3 ${HH3:+"$HH3"}
+      ) | perl -e "$CMD"
     else
       if [ -n "$PO" ]; then
         local TMPFILE="$PO"
@@ -480,10 +503,12 @@ _exec_cmd() {
       fi
       
       _summarize_stream --lf ${PE:+"$PE"} -f "$TMPFILE" "$1" < <(
+        (
           # shellcheck disable=SC2068
           $@ 2>&1
           echo "$?" > "$RVFILE"
-      ) | $H1 ${HH1:+"$HH1"} | $H2 ${HH2:+"$HH2"} | $H3 ${HH3:+"$HH3"}
+        ) | perl -e "$CMD"
+      )
     fi
 
     local RV="$(cat "$RVFILE")"
@@ -496,7 +521,7 @@ _exec_cmd() {
         _log_t "$1 execution was successful; log tail:"
         # shellcheck disable=SC2088
         echo '~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~'
-        _ppl-print-file-paginated "$TMPFILE" 500 "LOG"
+        _ppl-print-file-paginated "$TMPFILE" 200 "LOG"
         sleep 0.3
       fi
     else
@@ -508,7 +533,7 @@ _exec_cmd() {
         _log_e "Command \"$1\" completed with error code \"$RV\"; full log:"
         # shellcheck disable=SC2088
         echo '~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~'
-        _ppl-print-file-paginated "$TMPFILE" 500 "LOG"
+        _ppl-print-file-paginated "$TMPFILE" 200 "LOG"
         sleep 0.3
       fi
       
@@ -516,6 +541,7 @@ _exec_cmd() {
     fi
   )
 }
+
 # Determines the name of the release branch for the given reference version
 #
 # Params:
@@ -620,7 +646,8 @@ _ppl_is_feature_enabled() {
     I*)
       _log_w "Skip directives (SKIP-$1) are not allowed in "
               "\"ENTANDO_OPT_FEATURES\" or \"ENTANDO_OPT_GLOBAL_FEATURES\" => ignored"
-      return "$2"
+      [ "$2" == "true" ] && return 0
+      return 9
       ;;
     "") return 3;;
   esac
@@ -660,8 +687,13 @@ _ppl_is_feature_action() {
 # $2  part: "base-version" or "qualifier" or "pr-num"
 #
 _ppl_extract_snapshot_version_name_part() {
-  local _tmp1_ _tmp2_ _tmp3_ _tmp4_ _tmp5_ _tmp_res_
-  IFS='-' read -r _tmp1_ _tmp2_ _tmp3_ _tmp4_ _tmp5_ <<<"$2"
+  local _tmp1_ _tmp2_ _tmp2a_ _tmp3_ _tmp4_ _tmp5_ _tmp_res_
+  if [[ "$2" == *"-fix."* ]]; then
+    # shellcheck disable=SC2034
+    IFS='-' read -r _tmp1_ _tmp2a_ _tmp2_ _tmp3_ _tmp4_ _tmp5_ <<<"$2"
+  else
+    IFS='-' read -r _tmp1_ _tmp2_ _tmp3_ _tmp4_ _tmp5_ <<<"$2"
+  fi
   case "$3" in
     "base-version") 
       _tmp_res_="$_tmp1_"
@@ -820,4 +852,24 @@ stdin_to_arr() {
     _set_var "$2[$i]" "$line"
     ((i++))
   done
+}
+
+# Extracts from a full git ref the actual branch name even if it contains slashes
+# 
+_ppl_extract_branch_name_from_ref() {
+  # shellcheck disable=SC2034
+  {
+    local _tmp_ _tmp_ignore_
+
+    case "$2" in
+      refs/heads/*|refs/tags/*)
+        IFS='/' read -r _tmp_ignore_ _tmp_ignore_ _tmp_ <<< "$2";;
+      refs/pull/*) _tmp="";;
+      *) _tmp="";;
+    esac
+    
+    _set_var "$1" "$_tmp_"
+  }
+  
+  return 0
 }

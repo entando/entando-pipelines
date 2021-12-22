@@ -18,7 +18,7 @@ ppl--checkout-branch() {
     if [ -n "$PPL_HEAD_REF" ]; then
       branchToCheckout="$PPL_HEAD_REF"
     else
-      branchToCheckout="${PPL_REF##*/}"
+      branchToCheckout="$PPL_REF_NAME"
     fi
     
     _NONNULL PPL_LOCAL_CLONE_DIR PPL_CLONE_URL branchToCheckout

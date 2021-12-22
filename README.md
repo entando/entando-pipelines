@@ -1,135 +1,51 @@
 # entando-pipelines
 
-A GitFlow-like workflow implementation for GitHub, with some spice
+A GitFlow-like workflow implementation for GitHub Actions, with some spice
 
 # Brief
 
-The Entando Pipelines are a set of (testable) bash scripts that implement a gitflow-like workflow based on these rules:
+The primary aim of the entando piplelines it to provide a set of hight level functions called "macros", designed to be called from the provider workflow scripts. The pipeline developer should avoid creating logic on the provider scripts and instead always implement it in this repository.
 
- - releases are bumped and tagged on release branches
- - the new versions of the mainline release are developed on the "develop" branch, via feature branches
- - the new versions of the old releases are developed directly on the release branches, via "hotfix" branches
- 
-and these main features:
+## Supported project types
 
- - Mainline version management
- - Optional support for the BOM (bill of materials) pattern
- - Support for 3 publication levels: Snapshot, Release and GA
- - Can create and publish gpg-signed artifacts and docker images
- - Pull Requests formats validity controls (title, version etc..)
- - FeatureFlags and skip-labels to control pipeline features
+ `maven` | `npm`
 
-## Suppoted project types
+## Features:
 
- - Maven
- - NMP
+`PR VALIDITY CHECKS` | `PR PREVIEW ARTIFACTS AND IMAGES` | `FEATURE FLAGS` | `CUSTOM ENVIRONMENT VARS` | `BOM (BILL-OF-MATERIALS)` | `K8S POST-DEPLOYMENT TESTS` | `OKD CONNECTION` | `DOCKER PUBLICATION` | `MVN NEXUS PUBLICATION` | `MVN GPG SIGNATURE` | `SNYK SCANS` | `SONARCLOUD SCANS` | `OWASP SCANS`
 
- 
-# How to use it
-
-## Install
+# Install
 
 ```
-bash <(curl -qsL "https://raw.githubusercontent.com/entando/entando-pipelines/{tag}/macro/install.sh")
+bash <(curl -qsL "https://raw.githubusercontent.com/entando/entando-pipelines/{version-tag}/macro/install.sh")
 ```
-**NOTE:** 
-
-- Remember to replace the {tag} placeholder
-- check the directory "install" for the current workflows files used for the entando repositories
 
 
-## Run a macro
+# Macros
 
-A macro is a high level function that implements a full pipeline job or step.
+A macro is a function that implements an high level job or step.
+It is invoked this way:
 
 ```
 ~/ppl-run {macro-name} {args}
 ```
 
-..which has 3 standardized options:
+See also: [About Macros](doc/about-macros.md) and [Macros List](doc/macros.md)
 
- - `--id {id}` the identifier of the macro execution, for messages and skip labels
- - `--lcd {dir}` the local directly where the project repository was cloned
- - `--token {token}` a token to use insted of the one provided by the context
 
-..plus one more that is only implemented by some macro:
- 
- - `--out {file}` file pathname where the full output of the command is written
- 
-## Run a sequence of macros
+# Configuration
 
-```
-~/ppl-run {macro-name} {args} .. {macro-name} {args} [etc..]
-```
+Configuration mostly happens through environment variables.
 
-_Note:_
+See [About Configuration](doc/about-config.md) for an overview and some insight
 
-- _the symbol "@" before a macro name prevents the macro from interrupting the execution in case of errors_
+# Additional info and doc
 
-# Options defined via environment variables:
+Check the [documentation subdir](doc) for [release notes](doc/RELEASE-NOTES.md), methods reference doc, insight about [testing](doc/TESTING.md) and more.
 
-| name | description | values |
-| - | - | - |
-| `ENTANDO_OPT_LOG_LEVEL`  | The minimal log printing level | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR` |
-| `ENTANDO_OPT_PR_TITLE_FORMAT` | the PR title format to enforce | **`[M]`** `SINGLE`,`HIERARCHICAL`,`ANY` |
-| `ENTANDO_OPT_REPO_BOM_URL`  | the URL of the entando core bom | |
-| `ENTANDO_OPT_SUDO` | sudo command to use | |
-| `ENTANDO_OPT_NO_COL` | toggles the color ascii codes | `true`,`false` |
-| `ENTANDO_OPT_STEP_DEBUG` | toggle the step debug in macros | `true`,`false` |
-| `ENTANDO_OPT_MAINLINE` | **`[1]`** defines the current mainline version | `major.minor` |
-| `ENTANDO_OPT_GLOBAL_FEATURES` | the list of features enabled globally | (see below) |
-| `ENTANDO_OPT_FEATURES` | the list of features enabled | (see below) |
-| `ENTANDO_OPT_CUSTOM_ENV` | a list of semicolon-delimited variables assignments **`[2]`** | `A=1;B=2` |
+# Guests Projects
 
-Notes:
+this repository also hosts two "guest" projects:
 
- - **`[M]`**: _Multiple values can be combined with the symbol_ `","`
- - **`[1]`**: _The "mainline version" is a constraint that prevents the merge of any PR that comes with a different **major** or **minor** version._
- - **`[2]`**: _Suports backslash escaping_
- - _The sequence `###`, if found at the start of a value, is skipped and only the rest is considered. This is a trick that should be used to evade the CI/CD obfuscation for perfectly safe values (for instance "TRACE", should be written as "###TRACE")_
-
-# Defaults
-
-Defaults are usually provided as environment variables.  
-If they are not, the code assumes these ones:  
-
-| name | default value |
-| - | - |
-| `ENTANDO_OPT_PR_TITLE_FORMAT` | `SINGLE,HIERARCHICAL` |
-| `ENTANDO_OPT_REPO_BOM_URL`  | _the URL of the BOM repository_ |
-| `ENTANDO_OPT_NO_COL` | `false` |
-| `ENTANDO_OPT_SUDO` | `sudo` |
-| `ENTANDO_OPT_STEP_DEBUG` | `false` |
-
-# FEATURES FLAGS
-
-## Sources
-
-| name | description |
-| - | - |
-| `ENTANDO_OPT_FEATURES`        | environment var usually defined on the repo's secrets |
-| `ENTANDO_OPT_GLOBAL_FEATURES` | environment var usually defined on the organization's secrets |
-| `LABELS`                      | labels defined on the PR |
-
-## Syntax
-
-### Directives
-
- - Enable a feature: `+{FEATURE}` or `{FEATURE}` or `ENABLE-{FEATURE}`
- - Disable a feature: `-{FEATURE}` or `DISABLE-{FEATURE}`
- - Disable a feature once: `SKIP-{FEATURE}` (only labels)
- 
-### General
-
- - Environment variables contains lists of directives separed by "," or "/" or "|" or a line-feed 
- - Note that SKIP directives are only allowed in labels, which in fact are automatically removed from the PR, after evaluation.
-
-## Priorities rules
-
- 1. `LABEL` wins over `ENTANDO_OPT_FEATURES` which wins over `ENTANDO_OPT_GLOBAL_FEATURES`
- 2. the last directive of a given feature overrides the previous directives of the same feature
- 3. Above rule #1 wins over rule #2
-
-# FURTHER INFO
-
-Check the subdir docs for testing and methods reference documentation.
+- `/installation` which are the entando suggested workflow files for the specific provider and project type
+- `/cli-tools` which are auxiliary cli script, normally used to simplify interacting with the pipelines and the repositories

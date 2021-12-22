@@ -79,14 +79,19 @@ ppl--setup-features-list.with-prefix() {
     feature="${feature/#-/}"
     feature="${feature/#+/}"
     feature="${feature/#SKIP-/}"
-    if [ -n "$3" ]; then
-      [[ "$feature" =~ $2 && ! "$feature" =~ $3 ]] && LIST+=("$feature")
-    else
-      [[ "$feature" =~ $2 ]] && LIST+=("$feature")
-    fi
+    ppl--setup-features-list.has-prefix "$feature" "$2" "$3" && LIST+=("$feature")
   done <<< "$PPL_FEATURES"
   ppl--setup-features-list.with-list "$1" true "${LIST[@]}"
 }
+
+ppl--setup-features-list.has-prefix() {
+  IFS=, read -ra TMP <<< "$2"
+  for pre in "${TMP[@]}"; do
+    [[ "$1" == *"$pre"* ]] && [[ -z "$3" || ! "$1" == *"$3"* ]] && return 0
+  done
+  return 1
+}
+
 
 ppl--setup-features-list.with-list() {
   local n=1 feature ACTION RES

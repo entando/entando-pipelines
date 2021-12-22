@@ -4,7 +4,7 @@
 . "$PROJECT_DIR/test/_test-base.sh"
 
 # shellcheck disable=SC2034
-#TEST:macro
+#TEST:lib
 test_flow_pr_check() {
   print_current_function_name "RUNNING TEST> "  ".."
   # shellcheck disable=SC2034
@@ -12,7 +12,7 @@ test_flow_pr_check() {
   #~
   #~ CHECKOUT
   #~
-  TEST.mock.initial_checkout "local-clone"
+    TEST.mock.initial_checkout "local-clone"
 
   #~
   #~ LABELS MANIPULATION
@@ -81,10 +81,19 @@ test_flow_pr_check() {
   ) || FAILED
 
   #~
-  #~ GENERATE PREVIEW VERSION
+  #~ GENERATE SNAPSHOT VERSION
   #~
-  TEST.release.tag-snapshot-version
+  (
+    TEST__APPLY_OVERRIDES() {
+      PPL_PR_SHA="5a98877358d1322130cbde49628bdb796a100e89"
+    }
 
+    ppl--release tag-snapshot-version --lcd "local-clone" || _SOE
+    
+    cd local-clone
+    ASSERT -v SNAPSHOT-TAG "$(git tag | grep v10.9.8.0-ENG-2471-PR-154)" = "v10.9.8.0-ENG-2471-PR-154"
+  ) || _SOE
+  
   #~
   #~ SIMULATES A PR OPEN+MERGE CHECKOUT
   #~
@@ -104,8 +113,13 @@ test_flow_pr_check() {
   ) || FAILED
   
   #~
-  #~ GENERATE TAG-RELEASE
-  TEST.release.tag-snapshot-version
+  #~ GENERATE SNAPSHOT VERSION ON MERGE COMMIT
+  #   (
+  #     TEST__APPLY_OVERRIDES() {
+  #       PPL_PR_SHA="5a98877358d1322130cbde49628bdb796a100e89"
+  #     }
+  #     ppl--release tag-snapshot-version --lcd "local-clone" || _SOE
+  #   ) || _SOE
   
   # ~
   # ~ SIMULATES THE TAG EVENT

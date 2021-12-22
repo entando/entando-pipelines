@@ -13,7 +13,7 @@
 ppl--pr-preflight-checks() {
   (
     START_MACRO "PREFLIGHT-CHECKS" "$@"
-    _pkg_get "xmlstarlet" -c "xmlstarlet"
+    _pkg_get "xmlstarlet"
     
     _get_arg ONLY --only
     
@@ -63,14 +63,26 @@ ppl--pr-preflight-checks.CHECK_MAINLINE() {
 }
 
 ppl--pr-preflight-checks.CHECK_PROJECT_VERSION_FORMAT() {
-  local projectVersion="$1" 
+  local projectVersion="$1"
   
-  if [[ "$projectVersion" =~ .*-SNAPSHOT ||  "$projectVersion" =~ .*-snapshot ]]; then
-    _log_i "Project version number is a snapshot as required"
-    true
+  if $PPL_ON_RELEASE_MAIN_BRANCH || $PPL_ON_RELEASE_PR_BRANCH; then
+      # ON A RELEASE MAIN BRANCH OR PR BRANCH
+    
+      _semver_ex_parse maj min ptc "" tag "$projectVersion"
+      # shellcheck disable=SC2154
+      if [[ "$tag" != "" && "${tag:0:3}" != "fix" ]]; then
+        _FATAL "A null version tag or a fix version tag is required in release braanching"
+      fi
   else
-    _ppl-job-update-status "$PPL_COMMIT_ID" "failure" "Failed" "Invalid project version"
-    _FATAL "The project version \"$projectVersion\" is not a snapshot"
+    # ON THE DEVELOPMENT MAIN BRANCH OR SUB-BRANCH
+    
+    if [[ "$projectVersion" =~ .*-SNAPSHOT ||  "$projectVersion" =~ .*-snapshot ]]; then
+      _log_i "Project version number is a snapshot as required"
+      true
+    else
+      _ppl-job-update-status "$PPL_COMMIT_ID" "failure" "Failed" "Invalid project version"
+      _FATAL "The project version \"$projectVersion\" is not a snapshot"
+    fi
   fi
 }
 
