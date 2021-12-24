@@ -24,8 +24,6 @@ START_MACRO() {
   _get_arg noSkip --no-skip
   _get_arg PPL_CURRENT_MACRO --id "$defaultMacroName"
   
-  ENTANDO_OPT_REPO_BOM_MAIN_BRANCH="${ENTANDO_OPT_REPO_BOM_MAIN_BRANCH:-develop}"
-  
   _get_arg PPL_LOCAL_CLONE_DIR --lcd
   _get_arg PPL_TOKEN_OVERRIDE --token
   _get_arg PPL_OUTPUT_FILE --out
@@ -47,6 +45,25 @@ START_MACRO() {
   
   _ppl-load-context "$PPL_CONTEXT"
   
+  # MAIN BRANCH
+  PPL_MAIN_BRANCH=""
+  if [ -n "$PPL_BASE_REF" ]; then
+    PPL_MAIN_BRANCH="$PPL_BASE_REF"
+  elif [ -n "$PPL_HEAD_REF" ]; then
+    PPL_MAIN_BRANCH="$PPL_HEAD_REF"
+  fi
+  if [ -z "$PPL_MAIN_BRANCH" ]; then
+    PPL_MAIN_BRANCH="$(
+      # shellcheck disable=SC2164
+      cd "$PPL_LOCAL_CLONE_DIR"
+      git rev-parse --abbrev-ref HEAD 2>/dev/null
+    )"
+  fi
+  
+  # TARGET BOM BRANCH
+  ENTANDO_OPT_REPO_BOM_MAIN_BRANCH="${PPL_MAIN_BRANCH:-${ENTANDO_OPT_REPO_BOM_MAIN_BRANCH:-develop}}"
+  
+  # FEATURES
   _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_FEATURES}"
   _ppl_is_feature_enabled "INHERIT-GLOBAL-FEATURES" true && {
     _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_GLOBAL_FEATURES},${ENTANDO_OPT_FEATURES}"
@@ -56,8 +73,10 @@ START_MACRO() {
     _EXIT "Macro of id \"$PPL_CURRENT_MACRO\" is not enabled"
   }
   
+  # CUSTOM ENVIRONMENT
   _ppl_setup_custom_environment "$ENTANDO_OPT_CUSTOM_ENV"
   
+  # ..
   if _log_on_level DEBUG; then
     echo -e "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo "~~ ${comment}${PPL_CURRENT_MACRO} invoked on $(date +'%Y-%m-%d %H-%M-%S')"

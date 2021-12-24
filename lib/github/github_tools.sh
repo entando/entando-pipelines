@@ -275,6 +275,7 @@ _ppl-load-context() {
     
     _ppl_extract_branch_name_from_ref PPL_REF_NAME "$PPL_REF"
   
+    # RELEASE BRANCH INDICATORS
     PPL_ON_RELEASE_PR_BRANCH=false
     PPL_ON_RELEASE_MAIN_BRANCH=false
     if [[ "$PPL_BASE_REF" =~ ^"release/" ]]; then
@@ -284,7 +285,6 @@ _ppl-load-context() {
     fi
   }
 
-  
   PPL_COMMIT_ID="${PPL_PR_SHA:-$PPL_SHA}"
   
   return 0

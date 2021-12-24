@@ -33,6 +33,7 @@ ppl--bom() {
         ppl--bom.update-bom.SHOULD_RUN || return 0
         ppl--bom.EXTRACT_PROJECT_INFORMATION projectArtifactId projectVersion "$PPL_LOCAL_CLONE_DIR"
         ppl--bom.DETERMINE_BOM_QUALIFIER bomQualifier "${PPL_REF_NAME:1}"
+        DBGSHELL
         ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM "$projectArtifactId" "$projectVersion" "$PPL_TOKEN_OVERRIDE" "$bomQualifier"
         ;;
       *)

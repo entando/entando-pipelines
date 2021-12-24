@@ -339,4 +339,17 @@ test__ppl_extract_branch_name_from_ref() {
   ASSERT RES = "TEST/v7.0.0-ENG-3002-PR-166"
 }
 
+#TEST:lib
+test__ppl-determine-branch-qualifier() {
+  print_current_function_name "RUNNING TEST> "  ".."
+  local RES
+  #~ PRs
+  _ppl-determine-branch-qualifier RES "develop"
+  ASSERT RES = ""
+  _ppl-determine-branch-qualifier RES "develop-mylongrunningbranch"
+  ASSERT RES = "mylongrunningbranch"
+  _ppl-determine-branch-qualifier RES "develop-my-long-running-branch"
+  ASSERT RES = "my-long-running-branch"
+}
+
 true
