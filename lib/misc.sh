@@ -873,3 +873,18 @@ _ppl_extract_branch_name_from_ref() {
   
   return 0
 }
+
+# Determine the current branch qualified (the part after the first "-")
+# It's usuful as discriminant for identifiers related to a long running branch.
+# 
+# Examples:
+# - "develop" => ""
+# - "develop-mylongrunningbranch" => "mylongrunningbranch"
+# - "develop-my-long-running-branch" => "my-long-running-branch"
+#
+_ppl-determine-branch-qualifier() {
+  local _tmp1_ _tmp2_
+  IFS='-' read -r _tmp1_ _tmp2_ <<<"$2"
+  _set_var "$1" "$_tmp2_"
+}
+

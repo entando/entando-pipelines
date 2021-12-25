@@ -402,6 +402,26 @@
 
 ---
 
+### `_ppl-determine-branch-qualifier()`
+
+**Determine the current branch qualified (the part after the first -)**
+
+<details>
+
+```
+ It's usuful as discriminant for identifiers related to a long running branch.
+
+ Examples:
+ - "develop" => ""
+ - "develop-mylongrunningbranch" => "mylongrunningbranch"
+ - "develop-my-long-running-branch" => "my-long-running-branch"
+```
+
+</details>
+
+
+---
+
 ### `_ppl_query_latest_bom_version()`
 
 **Extracts the latest bom version given the bom repository URL**
