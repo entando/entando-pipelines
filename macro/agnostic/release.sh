@@ -77,15 +77,20 @@ ppl--release.tag-snapshot-version() {
 # - On a PR merge commit
 #
 ppl--release._determine_snapshot_version_name() {
-  local _tmp_ver_ _tmp_qual_ _tmp_fix_tag_=""
-  
-  if [ -n "$PPL_BASE_REF" ]; then
-    # ON THE PR BRANCH
-    _NONNULL PPL_PR_TITLE_PREFIX
+  if [ -n "$PPL_PR_TITLE" ]; then
+    ppl--release._determine_snapshot_version_name.on_pr_sync_event "$1"
+  else
+    ppl--release._determine_snapshot_version_name.on_tag_event "$1"
+  fi
+}
+
+ppl--release._determine_snapshot_version_name.on_pr_sync_event() {
+    local _tmp_ver_ _tmp_qual_ _tmp_fix_tag_=""
+    
+    _NONNULL PPL_PR_TITLE
     _ppl_get_current_project_version _tmp_ver_
 
     if $PPL_ON_RELEASE_PR_BRANCH; then
-      # ON THE RELEASE PR BRANCH
       _semver_ex_parse maj min ptc "" _tmp_fix_tag_ "v10.9.8-fix.1"
       if [ "${_tmp_fix_tag_:0:3}" = "fix" ]; then
         _tmp_fix_tag_="${_tmp_fix_tag_}-"
@@ -94,27 +99,35 @@ ppl--release._determine_snapshot_version_name() {
       fi
     fi
     
-    _ppl_extract_artifact_qualifier_from_pr_title _tmp_qual_ "$PPL_PR_TITLE_PREFIX"
-    _semver_set_tag _tmp_ver_ "$_tmp_ver_" "$_tmp_fix_tag_$_tmp_qual_-PR-$PPL_PR_NUM"
-  else
-    # ON THE BASE BRANCH
-    __git_get_commit_tag --snapshot-tag _tmp_ver_ "$PPL_COMMIT_ID"
+    _ppl_extract_artifact_qualifier_from_pr_title --epic-name "$PPL_EPIC_NAME" _tmp_qual_ "$PPL_PR_TITLE"
     
-    if [[ -n "$_tmp_ver_" ]]; then
-      # development branch was already published
-      _log_i "This merge was already tagged => Reusing tag \"$_tmp_ver_\""
+    if [ -n "$PPL_EPIC_NAME" ]; then
+      _semver_set_tag _tmp_ver_ "$_tmp_ver_" "$_tmp_fix_tag_$_tmp_qual_-PR-$PPL_PR_NUM-EP-$PPL_EPIC_NAME"
     else
-      # development branch is yet to be published
-      local pr_parent
-      __git_get_parent_pr pr_parent "$PPL_COMMIT_ID"
-      __git_get_commit_tag --snapshot-tag _tmp_ver_ "$pr_parent"
-      [ -z "$_tmp_ver_" ] && __git_get_commit_tag --pseudo-snapshot-tag _tmp_ver_ "$pr_parent"
+      _semver_set_tag _tmp_ver_ "$_tmp_ver_" "$_tmp_fix_tag_$_tmp_qual_-PR-$PPL_PR_NUM"
     fi
+    
+    _set_var "$1" "$_tmp_ver_"
+}
 
-    _tmp_ver_="${_tmp_ver_:1}"    # strips the tag version prefix
+ppl--release._determine_snapshot_version_name.on_tag_event() {
+  local _tmp_ver_tag_
+  
+  # ON THE BASE BRANCH
+  __git_get_commit_tag --snapshot-tag _tmp_ver_tag_ "$PPL_COMMIT_ID"
+  
+  if [[ -n "$_tmp_ver_tag_" ]]; then
+    # development branch was already published
+    _log_i "This merge commit was already tagged => Reusing tag \"$_tmp_ver_tag_\""
+  else
+    # development branch is yet to be published
+    local pr_parent
+    __git_get_parent_pr pr_parent "$PPL_COMMIT_ID"
+    __git_get_commit_tag --snapshot-tag _tmp_ver_tag_ "$pr_parent"
+    [ -z "$_tmp_ver_tag_" ] && __git_get_commit_tag --pseudo-snapshot-tag _tmp_ver_tag_ "$pr_parent"
   fi
   
-  _set_var "$1" "$_tmp_ver_"
+  _set_var "$1" "${_tmp_ver_tag_:1}"    # strips the tag version prefix
 }
 
 ppl--release._determine_final_version_name() {
@@ -126,7 +139,7 @@ ppl--release._determine_final_version_name() {
   # READ THE BASE PROJECT VERSION
   __git checkout "$PPL_BASE_REF"
   _ppl_get_current_project_version _tmp_ver_
-  _ppl_extract_artifact_qualifier_from_pr_title _tmp_qual_ "$PPL_PR_TITLE_PREFIX"
+  _ppl_extract_artifact_qualifier_from_pr_title --epic-name "$PPL_EPIC_NAME" _tmp_qual_ "$PPL_PR_TITLE_PREFIX"
   __git checkout "-"
 
   _semver_set_tag _tmp_ver_ "$_tmp_ver_" "$_tmp_qual_-PR-$PPL_PR_NUM-SNAPSHOT"
@@ -135,7 +148,7 @@ ppl--release._determine_final_version_name() {
 }
 
 ppl-release._handle_direct_commits() {
-   if [ -z "$PPL_BASE_REF" ]; then
+   if ! $PPL_IN_PR_BRANCH; then
     local pr_parent
     __git_get_parent_pr --tolerant pr_parent "$PPL_COMMIT_ID"
     if [ -z "$pr_parent" ]; then

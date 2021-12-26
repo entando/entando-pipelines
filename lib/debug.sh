@@ -18,6 +18,7 @@ _log_on_level() {
 }
 
 _log() {
+  [ "${ENTANDO_OPT_SILENT}" = "true" ] && return 0
   SY=$1; shift
 
   _to_nll RNLL "$ENTANDO_OPT_LOG_LEVEL"
@@ -140,6 +141,8 @@ print_current_function_name() {
 # $@  a list of variable names to pretty print (so without dereference operator "$")
 #
 _pp() {
+  [ "${ENTANDO_OPT_SILENT}" = "true" ] && return 0
+  
   if [[ "$1" == "-d" && -n "$ENTANDO_DEBUG_TTY" ]]; then
     shift
     _pp "$@" >"$ENTANDO_DEBUG_TTY"

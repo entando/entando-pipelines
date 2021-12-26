@@ -8,17 +8,90 @@
 #
 # shellcheck disable=SC2034
 START_MACRO() {
+  START_SIMPLE_MACRO "$@"
+  
+  _ppl-load-context "$PPL_CONTEXT"
+  
+  # IN PR?
+  __ppl_currently_in_pr PPL_IN_PR_BRANCH
+  
+  # RELEASE BRANCH INDICATORS
+  PPL_ON_RELEASE_PR_BRANCH=false
+  PPL_ON_RELEASE_MAIN_BRANCH=false
+  if [[ "$PPL_BASE_REF" =~ ^"release/" ]]; then
+    PPL_ON_RELEASE_PR_BRANCH=true
+  elif [[ "$PPL_REF" =~ ^"release/" ]]; then
+    PPL_ON_RELEASE_MAIN_BRANCH=true
+  fi
+  
+  # RELATIVE MAIN BRANCH
+  # it's the actual MAIN BRANCH or an EPIC branch if currently under an EPIC branch
+  PPL_RELATIVE_MAIN_BRANCH=""
+  if [ -n "$PPL_BASE_REF" ]; then
+    PPL_RELATIVE_MAIN_BRANCH="$PPL_BASE_REF"
+  elif [ -n "$PPL_HEAD_REF" ]; then
+    PPL_RELATIVE_MAIN_BRANCH="$PPL_HEAD_REF"
+  fi
+  if [ -z "$PPL_RELATIVE_MAIN_BRANCH" ]; then
+    PPL_RELATIVE_MAIN_BRANCH="$(
+      # shellcheck disable=SC2164
+      cd "$PPL_LOCAL_CLONE_DIR"
+      git rev-parse --abbrev-ref HEAD 2>/dev/null
+    )"
+  fi
+  
+  # EPIC NAME
+  # the short name (qualifier) of the current epic branch
+  PPL_EPIC_NAME=""
+  _ppl_is_feature_enabled "EPIC-BRANCHES" true && {
+    if ! "$PPL_ON_RELEASE_PR_BRANCH" && ! "$PPL_ON_RELEASE_MAIN_BRANCH"; then
+      if [[ "$PPL_RELATIVE_MAIN_BRANCH" =~ ^"epic/" ]]; then
+        _ppl-determine-branch-qualifier PPL_EPIC_NAME "$PPL_RELATIVE_MAIN_BRANCH"
+      fi
+    fi
+  }
+  
+  # TARGET BOM BRANCH
+  ENTANDO_OPT_REPO_BOM_MAIN_BRANCH="${PPL_RELATIVE_MAIN_BRANCH:-${ENTANDO_OPT_REPO_BOM_MAIN_BRANCH:-"$DEFAULT_MAIN_BRANCH"}}"
+  
+  # FEATURES
+  _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_FEATURES}"
+  _ppl_is_feature_enabled "INHERIT-GLOBAL-FEATURES" true && {
+    _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_GLOBAL_FEATURES},${ENTANDO_OPT_FEATURES}"
+  }
+
+  _ppl_is_feature_enabled "$PPL_CURRENT_MACRO" true || {
+    _EXIT "Macro of id \"$PPL_CURRENT_MACRO\" is not enabled"
+  }
+  
+  # CUSTOM ENVIRONMENT
+  _ppl_setup_custom_environment "$ENTANDO_OPT_CUSTOM_ENV"
+  
+  # ..
+  if _log_on_level DEBUG; then
+    echo -e "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    echo "~~ ${comment}${PPL_CURRENT_MACRO} invoked on $(date +'%Y-%m-%d %H-%M-%S')"
+    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  else
+    _log_i "~~ ${comment}${PPL_CURRENT_MACRO} invoked"
+  fi
+}
+
+
+START_SIMPLE_MACRO() {
   local defaultMacroName="$1"; shift
   set +e
   
+  DEFAULT_MAIN_BRANCH="develop"
+  
   _auto_decode_entando_opts
-
+  
   ${ENTANDO_OPT_STEP_DEBUG:-false} && {
     set -x
   }
   
-    ARGS_FLAGS=(--no-skip)
-    PARSE_ARGS "$@"
+  ARGS_FLAGS=(--no-skip)
+  PARSE_ARGS "$@"
   
   local noSkip
   _get_arg noSkip --no-skip
@@ -42,48 +115,6 @@ START_MACRO() {
   fi
   ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-INFO}"
   ENTANDO_OPT_REPO_BOM_URL="${ENTANDO_OPT_REPO_BOM_URL}"
-  
-  _ppl-load-context "$PPL_CONTEXT"
-  
-  # MAIN BRANCH
-  PPL_MAIN_BRANCH=""
-  if [ -n "$PPL_BASE_REF" ]; then
-    PPL_MAIN_BRANCH="$PPL_BASE_REF"
-  elif [ -n "$PPL_HEAD_REF" ]; then
-    PPL_MAIN_BRANCH="$PPL_HEAD_REF"
-  fi
-  if [ -z "$PPL_MAIN_BRANCH" ]; then
-    PPL_MAIN_BRANCH="$(
-      # shellcheck disable=SC2164
-      cd "$PPL_LOCAL_CLONE_DIR"
-      git rev-parse --abbrev-ref HEAD 2>/dev/null
-    )"
-  fi
-  
-  # TARGET BOM BRANCH
-  ENTANDO_OPT_REPO_BOM_MAIN_BRANCH="${PPL_MAIN_BRANCH:-${ENTANDO_OPT_REPO_BOM_MAIN_BRANCH:-develop}}"
-  
-  # FEATURES
-  _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_FEATURES}"
-  _ppl_is_feature_enabled "INHERIT-GLOBAL-FEATURES" true && {
-    _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_GLOBAL_FEATURES},${ENTANDO_OPT_FEATURES}"
-  }
-
-  _ppl_is_feature_enabled "$PPL_CURRENT_MACRO" true || {
-    _EXIT "Macro of id \"$PPL_CURRENT_MACRO\" is not enabled"
-  }
-  
-  # CUSTOM ENVIRONMENT
-  _ppl_setup_custom_environment "$ENTANDO_OPT_CUSTOM_ENV"
-  
-  # ..
-  if _log_on_level DEBUG; then
-    echo -e "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo "~~ ${comment}${PPL_CURRENT_MACRO} invoked on $(date +'%Y-%m-%d %H-%M-%S')"
-    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-  else
-    _log_i "~~ ${comment}${PPL_CURRENT_MACRO} invoked"
-  fi
 }
 
 # Stops the execution with a success result and an info message

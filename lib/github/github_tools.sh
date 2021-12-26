@@ -274,15 +274,6 @@ _ppl-load-context() {
     PPL_PR_LABELS="${PPL_PR_LABELS//\"/}"
     
     _ppl_extract_branch_name_from_ref PPL_REF_NAME "$PPL_REF"
-  
-    # RELEASE BRANCH INDICATORS
-    PPL_ON_RELEASE_PR_BRANCH=false
-    PPL_ON_RELEASE_MAIN_BRANCH=false
-    if [[ "$PPL_BASE_REF" =~ ^"release/" ]]; then
-      PPL_ON_RELEASE_PR_BRANCH=true
-    elif [[ "$PPL_REF" =~ ^"release/" ]]; then
-      PPL_ON_RELEASE_MAIN_BRANCH=true
-    fi
   }
 
   PPL_COMMIT_ID="${PPL_PR_SHA:-$PPL_SHA}"
@@ -397,4 +388,15 @@ _ppl-print-file-paginated() {
 #
 _ppl_create_pr() {
   gh pr create --title "$1" --base "$2" --head "$3" ${4:+--reviewer "$4"} --web
+}
+
+# Tells if the current execution is about a PR branch
+#
+__ppl_currently_in_pr() {
+  _set_var "$1" false
+  # PR SYNC
+  [[ -n "$PPL_BASE_REF" ]] && _set_var "$1" true
+  # Push of a tag on a PR commit
+  [[ -z "$PPL_BASE_REF" && -z "$PPL_HEAD_REF" ]] && _set_var "$1" true
+  return 0
 }

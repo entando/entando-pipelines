@@ -116,7 +116,7 @@ TEST.mock.initial_checkout() {
   (
     local local_dir="$1"
     rm -rf "$local_dir"
-    ppl--checkout-branch pr --id "PR-CHECKOUT" --lcd "$local_dir" || _SOE
+    ppl--checkout-branch --id "PR-CHECKOUT" --lcd "$local_dir" || _SOE
 
     __cd "$local_dir"
     __exist -f "pom.xml"

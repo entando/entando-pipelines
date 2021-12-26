@@ -91,7 +91,7 @@ test.docker.ppl--docker() {
   }
   
   rm -rf local-checkout
-  ppl--checkout-branch pr --id "PR-CHECKOUT" --lcd "local-checkout" || _SOE
+  ppl--checkout-branch --id "PR-CHECKOUT" --lcd "local-checkout" || _SOE
  
   #~ CASE #1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Simulate docker build commands for two dockerfiles

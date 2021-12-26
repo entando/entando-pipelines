@@ -44,13 +44,15 @@ ppl--npm() {
 }
 
 ppl--npm.FULL-BUILD() {
+  local notagging=false; [ "$1" == "--no-tagging" ] && { notagging=true; shift; }
   (
     _log_i "Running the packages CI installation"
-    
+
     __npm_exec ci
     
     export PUBLIC_URL DOMAIN
     export USE_MOCKS=false;
+    # shellcheck disable=SC2030
     export CI=false;
     export COMPONENT_REPOSITORY_UI_ENABLED=true;
     export KEYCLOAK_ENABLED=true;
@@ -63,12 +65,16 @@ ppl--npm.FULL-BUILD() {
     
     _SOE
     
-    if _ppl_is_feature_enabled "TAG-SNAPSHOT-AFTER-BUILD" true; then
-      # Adds snapshot-tag to provide context data and trigger publication workflow
-      ppl--release tag-snapshot-version
+    if ! $notagging; then
+      if _ppl_is_feature_enabled "TAG-SNAPSHOT-AFTER-BUILD" true; then
+        # Adds snapshot-tag to provide context data and trigger publication workflow
+        ppl--release tag-snapshot-version
+      else
+        # Adds pseudo-snapshot-tag to provide the required context data, but it doesn't trigger the workflow
+        ppl--release tag-pseudo-snapshot-version
+      fi
     else
-      # Adds pseudo-snapshot-tag to provide the required context data, but it doesn't trigger the workflow
-      ppl--release tag-pseudo-snapshot-version
+      true
     fi
     
     _SOE
@@ -80,11 +86,15 @@ ppl--npm.FULL-BUILD() {
 ppl---npm.PUBLISH() {
   case "$PPL_REF_NAME" in
     v*)
+      # NOTE that npm pipelines atm doesn't actually publish to an npm registry,
+      # anyway they still run the preparation steps (build) assumed by the
+      # subsequent publication methods (eg: docker)
+      
       _log_i "Preparing for publication"
       
       local projectVersion="${PPL_REF_NAME:1}"
       _ppl_set_current_project_version "$projectVersion"
-      ppl--npm.FULL-BUILD
+      ppl--npm.FULL-BUILD --no-tagging
       ;;
     *)
       _log_d "publication skipped"
@@ -97,6 +107,12 @@ ppl--npm.RUN-SCAN() {
   _log_i "Running the packages installation"
   __npm_exec install
   _log_i "Running $1"
+  
+  _ppl_is_feature_enabled "ENABLE_CI_INDICATOR_ON_SCAN" false && {
+    # shellcheck disable=SC2031
+    export CI=true
+  }
+  
   __npm_exec run "$@"
   if [[ "$?" != 0 ]]; then
     _ppl-pr-request-change "Please fix the \"$1\" issues"

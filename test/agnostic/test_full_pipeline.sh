@@ -12,7 +12,7 @@ test_flow_pr_check() {
   #~
   #~ CHECKOUT
   #~
-    TEST.mock.initial_checkout "local-clone"
+  TEST.mock.initial_checkout "local-clone"
 
   #~
   #~ LABELS MANIPULATION
@@ -104,7 +104,7 @@ test_flow_pr_check() {
   #~ POST-MERGE CHECKOUT
   #~
   (
-    ppl--checkout-branch base --id "AFTER-MERGE-CHECKOUT" --lcd "local-clone"
+    ppl--checkout-branch --id "AFTER-MERGE-CHECKOUT" --lcd "local-clone"
 
     _ppl-load-context "$PPL_CONTEXT"
     __cd "local-clone"
@@ -171,4 +171,16 @@ SIMULATE_PR_MERGE() {
 
 ASSUME_CONTEXT_OF_EVENT_ADD_RELEASE_TAG() {
   PPL_CONTEXT="$(cat "$PROJECT_DIR/test/resources/github-context-sample-05.json")"
+}
+
+#TEST:lib
+test_generate_build_cache_key() {
+  print_current_function_name "RUNNING TEST> "  ".."
+  
+  (
+    TEST.mock.initial_checkout "local-clone" > /dev/null
+    # shellcheck disable=SC2034
+    RES="$(ppl--generic GENERATE-BUILD-CACHE-KEY "BUILD_CACHE_KEY" --lcd "local-clone")"
+    ASSERT RES =~ "BUILD_CACHE_KEY=[a-z0-9]{64}"
+  ) || _SOE
 }

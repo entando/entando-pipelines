@@ -38,8 +38,20 @@ _extract_pr_title_prefix() {
 # $2 the PR title
 #
 _ppl_extract_artifact_qualifier_from_pr_title() {
-  local _tmp_="$2" _tmp2_
+  if [ "$1" = "--epic-name" ]; then
+    local _tmp_epic_name_="$2" _tmp_="$4" _tmp2_
+    shift 2
+  else
+    local _tmp_="$2" _tmp2_
+  fi
+  
   [ "${_tmp_:0:8}" = "Revert \"" ] && _tmp_="${_tmp_:8}"
+  
+  if [ -n "$_tmp_epic_name_" ]; then
+    local _tmp2_="${#_tmp_epic_name_}"; ((_tmp2_++))
+    [ "${_tmp_:0:$_tmp2_}" = "$_tmp_epic_name_/" ] && _tmp_="${_tmp_:$_tmp2_}"
+  fi
+  
   IFS=' ' read -r _tmp_ _tmp2_ <<<"$_tmp_"
   _tmp_="${_tmp_/:/}"
   IFS='/' read -r _tmp_ _tmp2_ <<<"$_tmp_"
@@ -169,7 +181,7 @@ _itmlst_empty() {
 # Supports the following separators:
 # - ","
 # - "|"
-# - "\n"
+# - <LINEFEED>
 #
 _itmlst_from_string() {
   local _tmp_="$2"
@@ -877,14 +889,18 @@ _ppl_extract_branch_name_from_ref() {
 # Determine the current branch qualified (the part after the first "-")
 # It's usuful as discriminant for identifiers related to a long running branch.
 # 
+# Params:
+# $1  the result receiver var
+# $2  the branch name
+# 
 # Examples:
 # - "develop" => ""
-# - "develop-mylongrunningbranch" => "mylongrunningbranch"
-# - "develop-my-long-running-branch" => "my-long-running-branch"
+# - "epic/mylongrunningbranch" => "mylongrunningbranch"
+# - "epic/my-long-running-branch" => "my-long-running-branch"
 #
 _ppl-determine-branch-qualifier() {
   local _tmp1_ _tmp2_
-  IFS='-' read -r _tmp1_ _tmp2_ <<<"$2"
+  IFS='/' read -r _tmp1_ _tmp2_ <<<"$2"
   _set_var "$1" "$_tmp2_"
 }
 

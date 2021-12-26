@@ -38,6 +38,8 @@ ppl--status-report() {
         PR_LABELS \
         PR_BRANCH \
         PR_MERGE_TARGET_BRANCH \
+        PPL_RELATIVE_MAIN_BRANCH \
+        PPL_EPIC_NAME \
       ;
     else
       _pp \
@@ -48,6 +50,8 @@ ppl--status-report() {
         PPL_REF \
         PPL_COMMIT_ID \
         PPL_CLONE_URL \
+        PPL_RELATIVE_MAIN_BRANCH \
+        PPL_EPIC_NAME \
       ;
     fi
   )

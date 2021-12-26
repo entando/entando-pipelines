@@ -11,7 +11,6 @@
 test_misc() {
   test_url_utils
   test_tpl_utils
-  test_pr_utils
   test_itmlst_utils
   test_semver_cmp
   test_args
@@ -42,6 +41,7 @@ test_tpl_utils() {
     || FAILED
 }
 
+#TEST:lib
 test_pr_utils() {
   local RES
 
@@ -58,6 +58,23 @@ test_pr_utils() {
   ASSERT RES = "ENG-101"
   _ppl_extract_artifact_qualifier_from_pr_title RES "Revert \"ENG-101/ENG-102: A title\""
   ASSERT RES = "ENG-101"
+  
+  PPL_EPIC_NAME="an-epic"
+  _ppl_extract_artifact_qualifier_from_pr_title --epic-name "an-epic" RES "an-epic/ENG-101 A title"
+  ASSERT RES = "ENG-101"
+  _ppl_extract_artifact_qualifier_from_pr_title --epic-name "an-epic" RES "an-epic/ENG-101/ENG-102: A title"
+  ASSERT RES = "ENG-101"
+  _ppl_extract_artifact_qualifier_from_pr_title --epic-name "an-epic" RES "Revert \"an-epic/ENG-101/ENG-102: A title\""
+  ASSERT RES = "ENG-101"
+  
+  # shellcheck disable=SC2034
+  PPL_EPIC_NAME="an-epic"
+  _ppl_extract_artifact_qualifier_from_pr_title --epic-name "an-epic" RES "not-an-epic/ENG-101 A title"
+  ASSERT RES = "not-an-epic"
+  _ppl_extract_artifact_qualifier_from_pr_title --epic-name "an-epic" RES "not-an-epic/ENG-101/ENG-102: A title"
+  ASSERT RES = "not-an-epic"
+  _ppl_extract_artifact_qualifier_from_pr_title --epic-name "an-epic" RES "Revert \"not-an-epic/ENG-101/ENG-102: A title\""
+  ASSERT RES = "not-an-epic"
 }
 
 test_itmlst_utils() {
@@ -335,6 +352,8 @@ test__ppl_extract_branch_name_from_ref() {
   ASSERT RES = "v7.0.0-ENG-3002-PR-166"
   _ppl_extract_branch_name_from_ref RES "refs/heads/release/1.2.3"
   ASSERT RES = "release/1.2.3"
+  _ppl_extract_branch_name_from_ref RES "refs/heads/epic/an-epic-branch"
+  ASSERT RES = "epic/an-epic-branch"
   _ppl_extract_branch_name_from_ref RES "refs/tags/TEST/v7.0.0-ENG-3002-PR-166"
   ASSERT RES = "TEST/v7.0.0-ENG-3002-PR-166"
 }
@@ -346,10 +365,12 @@ test__ppl-determine-branch-qualifier() {
   #~ PRs
   _ppl-determine-branch-qualifier RES "develop"
   ASSERT RES = ""
-  _ppl-determine-branch-qualifier RES "develop-mylongrunningbranch"
+  _ppl-determine-branch-qualifier RES "epic/mylongrunningbranch"
   ASSERT RES = "mylongrunningbranch"
-  _ppl-determine-branch-qualifier RES "develop-my-long-running-branch"
+  _ppl-determine-branch-qualifier RES "epic/my-long-running-branch"
   ASSERT RES = "my-long-running-branch"
+  _ppl-determine-branch-qualifier RES "release/1.2.3"
+  ASSERT RES = "1.2.3"
 }
 
 true

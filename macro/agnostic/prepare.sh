@@ -22,7 +22,7 @@ ppl--pr-preflight-checks() {
     [[ -z "$ONLY" || "$ONLY" = "checks" ]] && {
       ppl--pr-preflight-checks.CHECK_TITLE_FORMAT
     }
-
+    
     local projectVersion
     _ppl_get_current_project_version projectVersion
     
@@ -90,7 +90,7 @@ ppl--pr-preflight-checks.CHECK_TITLE_FORMAT() {
   local formatRules
   _get_arg formatRules 1 "${ENTANDO_OPT_PR_TITLE_FORMAT:-"SINGLE|HIERARCHICAL"}"
   _NONNULL formatRules
-
+  
   local olFormatRules="${formatRules//\|/,}" # conversion to itmlst
 
   local TICKET_ID_REGEX="[A-Z]{2,5}-[0-9]{1,5}"
@@ -105,10 +105,23 @@ ppl--pr-preflight-checks.CHECK_TITLE_FORMAT() {
   
   local currentPrTitle _tmp_
   _ppl-query-pr-info currentPrTitle "title"
-  
+
+  #~ Support for revert PRs
   _tmp_="$currentPrTitle"
   [ "${_tmp_:0:8}" = "Revert \"" ] && _tmp_="${_tmp_:8}"
   
+  #~ EPIC NAME CHECK
+  if [ -n "$PPL_EPIC_NAME" ]; then
+    local enlen="${#PPL_EPIC_NAME}"; ((enlen++))
+    if [ "${_tmp_:0:$enlen}" = "$PPL_EPIC_NAME/" ]; then
+      _tmp_="${_tmp_:$enlen}"
+    else
+      _FATAL "The Pull Request title \"$currentPrTitle\" violates the required format" \
+             "(missing epic name when under epic branch)"
+    fi
+  fi
+  
+  #~ TITLE FORMAT CHECK
   [[ "$_tmp_" =~ $REGEX_SNYK ]] && prTitleIsValid=true
   
   _itmlst_contains "$olFormatRules" "SINGLE" && {

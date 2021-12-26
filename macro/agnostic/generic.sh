@@ -27,7 +27,7 @@ ppl--generic() {
     } 1>/dev/null    
     echo -e "$action,$project_type"
   )
-
+  
   case "$action" in
     "FULL-BUILD")
       case "$project_type" in
@@ -45,6 +45,15 @@ ppl--generic() {
       ppl--mvn "$action" "$@";;
     MTX-SCAN-SNYK)
       ppl--scan "snyk" "$@";;
+    "GENERATE-BUILD-CACHE-KEY")
+      START_SIMPLE_MACRO "$action" "$@"
+      _get_arg -m VARIABLE_NAME 2
+      
+      __ppl_enter_local_clone_dir
+      case "$project_type" in
+        "MVN") ppl--mvn.generate-build-cache-key "$VARIABLE_NAME";;
+        "NPM") _FATAL "Not implemented";;
+      esac;;
     *)
       _FATAL "Invalid macro action \"$action\""
       ;;

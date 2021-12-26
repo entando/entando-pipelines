@@ -411,10 +411,14 @@
 ```
  It's usuful as discriminant for identifiers related to a long running branch.
 
+ Params:
+ $1  the result receiver var
+ $2  the branch name
+
  Examples:
  - "develop" => ""
- - "develop-mylongrunningbranch" => "mylongrunningbranch"
- - "develop-my-long-running-branch" => "my-long-running-branch"
+ - "epic/mylongrunningbranch" => "mylongrunningbranch"
+ - "epic/my-long-running-branch" => "my-long-running-branch"
 ```
 
 </details>

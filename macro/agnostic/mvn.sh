@@ -192,3 +192,9 @@ ppl--mvn.target() {
     RESTORE) rm target; mv "target.old.2f9b531a-a57c-45b0-a55f-01a162b5d470" target;;
   esac
 }
+
+ppl--mvn.generate-build-cache-key() {
+  local VARIABLE_NAME="$1"
+  _NONNULL VARIABLE_NAME
+  echo "$VARIABLE_NAME=$( sha256sum "pom.xml" --zero | cut -d' ' -f1 )"
+}
