@@ -141,7 +141,7 @@ print_current_function_name() {
 #
 _pp() {
   if [[ "$1" == "-d" && -n "$ENTANDO_DEBUG_TTY" ]]; then
-    shuft
+    shift
     _pp "$@" >"$ENTANDO_DEBUG_TTY"
   fi
 
@@ -152,7 +152,7 @@ _pp() {
   echo "▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁"
   echo "▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒$TITLE"
   for var_name in "$@"; do
-    (echo "▕- $var_name: ${!var_name}")
+    echo "▕- $var_name: ${!var_name}"
   done
   echo "▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒"
   echo "▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
@@ -231,6 +231,7 @@ __VERIFY_EXPRESSION() {
     =|==) O="=";OD="TO:  ";  [[ "$E" = "$V" ]];;
     !=) O="!=";OD="TO:  ";  [[ "$E" != "$V" ]];;
     =~) O="=~";OD="TO:  ";   [[ "$E" =~ $V ]];;
+    !=~) O="=~";OD="TO:  ";   [[ ! "$E" =~ $V ]];;
     starts-with) O="=";OD="TO:  ";  [[ "$E" = "$V"* ]];;
     *) _FATAL "Unknown operator \"$O\"";;
   esac
@@ -271,17 +272,6 @@ __VERIFY_EXPRESSION() {
 #
 __VERIFY() {
   __VERIFY_EXPRESSION "" "$@"
-}
-
-# A defensive verify is a shield against dangerous bugs and conditions.
-#
-# Developers should never remove a defensive check just because the
-# condition tested can't fail according to the (current) code.
-#
-# For the syntax see __VERIFY_EXPRESSION
-#
-__DEFENSIVE_VERIFY() {
-  __VERIFY_EXPRESSION "DEFENSIVE-CHECK>" "$@"
 }
 
 # Drops a shell that inherits the caller environment

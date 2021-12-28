@@ -27,6 +27,10 @@ _failend() { EC="$?"; echo -e "\nTEST> TEST FAILURE DETECTED (EXITCODE: $EC)\n";
 #~ SETUP TEST ENVIRONMENT
 #~
 
+TEST.RESET_TLOG() {
+  echo "[REM] STARTED AT $(date +'%Y-%m-%d %H-%M-%S')" > "$TEST__TECHNICAL_LOG_FILE"
+}
+
 # shellcheck disable=SC1091
 {
   PROJECT_DIR="$PWD"
@@ -46,7 +50,7 @@ _failend() { EC="$?"; echo -e "\nTEST> TEST FAILURE DETECTED (EXITCODE: $EC)\n";
   PPL_CONTEXT="{{test-run}}"
 
   TEST__TECHNICAL_LOG_FILE="$TEST__WORK_DIR/ttlog"
-  echo "[REM] STARTED AT $(date +'%Y-%m-%d %H-%M-%S')" > "$TEST__TECHNICAL_LOG_FILE"
+  TEST.RESET_TLOG
 }
 
 [ -f "$PROJECT_DIR/test/_test-base.sh" ] && . "$PROJECT_DIR/test/_test-base.sh"
@@ -68,7 +72,7 @@ type TEST__BEFORE_RUN &>/dev/null && TEST__BEFORE_RUN
 
 
 TEST__APPLY_DEFAULT_OVERRIDES() {
-  EE_CLONE_URL="file://$TEST__WORK_DIR/repo-mocks/entando-portal-ui"
+  PPL_CLONE_URL="file://$TEST__WORK_DIR/repo-mocks/entando-test-repo-base"
 }
 
 test-cleanup() {
@@ -87,11 +91,12 @@ trap test-cleanup exit
       (
         . "$file"
 
-        while read -r fn; do
-          echo '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-          echo 'TEST> TEST FILE "'"$fn"'"'
-          ($fn) || exit "$?"
-        done < <(grep  -A 1 "#TEST:$label" "$file" | tail -1 | sed 's/().*//')
+         while read -r fn; do
+           [[ "${fn:0:6}" = "#TEST:" || "${fn:0:2}" = "--" ]] && continue
+           echo '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+           echo 'TEST> TEST FUNCTION "'"$fn"'"'
+           ($fn) || exit "$?"
+         done < <(grep  -A 1 "#TEST:$label" "$file" | sed 's/().*//')
       ) || _failend
     done  < <(grep -lr "#TEST:$label" "$PROJECT_DIR/test")
   done

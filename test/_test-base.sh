@@ -28,11 +28,12 @@
 TEST__BEFORE_RUN() {
   GIT_USER_NAME="CiCd Bot"
   GIT_USER_EMAIL="cicd@example.com"
-  PPL_CONTEXT="$(cat "$PROJECT_DIR/test/resources/github-context-sample-02.json")"
+  PPL_CONTEXT="$(cat "$PROJECT_DIR/test/resources/github-context-base.json")"
   ENTANDO_CORE_BOM_REPO_URL="${ENTANDO_OPT_REPO_BOM_URL:-$TEST__ENTANDO_OPT_REPO_BOM_URL}"
 }
 
 
+# shellcheck disable=SC2120
 FAILED() {
   [ "$?" = "99" ] && exit 99
 
@@ -67,7 +68,7 @@ _create-test-git-repo() {
 
     __cd "$dst_dir"
 
-    git init
+    __git_init
     _git_set_commit_config "the-user-name" "the-user-email@example.com"
     [ "$(git config "user.name")" = "the-user-name" ] || _FATAL "Test git repo preparation failed"
     [ "$(git config "user.email")" = "the-user-email@example.com" ] || _FATAL "Test git repo preparation failed"
@@ -95,7 +96,7 @@ _create-test-git-repo() {
   ) 1>/dev/null || _FATAL "Test git repo preparation failed"
 }
 
-TEST__GET_TLOG_COMMAND() {
+TEST.GET_TLOG_COMMAND() {
   local N="$2"
   _NONNULL N
   if [ "$N" -ge 0 ]; then
@@ -103,4 +104,39 @@ TEST__GET_TLOG_COMMAND() {
   else
     _set_var "$1" "$(tail -n$((N*-1)) "$TEST__TECHNICAL_LOG_FILE" | head -n1)"
   fi
+}
+
+
+TEST.mock.load-pipeline-context() {  
+  _ppl-load-context "$PPL_CONTEXT"
+}
+
+TEST.mock.initial_checkout() {  
+  _pkg_get "xmlstarlet"
+  (
+    local local_dir="$1"
+    rm -rf "$local_dir"
+    ppl--checkout-branch pr --id "PR-CHECKOUT" --lcd "$local_dir" || _SOE
+
+    __cd "$local_dir"
+    __exist -f "pom.xml"
+    _pom_get_project_artifact_id RES "pom.xml" "artifactId"
+    ASSERT RES == "entando-test-repo-base"
+  ) || FAILED
+}
+
+
+# shellcheck disable=SC2034
+TEST.mock.param() {
+  case "$1" in
+    "--lcd") PPL_LOCAL_CLONE_DIR="$2";;
+    *) _FATAL "Unknown mock param \"$1\"";;
+  esac
+}
+
+TEST.mock.context() {
+  PPL_CONTEXT="$(cat "$PROJECT_DIR/test/resources/$1")"
+  # shellcheck disable=2034
+  PPL_PARSED_CONTEXT=""
+  _ppl-load-context --disable-overrides "$PPL_CONTEXT"
 }

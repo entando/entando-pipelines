@@ -1,27 +1,18 @@
 #!/bin/bash
 
 # shellcheck disable=SC1091,SC1090
-. "$PROJECT_DIR/tests/_test_base-sh"
+. "$PROJECT_DIR/test/_test-base.sh"
 
 # shellcheck disable=SC2034
-#TEST:macro
+#TEST:lib
 test_flow_pr_check() {
   print_current_function_name "RUNNING TEST> "  ".."
   # shellcheck disable=SC2034
   
-  ENTANDO_OPT_FEATURES="*"
-  
   #~
   #~ CHECKOUT
   #~
-  (
-    ppl--checkout-branch pr --id "PR-CHECKOUT" --lcd "local-checkout" || _SOE
-
-    __cd "local-checkout"
-    __exist -f "pom.xml"
-    _pom_get_project_artifact_id RES "pom.xml" "artifactId"
-    ASSERT RES == "entando-portal-ui"
-  ) || FAILED
+    TEST.mock.initial_checkout "local-clone"
 
   #~
   #~ LABELS MANIPULATION
@@ -31,38 +22,21 @@ test_flow_pr_check() {
     ppl--pr-labels --id "TEST" remove "test" || _SOE
 
     ASSERT -v RES $? -eq 0
-    TEST__GET_TLOG_COMMAND TMP -1
+    TEST.GET_TLOG_COMMAND TMP -1
     ASSERT TMP =~ "\[HTS\] \"DELETE\" to \"https:.*\""
-  ) || FAILED
-
-  #~
-  #~ GATE
-  #~
-  (
-    TMP="$(ppl--gate-check --id TEST | grep "set-output")"
-    ASSERT TMP = "::set-output name=ENABLED::true"
-  ) || FAILED
-
-  (
-    TEST__APPLY_OVERRIDES() {
-      EE_PR_LABELS+=",skip-test"
-    }
-
-    TMP="$(ppl--gate-check --id TEST | grep "set-output")"
-    ASSERT TMP = "::set-output name=ENABLED::false"
   ) || FAILED
 
   #~
   #~ CHECK PR BOM STATE
   #~
   (
-    ppl--check-pr-bom-state --lcd "local-checkout"
+    ppl--check-pr-bom-state --lcd "local-clone"
     ASSERT -v "BOM_CHECK_RESULfile:///home/wrt/work/prj/entando/main/tools/entando-pipelines/test/github/test_github_full_pipeline.shT" "$?" = 0
     __cd "$ENTANDO_OPT_REPO_BOM_URL"
     echo "something-new" > something-new
     __git_ACTP "something-new" "v9.9.9"
     __cd -
-    ppl--check-pr-bom-state --lcd "local-checkout"
+    ppl--check-pr-bom-state --lcd "local-clone"
     ASSERT -v "BOM_CHECK_RESULT" "$?" = 77
     __cd -
     __git tag -d "v9.9.9"
@@ -73,82 +47,79 @@ test_flow_pr_check() {
   #~
   (
     ENTANDO_OPT_MAINLINE=""
-    ppl--check-pr-format --lcd "local-checkout"
+    ppl--pr-preflight-checks --lcd "local-clone"
   ) || FAILED
   
   (
-    ENTANDO_OPT_MAINLINE="6.3"
-    ppl--check-pr-format --lcd "local-checkout"
+    ENTANDO_OPT_MAINLINE="10.9.8"
+    ppl--pr-preflight-checks --lcd "local-clone"
   ) || FAILED
   
   (
     ENTANDO_OPT_MAINLINE="99.99"
-    ppl--check-pr-format --lcd "local-checkout"
+    ppl--pr-preflight-checks --lcd "local-clone"
   ) && FAILED
 
   (
-    TEST__APPLY_OVERRIDES() { EE_PR_TITLE="ENG-999-Hey There!"; }
-    ppl--check-pr-format --lcd "local-checkout"
+    TEST__APPLY_OVERRIDES() { PPL_PR_TITLE="ENG-999-Hey There!"; }
+    ppl--pr-preflight-checks --lcd "local-clone"
   ) && FAILED "I was expecting an error, but I've got success"
 
   (
-    TEST__APPLY_OVERRIDES() { EE_PR_TITLE="ENG-999 Hey There!"; }
-    ppl--check-pr-format --lcd "local-checkout"
+    TEST__APPLY_OVERRIDES() { PPL_PR_TITLE="ENG-999 Hey There!"; }
+    ppl--pr-preflight-checks --lcd "local-clone"
   ) || FAILED
 
   (
-    TEST__APPLY_OVERRIDES() { EE_PR_TITLE="ENG-100/ENG-999 Hey There!"; }
-    ppl--check-pr-format --lcd "local-checkout"
+    TEST__APPLY_OVERRIDES() { PPL_PR_TITLE="ENG-100/ENG-999 Hey There!"; }
+    ppl--pr-preflight-checks --lcd "local-clone"
+  ) || FAILED
+
+  (
+    TEST__APPLY_OVERRIDES() { PPL_PR_TITLE="Revert \"ENG-100/ENG-999 Hey There!\""; }
+    ppl--pr-preflight-checks --lcd "local-clone"
   ) || FAILED
 
   #~
-  #~ GENERATE PREVIEW VERSION
+  #~ GENERATE SNAPSHOT VERSION
   #~
   (
-    ppl--release prepare-preview-release --id "PREVIEW-RELEASE" --lcd "local-checkout"
+    TEST__APPLY_OVERRIDES() {
+      PPL_PR_SHA="5a98877358d1322130cbde49628bdb796a100e89"
+    }
 
-    _ppl-load-context "$PPL_CONTEXT"
-    __cd "$EE_CLONE_URL"
-    __git checkout "$EE_HEAD_REF"
-    _pom_get_project_version RES "pom.xml"
-    ASSERT RES = "6.3.0-SNAPSHOT"
-    _git_determine_latest_version --include-previews RES
-    ASSERT RES = "p6.3.0-ENG-2471-PR-154-SNAPSHOT"
-    __git checkout "_tmp_"
-  ) || FAILED
-
+    ppl--release tag-snapshot-version --lcd "local-clone" || _SOE
+    
+    cd local-clone
+    ASSERT -v SNAPSHOT-TAG "$(git tag | grep v10.9.8.0-ENG-2471-PR-154)" = "v10.9.8.0-ENG-2471-PR-154"
+  ) || _SOE
+  
   #~
   #~ SIMULATES A PR OPEN+MERGE CHECKOUT
   #~
   SIMULATE_PR_MERGE
-  rm -rf "local-checkout"
+  rm -rf "local-clone"
 
   #~
   #~ POST-MERGE CHECKOUT
   #~
   (
-    ppl--checkout-branch base --id "AFTER-MERGE-CHECKOUT" --lcd "local-checkout"
+    ppl--checkout-branch base --id "AFTER-MERGE-CHECKOUT" --lcd "local-clone"
 
     _ppl-load-context "$PPL_CONTEXT"
-    __cd "local-checkout"
+    __cd "local-clone"
     ASSERT -v LOCAL_BRANCH "$(git branch --show-current)" = "develop"
-    rm -rf "local-checkout"  
+    rm -rf "local-clone"  
   ) || FAILED
   
   #~
-  #~ GENERATE TAG-RELEASE
-  #~
-  (
-    ppl--release prepare-tag-release --id "TAG-RELEASE" --lcd "local-checkout" || _SOE
-
-    _ppl-load-context "$PPL_CONTEXT"
-    __cd "$EE_CLONE_URL"
-    __git checkout "release/6.3.0"
-    _pom_get_project_version RES "pom.xml"
-    ASSERT RES = "6.3.11"
-
-    __git checkout "_tmp_"
-  ) || FAILED
+  #~ GENERATE SNAPSHOT VERSION ON MERGE COMMIT
+  #   (
+  #     TEST__APPLY_OVERRIDES() {
+  #       PPL_PR_SHA="5a98877358d1322130cbde49628bdb796a100e89"
+  #     }
+  #     ppl--release tag-snapshot-version --lcd "local-clone" || _SOE
+  #   ) || _SOE
   
   # ~
   # ~ SIMULATES THE TAG EVENT
@@ -159,13 +130,25 @@ test_flow_pr_check() {
   #~ BOM UPDATE
   #~
   (
-    ppl--bom update-bom --id "TEST-BOM-UPDATE" --lcd "local-checkout"
+    TEST__APPLY_OVERRIDES() {
+      PPL_REF="refs/tags/v6.4.0-ENG-2704-PR-126"
+    }
+    
+    (
+      __cd "$ENTANDO_OPT_REPO_BOM_URL"
+      __git checkout _tmp_
+    ) || _SOE
+    
+    ppl--bom update-bom --id "TEST-BOM-UPDATE" --lcd "local-clone" || _SOE
 
     _ppl-load-context "$PPL_CONTEXT"
     __cd "$ENTANDO_OPT_REPO_BOM_URL"
     __git checkout "$ENTANDO_OPT_REPO_BOM_MAIN_BRANCH"
-    _pom_get_project_property RES "pom.xml" "entando-portal-ui.version"
-    ASSERT RES = "6.3.11"
+    _pom_get_project_property RES "pom.xml" "entando-test-repo-base.version"
+    ASSERT RES = "10.9.8.0-SNAPSHOT"
+    
+    RES="$(__git tag | grep ENG | tail -n 1)"
+    ASSERT RES = "v6.4.0-ENG-2704"
 
     __git checkout "_tmp_"
   ) || FAILED
@@ -174,11 +157,11 @@ test_flow_pr_check() {
 SIMULATE_PR_MERGE() {
   (
     _ppl-load-context "$PPL_CONTEXT"
-    local prBranch="$EE_HEAD_REF"
+    local prBranch="$PPL_HEAD_REF"
     PPL_CONTEXT="$(cat "$PROJECT_DIR/test/resources/github-context-sample-03.json")"
     _ppl-load-context "$PPL_CONTEXT"
 
-    __cd "local-checkout"
+    __cd "local-clone"
     __git checkout "develop"
     __git merge --no-edit "$prBranch"
     __git push -f

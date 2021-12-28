@@ -12,8 +12,7 @@
 test_pom() {
   print_current_function_name "RUNNING TEST> " ".."
 
-  _pkg_get "xmlstarlet" -c xmlstarlet
-
+  _pkg_get "xmlstarlet"
 
   # shellcheck disable=SC2034
   local RES

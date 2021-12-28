@@ -36,6 +36,15 @@ test_semver_parse() {
   ASSERT -v RES "$maj.$min.$ptc-$tag" = ".2.3-"
   _semver_parse maj min ptc tag "1.2.3-SNAPSHOT"
   ASSERT -v RES "$maj.$min.$ptc-$tag" = "1.2.3-SNAPSHOT"
+  _semver_parse maj min ptc tag "1.2.3.4-SNAPSHOT"
+  ASSERT -v RES "$maj.$min.$ptc-$tag" = "1.2.3-SNAPSHOT"
+  local upd
+  _semver_ex_parse maj min ptc upd tag "1.2.3.1-SNAPSHOT"
+  ASSERT -v RES "$maj.$min.$ptc.$upd-$tag" = "1.2.3.1-SNAPSHOT"
+  _semver_ex_parse maj min ptc "" tag "1.2.3.1-SNAPSHOT"
+  ASSERT -v RES "$maj.$min.$ptc-$tag" = "1.2.3-SNAPSHOT"
+  _semver_ex_parse maj min ptc upd tag "1.2.3-fix.1"
+  ASSERT -v RES "$maj|$min|$ptc|$tag" = "1|2|3|fix.1"
 }
 
 test_semver_set_tag() {

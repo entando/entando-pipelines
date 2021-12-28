@@ -42,8 +42,8 @@ test.docker.publish.LOGIN() {
     ENTANDO_OPT_DOCKER_PASSWORD="the-pass"    
   }
   ppl--docker.publish.LOGIN
-  TEST__GET_TLOG_COMMAND TMP -1
-  ASSERT TMP =~ "\[DOK\] docker login -u the-user -p the-pass" 
+  TEST.GET_TLOG_COMMAND TMP -1
+  ASSERT TMP =~ "\[DOK\] docker login -u the-user --password-stdin" 
 }
 
 #TEST:macro
@@ -57,21 +57,25 @@ test.docker.publish.BUILD_AND_PUSH() {
 
   ppl--docker.publish.BUILD_AND_PUSH_ALL "Dockerfile" "entando-de-app" "6.3.2"
   
-  TEST__GET_TLOG_COMMAND TMP -3
-  ASSERT TMP =~ "\[DOK\] docker build . -t entando/entando-de-app:v6.3.2 -f entando-de-app"
-  TEST__GET_TLOG_COMMAND TMP -2
-  ASSERT TMP =~ "\[DOK\] docker image inspect entando/entando-de-app:v6.3.2"
-  TEST__GET_TLOG_COMMAND TMP -1
-  ASSERT TMP =~ "\[DOK\] docker image inspect entando/entando-de-app:v6.3.2"
+  TEST.GET_TLOG_COMMAND TMP -3
+  ASSERT TMP = "[DOK] docker build . -t entando/entando-de-app:6.3.2 -f Dockerfile"
+  TEST.GET_TLOG_COMMAND TMP -2
+  ASSERT TMP = "[DOK] docker image inspect entando/entando-de-app:6.3.2"
+  TEST.GET_TLOG_COMMAND TMP -1
+  ASSERT TMP = "[DOK] docker push entando/entando-de-app:6.3.2"
 }
 
-#TEST:macrox
-test.docker.ppl--docker-skipped() {  
- print_current_function_name "RUNNING TEST> " ".."
+#TEST:macro
+test.docker.ppl--docker-skipped-due-to-no-dockerfile() {  
+  print_current_function_name "RUNNING TEST> " ".."
 
+  _git_full_clone --as-work-area "file://$TEST__WORK_DIR/repo-mocks/app-builder" "local-checkout"
+  __cd ..
+
+  TEST.RESET_TLOG
   # shellcheck disable=SC2034
   ppl--docker publish "" --id "TEST" --lcd "local-checkout" || _SOE
-  TEST__GET_TLOG_COMMAND TMP -1
+  TEST.GET_TLOG_COMMAND TMP -1
   ASSERT TMP =~ "\[REM\] STARTED AT .*"
 }
 
@@ -89,35 +93,39 @@ test.docker.ppl--docker() {
   rm -rf local-checkout
   ppl--checkout-branch pr --id "PR-CHECKOUT" --lcd "local-checkout" || _SOE
  
-  #  CASE #1
-  ppl--docker publish "Dockerfile.eap,Dockerfile.wildfly" \
+  #~ CASE #1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Simulate docker build commands for two dockerfiles
+  ppl--docker publish "Dockerfile.mode1,Dockerfile.mode2" \
     --id "TEST" --lcd "local-checkout" || _SOE
+  
+  #~ expectations
 
-  cat "$TEST__TECHNICAL_LOG_FILE"
-  TEST__GET_TLOG_COMMAND TMP -7
+  TEST.GET_TLOG_COMMAND TMP -7
   ASSERT TMP =~ "\[DOK\] docker login -u the-user --password-stdin"
   
-  TEST__GET_TLOG_COMMAND TMP -6
-  ASSERT TMP =~ "\[DOK\] docker build . -t entando/entando-portal-ui-eap:6.3.0-SNAPSHOT -f Dockerfile.eap"
-  TEST__GET_TLOG_COMMAND TMP -5
-  ASSERT TMP =~ "\[DOK\] docker image inspect entando/entando-portal-ui-eap:6.3.0-SNAPSHOT"
-  TEST__GET_TLOG_COMMAND TMP -4
-  ASSERT TMP =~ "\[DOK\] docker push entando/entando-portal-ui-eap:6.3.0-SNAPSHOT"
+  local EXPECTED_VERSION_TAG="10.9.8.0-SNAPSHOT"
+  TEST.GET_TLOG_COMMAND TMP -6
+  ASSERT TMP =~ "\[DOK\] docker build . -t entando/entando-test-repo-base-mode1:$EXPECTED_VERSION_TAG -f Dockerfile.mode1"
+  TEST.GET_TLOG_COMMAND TMP -5
+  ASSERT TMP =~ "\[DOK\] docker image inspect entando/entando-test-repo-base-mode1:$EXPECTED_VERSION_TAG"
+  TEST.GET_TLOG_COMMAND TMP -4
+  ASSERT TMP =~ "\[DOK\] docker push entando/entando-test-repo-base-mode1:$EXPECTED_VERSION_TAG"
   
-  TEST__GET_TLOG_COMMAND TMP -3
-  ASSERT TMP =~ "\[DOK\] docker build . -t entando/entando-portal-ui-wildfly:6.3.0-SNAPSHOT -f Dockerfile.wildfly"
-  TEST__GET_TLOG_COMMAND TMP -2
-  ASSERT TMP =~ "\[DOK\] docker image inspect entando/entando-portal-ui-wildfly:6.3.0-SNAPSHOT"
-  TEST__GET_TLOG_COMMAND TMP -1
-  ASSERT TMP =~ "\[DOK\] docker push entando/entando-portal-ui-wildfly:6.3.0-SNAPSHOT"
+  TEST.GET_TLOG_COMMAND TMP -3
+  ASSERT TMP =~ "\[DOK\] docker build . -t entando/entando-test-repo-base-mode2:$EXPECTED_VERSION_TAG -f Dockerfile.mode2"
+  TEST.GET_TLOG_COMMAND TMP -2
+  ASSERT TMP =~ "\[DOK\] docker image inspect entando/entando-test-repo-base-mode2:$EXPECTED_VERSION_TAG"
+  TEST.GET_TLOG_COMMAND TMP -1
+  ASSERT TMP =~ "\[DOK\] docker push entando/entando-test-repo-base-mode2:$EXPECTED_VERSION_TAG"
 
+  #~ CASE #2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # shellcheck disable=SC2034
   ENTANDO_OPT_DOCKER_BUILD_QUALIFIER_POSITION="after-tag"
-  ppl--docker publish "Dockerfile.eap,Dockerfile.wildfly" \
+  ppl--docker publish "Dockerfile.mode1,Dockerfile.mode2" \
       --id "TEST" --lcd "local-checkout" || _SOE
-
-  TEST__GET_TLOG_COMMAND TMP -1
-  ASSERT TMP =~ "\[DOK\] docker push entando/entando-portal-ui:6.3.0-SNAPSHOT-wildfly"
+      
+  TEST.GET_TLOG_COMMAND TMP -1
+  ASSERT TMP =~ "\[DOK\] docker push entando/entando-test-repo-base:$EXPECTED_VERSION_TAG-mode2"
 }
 
 true

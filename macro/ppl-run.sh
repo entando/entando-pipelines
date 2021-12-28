@@ -29,15 +29,22 @@ fi
 
 (
   # shellcheck disable=SC2034
-  [ -t 0 ] && IN_TTY=false || IN_TTY=trye
+  [ -t 0 ] && IN_TTY=false || IN_TTY=true
   LAST_CMD=()
   CMD=()
   IE=false  # ignore command error
+
   ELEM="${1:-}"
+  if [ "$ELEM" = ".." ]; then
+    shift
+    ELEM="${1:-}"
+  fi
+
   RV=0
-  shift
 
   LOOP=true; [ $# -le 0 ] && LOOP=false
+  shift
+  
   while $LOOP; do
     if [ "${#CMD[@]}" = 0 ]; then
       if [ "${ELEM:0:1}" = "@" ]; then

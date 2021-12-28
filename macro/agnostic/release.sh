@@ -6,96 +6,146 @@
 # STARTS THE CREATION OF A VERSION
 #
 # Params:
-# $1: the ID of the macro
-# $3: the release operation
-# $2: the folder where the PR has been checked out
+# $1: the release action to apply
+#
+# Actions:
+# - tag-snapshot-version:         applies the snapshot tag to the current commit
+# - tag-pseudo-snapshot-version:  applies a tag similar to the snapshot tag but that doesn't triggers workflows
+# - tag-release-version           applies the final release tag to the current commit
 #
 ppl--release() {
   (
     START_MACRO "RELEASE" "$@"
 
-    _pkg_get "xmlstarlet" -c "xmlstarlet"
+    _pkg_get "xmlstarlet"
 
     __ppl_enter_local_clone_dir
-    __exist -f "pom.xml"
-
-    local action versionToSet TAG pomVersionToSet
-    local currentBranch="${EE_REF##*/}"
     
+    local action
     _get_arg action 1
 
-    #~ 
-    #~ ANALYSIS of the current repo/branch
-    #~ READY-ONLY
-    #~
     case "$action" in
-      prepare-tag-release)
-        #~ determine the next module version from the current git repo tags
-        local highestModuleVersion maj min ptc
-        _git_determine_highest_version highestModuleVersion
-        _semver_parse maj min ptc "" "$highestModuleVersion"
-        ((ptc++))
-        versionToSet="${maj:-0}.${min:-0}.${ptc:-0}"
-        TAG="v$versionToSet"
-        ;;
-      prepare-preview-release)
-        __git checkout "$EE_BASE_REF"
-        local snapshotVersion
-        #~ derived from the PR information
-        _NONNULL EE_PR_NUM EE_PR_TITLE_PREFIX
-        _pom_get_project_version snapshotVersion "./pom.xml"
-        EE_PR_TITLE_PREFIX="${EE_PR_TITLE_PREFIX/\//-}"
-        _semver_set_tag versionToSet "$snapshotVersion" "$EE_PR_TITLE_PREFIX-PR-$EE_PR_NUM-SNAPSHOT"
-        _NONNULL versionToSet
-        TAG="p$versionToSet"
-        __git checkout "$EE_HEAD_REF"
-        ;;
-      auto-finalize-release)
-        case "$currentBranch" in
-          v*)
-            _log_i "Finalizing tag-release \"${currentBranch:1}\""
-            pomVersionToSet=""
-            ;;
-          p*)
-            pomVersionToSet="${currentBranch:1}"
-            _log_i "Finalizing preview release \"$pomVersionToSet\""
-            ;;
-          *)
-        esac
-        ;;
+      "tag-snapshot-version") ppl--release.tag-snapshot-version "v";;
+      "tag-pseudo-snapshot-version") ppl--release.tag-snapshot-version "p";;
+      "tag-release-version") ppl--release.prepare-final-release;;
       *)
-        _FATAL "Illegal action \"$action\" provided"
-        ;;
-    esac
-    
-    #~ 
-    #~ UPDATE OF THE RELEASE BRANCH
-    #~ READY-WRITE
-    #~ 
-    case "$action" in
-      prepare-tag-release)
-        _ppl_determine_release_branch releaseBranch "$versionToSet"
-        # shellcheck disable=SC2154
-        __git_auto_checkout "$releaseBranch"
-        _NONNULL currentBranch
-        __git_force_merge_branch "$currentBranch"
-        #~ UPDATES the version on the POM and REBUILDS the module
-        _pom_set_project_version "$versionToSet" "./pom.xml"
-        __git_ACTP "Release of version $versionToSet"  "$TAG" "$releaseBranch"
-        ;;
-      prepare-preview-release)
-        git push --delete origin "$TAG" 2>/dev/null
-        __git_add_tag -f "$TAG"
-        __git push --tags
-        ;;
-      auto-finalize-release)
-        # Build
-        _pom_set_project_version "$pomVersionToSet" "./pom.xml"
-        #__mvn_exec package -Dmaven.test.skip=true
-        ;;
-      *)
-        _FATAL "Illegal action \"$action\""
+        _FATAL "Invalid action \"$action\" provided"
         ;;
     esac
   )
+}
+
+
+ppl--release.tag-snapshot-version() {
+  _NONNULL PPL_RUN_ID
+  
+  local snapshotVersionTypePrefix="$1"
+  
+  ppl-release._handle_direct_commits || {
+    return 0
+  }
+  
+  local snapshotVersionName pr_num
+  ppl--release._determine_snapshot_version_name snapshotVersionName
+  _NONNULL snapshotVersionTypePrefix snapshotVersionName
+  
+  local snapshotVersionTag="$snapshotVersionTypePrefix$snapshotVersionName"
+  if [ -n "$PPL_HEAD_REF" ]; then
+    __git checkout "$PPL_HEAD_REF"
+    pr_num="$PPL_PR_NUM"
+  else
+    _ppl_extract_snapshot_version_name_part pr_num "$snapshotVersionName" "pr-num"
+  fi
+
+  _NONNULL pr_num
+  
+  _git_commit_exists "$PPL_COMMIT_ID" || {
+    _FATAL "Unable to find the reference commit on this repo, " \
+           "may be you re-executed an old run?"
+  }
+  
+  __git_add_tag -f "$snapshotVersionTag" "$PPL_RUN_ID" "$PPL_COMMIT_ID"
+  __git push origin "$snapshotVersionTag" -f
+  
+  _ppl-pr-submit-comment "$pr_num" "Requested publication of snapshot version \`${snapshotVersionName}\`"
+}
+
+# Determine the current snapshot version names
+#
+# Supported Conditions:
+# - On a PR creation/update commit
+# - On a PR merge commit
+#
+ppl--release._determine_snapshot_version_name() {
+  local _tmp_ver_ _tmp_qual_ _tmp_fix_tag_=""
+  
+  if [ -n "$PPL_BASE_REF" ]; then
+    # ON THE PR BRANCH
+    _NONNULL PPL_PR_TITLE_PREFIX
+    _ppl_get_current_project_version _tmp_ver_
+
+    if $PPL_ON_RELEASE_PR_BRANCH; then
+      # ON THE RELEASE PR BRANCH
+      _semver_ex_parse maj min ptc "" _tmp_fix_tag_ "v10.9.8-fix.1"
+      if [ "${_tmp_fix_tag_:0:3}" = "fix" ]; then
+        _tmp_fix_tag_="${_tmp_fix_tag_}-"
+      elif [ "$_tmp_fix_tag_" != "" ]; then
+        _FATAL "A null version tag or a fix version tag is required in release braanching"
+      fi
+    fi
+    
+    _ppl_extract_artifact_qualifier_from_pr_title _tmp_qual_ "$PPL_PR_TITLE_PREFIX"
+    _semver_set_tag _tmp_ver_ "$_tmp_ver_" "$_tmp_fix_tag_$_tmp_qual_-PR-$PPL_PR_NUM"
+  else
+    # ON THE BASE BRANCH
+    __git_get_commit_tag --snapshot-tag _tmp_ver_ "$PPL_COMMIT_ID"
+    
+    if [[ -n "$_tmp_ver_" ]]; then
+      # development branch was already published
+      _log_i "This merge was already tagged => Reusing tag \"$_tmp_ver_\""
+    else
+      # development branch is yet to be published
+      local pr_parent
+      __git_get_parent_pr pr_parent "$PPL_COMMIT_ID"
+      __git_get_commit_tag --snapshot-tag _tmp_ver_ "$pr_parent"
+      [ -z "$_tmp_ver_" ] && __git_get_commit_tag --pseudo-snapshot-tag _tmp_ver_ "$pr_parent"
+    fi
+
+    _tmp_ver_="${_tmp_ver_:1}"    # strips the tag version prefix
+  fi
+  
+  _set_var "$1" "$_tmp_ver_"
+}
+
+ppl--release._determine_final_version_name() {
+  _NONNULL PPL_BASE_REF PPL_PR_TITLE_PREFIX
+  local _tmp_ver_ _tmp_qual_
+
+  _FATAL "NOT IMPLEMENTED"
+  
+  # READ THE BASE PROJECT VERSION
+  __git checkout "$PPL_BASE_REF"
+  _ppl_get_current_project_version _tmp_ver_
+  _ppl_extract_artifact_qualifier_from_pr_title _tmp_qual_ "$PPL_PR_TITLE_PREFIX"
+  __git checkout "-"
+
+  _semver_set_tag _tmp_ver_ "$_tmp_ver_" "$_tmp_qual_-PR-$PPL_PR_NUM-SNAPSHOT"
+
+  _set_var "$1" "$_tmp_ver_"
+}
+
+ppl-release._handle_direct_commits() {
+   if [ -z "$PPL_BASE_REF" ]; then
+    local pr_parent
+    __git_get_parent_pr --tolerant pr_parent "$PPL_COMMIT_ID"
+    if [ -z "$pr_parent" ]; then
+      if _itmlst_contains "$PPL_FEATURES" "TOLERATE-DIRECT-COMMITS"; then
+        _log_i "Direct commit to base branch tolerated due to \"TOLERATE-DIRECT-COMMITS\" feature flag"
+        return 1
+      else
+        _FATAL "Only PR merges can be snapshot-tagged on the base branch"
+      fi
+    fi
+  fi  
+  true
 }

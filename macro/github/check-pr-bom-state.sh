@@ -8,14 +8,11 @@
 # Business Rules:
 # - The PR bom should be aligned with the latest published BOM
 #
-# Params:
-# $1: the folder containing the related repo/branch
-#
 ppl--check-pr-bom-state() {
   (
     START_MACRO "CHECK-PR-BOM" "$@"
 
-    _pkg_get "xmlstarlet" -c "xmlstarlet"
+    _pkg_get "xmlstarlet"
 
 
     __ppl_enter_local_clone_dir
@@ -41,12 +38,12 @@ ppl--check-pr-bom-state() {
     _log_d "> THE LATEST BOM VERSION PUBLISHED IS: $latestBomVersion"
   
     if [ "$prBomVersion" != "$latestBomVersion" ]; then
-      _ppl-job-update-status "$EE_COMMIT_ID" "failure" "Failed" "BOM misalignment error"
+      _ppl-job-update-status "$PPL_COMMIT_ID" "failure" "Failed" "BOM misalignment error"
       local MSG="The BOM version requested by this PR is not aligned with "
       MSG+="the latest BOM version released ($prBomVersion != $latestBomVersion)"
       _FATAL "$MSG"
     else
-      _ppl-job-update-status "$EE_COMMIT_ID" "failure" "Failed" "BOM misalignment error"
+      _ppl-job-update-status "$PPL_COMMIT_ID" "failure" "Failed" "BOM misalignment error"
       _log_i "BOM check ok ($prBomVersion = $latestBomVersion)"
     fi
   )

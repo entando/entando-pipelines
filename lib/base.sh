@@ -10,42 +10,28 @@
 START_MACRO() {
   local defaultMacroName="$1"; shift
   set +e
+  
+  _auto_decode_entando_opts
 
   ${ENTANDO_OPT_STEP_DEBUG:-false} && {
     set -x
   }
   
-  ARGS_FLAGS=(--no-skip)
-  PARSE_ARGS "$@"
+    ARGS_FLAGS=(--no-skip)
+    PARSE_ARGS "$@"
   
   local noSkip
   _get_arg noSkip --no-skip
+  _get_arg PPL_CURRENT_MACRO --id "$defaultMacroName"
   
-  EE_CURRENT_MACRO="${ARGS_OPT[--id]}"
-  [ -z "$EE_CURRENT_MACRO" ] && EE_CURRENT_MACRO="$defaultMacroName"
+  _get_arg PPL_LOCAL_CLONE_DIR --lcd
+  _get_arg PPL_TOKEN_OVERRIDE --token
+  _get_arg PPL_OUTPUT_FILE --out
   
-  _itmlst_from_string ENTANDO_OPT_FEATURES "${ENTANDO_OPT_FEATURES:-*}"
-  _ppl_is_feature_enabled "$EE_CURRENT_MACRO" || {
-    _EXIT "Macro of id \"$EE_CURRENT_MACRO\" is not enabled"
-  }
-
-  ENTANDO_OPT_REPO_BOM_MAIN_BRANCH="${ENTANDO_OPT_REPO_BOM_MAIN_BRANCH:-develop}"
-
-  EE_LOCAL_CLONE_DIR="${ARGS_OPT[--lcd]}"
-  EE_TOKEN_OVERRIDE="${ARGS_OPT[--token]}"
-  
-  if [ "${EE_CURRENT_MACRO:0:1}" = "@" ]; then
-    EE_CURRENT_MACRO_PREFIX="@"
-    EE_CURRENT_MACRO="${EE_CURRENT_MACRO:1}"
+  if [ "${PPL_CURRENT_MACRO:0:1}" = "@" ]; then
+    PPL_CURRENT_MACRO_PREFIX="@"
+    PPL_CURRENT_MACRO="${PPL_CURRENT_MACRO:1}"
     local comment="user macro "
-  fi
-
-  if _log_on_level DEBUG; then
-    echo -e "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo "~~ ${comment}${EE_CURRENT_MACRO} invoked on $(date +'%Y-%m-%d %H-%M-%S')"
-    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-  else
-    _log_i "~~ ${comment}${EE_CURRENT_MACRO} invoked"
   fi
 
   TEST__EXECUTION="${TEST__EXECUTION:-false}"
@@ -58,15 +44,46 @@ START_MACRO() {
   ENTANDO_OPT_REPO_BOM_URL="${ENTANDO_OPT_REPO_BOM_URL}"
   
   _ppl-load-context "$PPL_CONTEXT"
-
-  #_pp EE_CLONE_URL ENTANDO_OPT_REPO_BOM_URL EE_HEAD_REF
-  _ppl-pr-has-label "skip-${EE_CURRENT_MACRO,,}" && {
-    if "$noSkip"; then
-      return 101
-    else
-      _EXIT "$EE_CURRENT_MACRO skipped due to skip-label: \"skip-${EE_CURRENT_MACRO,,}\""
-    fi
+  
+  # MAIN BRANCH
+  PPL_MAIN_BRANCH=""
+  if [ -n "$PPL_BASE_REF" ]; then
+    PPL_MAIN_BRANCH="$PPL_BASE_REF"
+  elif [ -n "$PPL_HEAD_REF" ]; then
+    PPL_MAIN_BRANCH="$PPL_HEAD_REF"
+  fi
+  if [ -z "$PPL_MAIN_BRANCH" ]; then
+    PPL_MAIN_BRANCH="$(
+      # shellcheck disable=SC2164
+      cd "$PPL_LOCAL_CLONE_DIR"
+      git rev-parse --abbrev-ref HEAD 2>/dev/null
+    )"
+  fi
+  
+  # TARGET BOM BRANCH
+  ENTANDO_OPT_REPO_BOM_MAIN_BRANCH="${PPL_MAIN_BRANCH:-${ENTANDO_OPT_REPO_BOM_MAIN_BRANCH:-develop}}"
+  
+  # FEATURES
+  _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_FEATURES}"
+  _ppl_is_feature_enabled "INHERIT-GLOBAL-FEATURES" true && {
+    _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_GLOBAL_FEATURES},${ENTANDO_OPT_FEATURES}"
   }
+
+  _ppl_is_feature_enabled "$PPL_CURRENT_MACRO" true || {
+    _EXIT "Macro of id \"$PPL_CURRENT_MACRO\" is not enabled"
+  }
+  
+  # CUSTOM ENVIRONMENT
+  _ppl_setup_custom_environment "$ENTANDO_OPT_CUSTOM_ENV"
+  
+  # ..
+  if _log_on_level DEBUG; then
+    echo -e "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    echo "~~ ${comment}${PPL_CURRENT_MACRO} invoked on $(date +'%Y-%m-%d %H-%M-%S')"
+    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  else
+    _log_i "~~ ${comment}${PPL_CURRENT_MACRO} invoked"
+  fi
 }
 
 # Stops the execution with a success result and an info message
@@ -88,7 +105,7 @@ _EXIT() {
 }
 
 # Stops the execution with a fatal error
-# and optionally prints the callstack
+# and prints the callstack
 #
 # Options
 # [-s]  simple: omits the stacktrace
@@ -120,13 +137,23 @@ _SOE() {
   local R="$?"
   [ -n "$1" ] && _log_e "$1 didn't complete properly"
   [ "$R" != 0 ] && exit "$R"
+  return "$R"
 }
 
-# Sets a variable
+# Sets a variable given the name and the value
+#
+# IMPORTANT:
+# This function can be used to set a variable of the caller's scope and this tecnique
+# is commonly used to return values to the caller.
+# But note that if there is a variable with same name in the local scope, the local one
+# is preferred leaving the caller's variable untouched.
+# That's why functions that returns values uses a special naming convention for their
+# internal variables (_tmp_...).
 #
 # Params:
 # - $1: variable to set
 # - $2: value
+#
 _set_var() {
   [ -z "$1" ] && _FATAL "null var_name provided"
   if [ -z "$2" ]; then

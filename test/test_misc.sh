@@ -7,7 +7,7 @@
   . "$PROJECT_DIR/lib/semver.sh"
 }
 
-#TEST:libx
+#TEST:lib
 test_misc() {
   test_url_utils
   test_tpl_utils
@@ -16,6 +16,7 @@ test_misc() {
   test_semver_cmp
   test_args
   test_str
+  test_versioning
   
   true
 }
@@ -43,10 +44,20 @@ test_tpl_utils() {
 
 test_pr_utils() {
   local RES
+
   _extract_pr_title_prefix RES "ENG-101 A title"
   ASSERT RES = "ENG-101"
   _extract_pr_title_prefix RES "ENG-101/ENG-102: A title"
   ASSERT RES = "ENG-101/ENG-102"
+  _extract_pr_title_prefix RES "Revert \"ENG-101/ENG-102: A title\""
+  ASSERT RES = "ENG-101/ENG-102"
+
+  _ppl_extract_artifact_qualifier_from_pr_title RES "ENG-101 A title"
+  ASSERT RES = "ENG-101"
+  _ppl_extract_artifact_qualifier_from_pr_title RES "ENG-101/ENG-102: A title"
+  ASSERT RES = "ENG-101"
+  _ppl_extract_artifact_qualifier_from_pr_title RES "Revert \"ENG-101/ENG-102: A title\""
+  ASSERT RES = "ENG-101"
 }
 
 test_itmlst_utils() {
@@ -145,7 +156,200 @@ test_str() {
   ASSERT RES = 4
   _str_last_pos RES ",10,11,12,*,13" "*"
   ASSERT RES = 4
+  
+  local RES='hey'
+  _decode_entando_opt RES
+  ASSERT RES = 'hey'
+  local RES='###hey'
+  _decode_entando_opt RES
+  ASSERT RES = 'hey'
+  local RES='###'$'\n''hey'
+  _decode_entando_opt RES
+  ASSERT RES = 'hey'
+
+  # shellcheck disable=SC2034
+  ENTANDO_OPT_A_TEST="###a-test"
+  _auto_decode_entando_opts
+  ASSERT ENTANDO_OPT_A_TEST = 'a-test'
+
+  RES="$(_str_quote "Started publication as 101")"
+  ASSERT RES = '"Started publication as 101"'
+  RES="$(_str_quote -s "Started publication as 101")"
+  ASSERT RES = 'Started publication as 101'
+  
+  RES="$(_str_escape_char "sdasda/Dsdaas" "/")"
+  ASSERT RES = 'sdasda\/Dsdaas'
 }
 
+#TEST:lib
+test_stream_utils() {
+  print_current_function_name "RUNNING TEST> "  ".."
+
+  
+  local RES="$(
+    _summarize_stream --lf --li 3 --ti 0 TEST < <(
+      for ((i=0;i<10;i++)); do
+        echo "dsaas   ERROR  das"
+        echo "saad WARN asdsa"
+      done
+    ) | sed 's/SEC:\s*[0-9]*/../';
+    echo "X"
+  )"
+  
+  RES="${RES:0:-1}"
+  
+  local EXP
+  EXP+="~ TEST > | .. | TOT:      1  | ERR:      1 | WRN:      0 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:      4  | ERR:      2 | WRN:      2 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:      7  | ERR:      4 | WRN:      3 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:     10  | ERR:      5 | WRN:      5 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:     13  | ERR:      7 | WRN:      6 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:     16  | ERR:      8 | WRN:      8 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:     19  | ERR:     10 | WRN:      9 | DNL:      0 |       "$'\n'
+  EXP+="~ TEST > | .. | TOT:     20  | ERR:     10 | WRN:     10 | DNL:      0 |       "$'\n'
+  
+  ASSERT RES = "$EXP"
+}
+
+#TEST:lib
+test_exec_cmd() {
+  local RES
+  
+  # STARDARD EXECUTION
+  # Both the summary and the full ourput are printed
+  
+  (
+    _TEXT__EXEC_CMD_SAMPLE() {  
+      for ((i=0;i<100;i++)); do
+        echo "Line (${i})"
+        echo "Progress 20 kB (${i})"
+        echo "Important Error (${i})"
+        echo "  at XXX (${i})"
+        echo "Error message = null (${i}/a)"
+        echo "Error message = null (${i}/b)"
+      done
+      return 55
+    }
+    
+    #~~~
+
+    local TMPFILE="$(mktemp)"
+    # shellcheck disable=SC2064
+    trap "rm \"$TMPFILE\"" exit
+    
+    RES="$(_exec_cmd \
+      --hide "Progress.* kB" \
+      --hide "Error message = null" \
+      --pe \
+      --po "$TMPFILE" \
+      "_TEXT__EXEC_CMD_SAMPLE"
+
+      ASSERT -v RESCODE "$?" = 55
+    )"
+
+    N1="$(echo "$RES" | grep -c "Line")"
+    N2="$(echo "$RES" | grep -c "Important Error")"
+    N3="$(echo "$RES" | grep -c -E "^\s+at\s")"
+    N4="$(echo "$RES" | grep -c "Error message")"
+    N5="$(echo "$RES" | grep -c "Progress")"
+    
+    # Both summarised and full log are printed
+    
+    ASSERT -v RES "$N1" = 100       # Standard lines are only printed in the full log 
+    ASSERT -v RES "$N2" = 200       # Error lines if not explicitly filtered appears on both
+    ASSERT -v RES "$N3" = 100       # "  at" strings following an error shares the same visibility
+    ASSERT -v RES "$N4" = 0         # Even error lines when explicitly filtered are hidden
+    ASSERT -v RES "$N5" = 100       # Filtered lines only on the full log
+    
+    N1="$(grep -c "Line" "$TMPFILE")"
+    N2="$(grep -c "Important Error" "$TMPFILE")"
+    N3="$(grep -c "Error message" "$TMPFILE")"
+    N4="$(grep -c "Progress" "$TMPFILE")"
+    
+    ASSERT -v RES "$N1" = 100       # In nor filtered, normal lines are printed in the file log
+    ASSERT -v RES "$N2" = 100       # In nor filtered, error lines are printed in the file log
+    ASSERT -v RES "$N3" = 0         # when filtered, error lines are not printed in the file log
+    ASSERT -v RES "$N4" = 100       # when filtered, normal lines are not printed in the file log
+
+  ) || _SOE
+}
+
+test_versioning() {
+  print_current_function_name "RUNNING TEST> "  ".."
+
+  local RES
+  _ppl_extract_snapshot_version_name_part RES "6.4.0-ENG-2268-PR-143" "base-version"
+  ASSERT RES = "6.4.0"
+  _ppl_extract_snapshot_version_name_part RES "6.4.0-ENG-2268-PR-143" "qualifier"
+  ASSERT RES = "ENG-2268"
+  _ppl_extract_snapshot_version_name_part RES "6.4.0-ENG-2268-PR-143" "pr-num"
+  ASSERT RES = "143"
+  _ppl_extract_snapshot_version_name_part RES "v6.4.0-ENG-2268-PR-143" "base-version"
+  ASSERT RES = "6.4.0"
+}
+
+#TEST:lib
+test__features() {
+  print_current_function_name "RUNNING TEST> "  ".."
+  
+  # shellcheck disable=SC2034
+  PPL_PARSED_CONTEXT="[test]"
+  # shellcheck disable=SC2034
+  PPL_FEATURES="MTX-SCAN-SNYK,MTX-MVN-SCAN-OWASP,DISABLE-INTEGRATION-TESTS,MVN-QUARKUS-NATIVE"
+  _ppl_is_feature_enabled "MVN-QUARKUS-NATIVE" || {
+    _FATAL -99 "Feature was configured but is has not been detected" 1>&2
+  }
+  _ppl_is_feature_enabled "MVN-VERIFY" && {
+    _FATAL -99 "Feature was detected but was not actually configured" 1>&2
+  }
+  # shellcheck disable=SC2034
+  PPL_FEATURES="-INHERIT-GLOBAL-FEATURES"
+  _ppl_is_feature_enabled "INHERIT-GLOBAL-FEATURES" true && {
+    _FATAL -99 "Feature was detected but was not actually configured" 1>&2
+  }
+  true
+}
+
+#TEST:lib
+test__ppl_setup_custom_environment() {
+  print_current_function_name "RUNNING TEST> "  ".."
+  
+  # shellcheck disable=SC2034
+  local Z="_Z" K="_K"
+  _ppl_setup_custom_environment "X=XX;Y=YY;Z=ZZ;W=W\;W"
+  RES="$(bash -c 'echo "$X/$Y/$Z/$K/$W"')"
+  echo "$RES"
+  ASSERT RES = "XX/YY/ZZ//W;W"
+}
+
+#TEST:lib
+test__ppl_extract_branch_name_from_ref() {
+  print_current_function_name "RUNNING TEST> "  ".."
+
+  local RES
+  _ppl_extract_branch_name_from_ref RES "refs/pull/167/merge"
+  ASSERT RES = ""
+  _ppl_extract_branch_name_from_ref RES "refs/heads/develop"
+  ASSERT RES = "develop"
+  _ppl_extract_branch_name_from_ref RES "refs/tags/v7.0.0-ENG-3002-PR-166"
+  ASSERT RES = "v7.0.0-ENG-3002-PR-166"
+  _ppl_extract_branch_name_from_ref RES "refs/heads/release/1.2.3"
+  ASSERT RES = "release/1.2.3"
+  _ppl_extract_branch_name_from_ref RES "refs/tags/TEST/v7.0.0-ENG-3002-PR-166"
+  ASSERT RES = "TEST/v7.0.0-ENG-3002-PR-166"
+}
+
+#TEST:lib
+test__ppl-determine-branch-qualifier() {
+  print_current_function_name "RUNNING TEST> "  ".."
+  local RES
+  #~ PRs
+  _ppl-determine-branch-qualifier RES "develop"
+  ASSERT RES = ""
+  _ppl-determine-branch-qualifier RES "develop-mylongrunningbranch"
+  ASSERT RES = "mylongrunningbranch"
+  _ppl-determine-branch-qualifier RES "develop-my-long-running-branch"
+  ASSERT RES = "my-long-running-branch"
+}
 
 true

@@ -8,11 +8,11 @@
   cd "$HOME/.entando/ppl" || { echo "Error $LINENO"; exit 1; }
   rm -rf "$HOME/.entando/ppl/entando-pipelines"
   if [ "$1" = "--local" ]; then
-    git clone -q -b "$BRANCH" --depth 1 "file://$PROJECT_DIR"
+    git -c advice.detachedHead=false clone -q -b "$BRANCH" --depth 1 "file://$PROJECT_DIR"
   elif [ "$1" = "--work" ]; then
     cp -r "$PROJECT_DIR" .
   else
-    git clone -q -b "$BRANCH" --depth 1 "https://github.com/entando/entando-pipelines.git"
+    git -c advice.detachedHead=false clone -q -b "$BRANCH" --depth 1 "https://github.com/entando/entando-pipelines.git"
   fi
   cd "$HOME/.entando/ppl/entando-pipelines" || { echo "Error $LINENO"; exit 1; }
   echo -e "#!/bin/bash\nsource \"$HOME/.entando/ppl/entando-pipelines/macro/ppl-run.sh\" \"\$@\"" > "$HOME/ppl-run"
