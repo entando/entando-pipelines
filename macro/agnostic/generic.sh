@@ -14,6 +14,7 @@
 #  - MTX-MVN-SCAN-*   see equivalent on ppl--npm
 #  - MTX-NPM-SCAN-*   see equivalent on ppl--npm
 #  - MTX-SCAN-SNYK    runs a snyk scan (see ppl--scan)
+#  - GENERATE-BUILD-CACHE-KEY generate the key to store the build cache
 #
 ppl--generic() {
   local action project_type
@@ -24,7 +25,7 @@ ppl--generic() {
       _get_arg action 1; shift
       __ppl_enter_local_clone_dir
       __ppl_determine_current_project_type project_type
-    } 1>/dev/null    
+    } 1>/dev/null
     echo -e "$action,$project_type"
   )
   
@@ -49,7 +50,7 @@ ppl--generic() {
       START_SIMPLE_MACRO "$action" "$@"
       _get_arg -m VARIABLE_NAME 2
       
-      __ppl_enter_local_clone_dir
+      __ppl_enter_local_clone_dir > /dev/null
       case "$project_type" in
         "MVN") ppl--mvn.generate-build-cache-key "$VARIABLE_NAME";;
         "NPM") _FATAL "Not implemented";;

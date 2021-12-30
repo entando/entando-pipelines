@@ -31,16 +31,16 @@ jobs:
         id: START
         run: |
           ${{ secrets.ENTANDO_OPT_PPL_INSTALL_CMD }}
-          ~/ppl-run status-report \
+          ~/ppl-run \
+            .. status-report \
             .. @setup-feature-flags "PR_FORMAT_CHECK" "BOM_CHECK" "BOM" \
-            .. @setup-features-list "SCAN_MATRIX" true SONAR_SCAN OWASP_SCAN SNYK_SCAN \
           ;
       #~ CHECKOUT
-      - name: "Checkout"
+      - name: "CHECKOUT"
         id: CHECKOUT
         run: |
           ~/ppl-run \
-            .. checkout-branch base --id "CHECKOUT FOR NEXUS PUBLICATION" \
+            .. checkout-branch --id "CHECKOUT FOR NEXUS PUBLICATION" \
                   --lcd "$LOCAL_CLONE_DIR" \
                   --token "$ENTANDO_BOT_TOKEN" \
             .. pr-preflight-checks --only flags --lcd "$LOCAL_CLONE_DIR" \

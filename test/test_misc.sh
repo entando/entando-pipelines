@@ -15,7 +15,6 @@ test_misc() {
   test_semver_cmp
   test_args
   test_str
-  test_versioning
   
   true
 }
@@ -135,13 +134,14 @@ test_semver_cmp() {
   ASSERT RES = 0
 }
 
+#TEST:lib
 test_args() {
   print_current_function_name "RUNNING TEST> "  ".."
   # shellcheck disable=SC2034
   ARGS_FLAGS=(--temp --splat)
-  PARSE_ARGS --temp 1 55 --set 2 --with calm 101 -a "103" -- -b 999 --raise --splat
-  ASSERT -v NUM_ARGS_POS "${#ARGS_POS[@]}" = 8
-  ASSERT -v NUM_ARGS_OPT "${#ARGS_OPT[@]}" = 5
+  PARSE_ARGS --temp 1 --mark X 55 --set 2 --with calm 101 -a "103" -- -b 999 --raise --splat --blot 1
+  ASSERT -v NUM_ARGS_POS "${#ARGS_POS[@]}" = 10
+  ASSERT -v NUM_ARGS_OPT "${#ARGS_OPT[@]}" = 6
   ASSERT "ARGS_POS[0]" = ""
   ASSERT "ARGS_POS[1]" = 1
   ASSERT "ARGS_POS[2]" = 55
@@ -150,10 +150,13 @@ test_args() {
   ASSERT "ARGS_POS[5]" = 999
   ASSERT "ARGS_POS[6]" = "--raise"
   ASSERT "ARGS_POS[7]" = "--splat"
+  ASSERT "ARGS_POS[8]" = "--blot"
+  ASSERT "ARGS_POS[9]" = "1"
   ASSERT "ARGS_OPT[--set]" = "2"
   ASSERT "ARGS_OPT[--with]" = "calm"
   ASSERT "ARGS_OPT[-a]" = "103"
   ASSERT "ARGS_OPT[--temp]" = true
+  ASSERT "ARGS_OPT[--mark]" = X
   ASSERT "ARGS_OPT[--splat]" = false
   
   local RES
@@ -161,6 +164,8 @@ test_args() {
   ASSERT RES = "calm"
   _get_arg RES 3
   ASSERT RES = 101
+  _get_arg RES unexistent a-fallback
+  ASSERT RES = a-fallback
   _get_arg RES unexistent a-fallback
   ASSERT RES = a-fallback
 }
@@ -188,7 +193,8 @@ test_str() {
   ENTANDO_OPT_A_TEST="###a-test"
   _auto_decode_entando_opts
   ASSERT ENTANDO_OPT_A_TEST = 'a-test'
-
+  
+  #~
   RES="$(_str_quote "Started publication as 101")"
   ASSERT RES = '"Started publication as 101"'
   RES="$(_str_quote -s "Started publication as 101")"
@@ -196,6 +202,15 @@ test_str() {
   
   RES="$(_str_escape_char "sdasda/Dsdaas" "/")"
   ASSERT RES = 'sdasda\/Dsdaas'
+  
+  #~
+  (
+    PARSE_ARGS --ENTANDO_OPT_A_TEST="another-test" --ENTANDO_TEST 1
+    _read_entando_options_from_args -e
+    ASSERT ENTANDO_OPT_A_TEST = 'another-test'
+    ASSERT ENTANDO_TEST = ''
+    ASSERT -v EXPORTED_ENTANDO_OPT_A_TEST "$(bash -c 'echo $ENTANDO_OPT_A_TEST')" = 'another-test'
+  )
 }
 
 #TEST:lib
@@ -291,18 +306,26 @@ test_exec_cmd() {
   ) || _SOE
 }
 
-test_versioning() {
+#TEST:lib
+test_versioning_utils() {
   print_current_function_name "RUNNING TEST> "  ".."
 
+  local ENCODED_REF="$(_ppl_encode-branch-for-tagging "KB" "epic/an-epic-branch")"
+  ASSERT ENCODED_REF = "KB-epic+2F+an-epic-branch"
+  
   local RES
-  _ppl_extract_snapshot_version_name_part RES "6.4.0-ENG-2268-PR-143" "base-version"
+  _ppl_extract_version_name_part RES "6.4.0-ENG-2268-PR-143+$ENCODED_REF" "base-version"
   ASSERT RES = "6.4.0"
-  _ppl_extract_snapshot_version_name_part RES "6.4.0-ENG-2268-PR-143" "qualifier"
+  _ppl_extract_version_name_part RES "6.4.0-ENG-2268-PR-143+$ENCODED_REF" "qualifier"
   ASSERT RES = "ENG-2268"
-  _ppl_extract_snapshot_version_name_part RES "6.4.0-ENG-2268-PR-143" "pr-num"
+  _ppl_extract_version_name_part RES "6.4.0-ENG-2268-PR-143+$ENCODED_REF" "pr-num"
   ASSERT RES = "143"
-  _ppl_extract_snapshot_version_name_part RES "v6.4.0-ENG-2268-PR-143" "base-version"
+  _ppl_extract_version_name_part RES "v6.4.0-ENG-2268-PR-143+$ENCODED_REF" "base-version"
   ASSERT RES = "6.4.0"
+  _ppl_extract_version_name_part RES "v6.4.0-ENG-2268-PR-143+$ENCODED_REF" "base-version"
+  ASSERT RES = "6.4.0"
+  _ppl_extract_version_name_part RES "v6.4.0-ENG-2268-PR-143+$ENCODED_REF" "meta:kb"
+  ASSERT RES = "epic/an-epic-branch"
 }
 
 #TEST:lib
@@ -359,18 +382,54 @@ test__ppl_extract_branch_name_from_ref() {
 }
 
 #TEST:lib
-test__ppl-determine-branch-qualifier() {
+test__ppl_extract_branch_short_name() {
   print_current_function_name "RUNNING TEST> "  ".."
   local RES
   #~ PRs
-  _ppl-determine-branch-qualifier RES "develop"
+  _ppl_extract_branch_short_name RES "develop"
   ASSERT RES = ""
-  _ppl-determine-branch-qualifier RES "epic/mylongrunningbranch"
+  _ppl_extract_branch_short_name RES "epic/mylongrunningbranch"
   ASSERT RES = "mylongrunningbranch"
-  _ppl-determine-branch-qualifier RES "epic/my-long-running-branch"
+  _ppl_extract_branch_short_name RES "epic/my-long-running-branch"
   ASSERT RES = "my-long-running-branch"
-  _ppl-determine-branch-qualifier RES "release/1.2.3"
+  _ppl_extract_branch_short_name RES "release/1.2.3"
   ASSERT RES = "1.2.3"
 }
 
-true
+#TEST:lib
+test__ppl_is_release_version_name() {
+  print_current_function_name "RUNNING TEST> "  ".."
+  _ppl_is_release_version_name "v1.2.3"
+  ASSERT -v RES $? = 0
+  _ppl_is_release_version_name "1.2.3"
+  ASSERT -v RES $? = 0
+  _ppl_is_release_version_name "1.2.3-fix.1"
+  ASSERT -v RES $? = 0
+  _ppl_is_release_version_name "v1.2.3-SNAPSHOT"
+  ASSERT -v RES $? != 0
+  _ppl_is_release_version_name "1.2.3-SNAPSHOT"
+  ASSERT -v RES $? != 0
+  _ppl_is_release_version_name "1.2.3-fix.1-SNAPSHOT"
+  ASSERT -v RES $? != 0
+}
+
+#TEST:lib
+test_path_functions() {
+  print_current_function_name "> " ".."
+  # shellcheck disable=SC2034
+  local CONCAT_RES
+  
+  ASSERT -v CONCAT_RES "$(path-concat)" = ""
+  ASSERT -v CONCAT_RES "$(path-concat "")" = ""
+  ASSERT -v CONCAT_RES "$(path-concat "" "")" = ""
+  ASSERT -v CONCAT_RES "$(path-concat "a" "b")" = "a/b"
+  ASSERT -v CONCAT_RES "$(path-concat "a/" "b")" = "a/b"
+  ASSERT -v CONCAT_RES "$(path-concat "a" "/b")" = "a/b"
+  ASSERT -v CONCAT_RES "$(path-concat "a/" "/b")" = "a/b"
+  ASSERT -v CONCAT_RES "$(path-concat "a" "")" = "a/"
+  ASSERT -v CONCAT_RES "$(path-concat "a/" "")" = "a/"
+  ASSERT -v CONCAT_RES "$(path-concat "" "b")" = "b"
+  ASSERT -v CONCAT_RES "$(path-concat "" "/b")" = "/b"
+  ASSERT -v CONCAT_RES "$(path-concat "a" "b" "c")" = "a/b/c"
+  ASSERT -v CONCAT_RES "$(path-concat "a" "b" "c" "")" = "a/b/c/"
+}

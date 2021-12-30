@@ -68,10 +68,10 @@ ppl--npm.FULL-BUILD() {
     if ! $notagging; then
       if _ppl_is_feature_enabled "TAG-SNAPSHOT-AFTER-BUILD" true; then
         # Adds snapshot-tag to provide context data and trigger publication workflow
-        ppl--release tag-snapshot-version
+        ppl--publication tag-git-version
       else
         # Adds pseudo-snapshot-tag to provide the required context data, but it doesn't trigger the workflow
-        ppl--release tag-pseudo-snapshot-version
+        ppl--publication tag-git-pseudo-version
       fi
     else
       true
@@ -91,8 +91,9 @@ ppl---npm.PUBLISH() {
       # subsequent publication methods (eg: docker)
       
       _log_i "Preparing for publication"
-      
-      local projectVersion="${PPL_REF_NAME:1}"
+
+      local projectVersion
+      _ppl_extract_version_name_part projectVersion "$PPL_REF_NAME" "effective-name"
       _ppl_set_current_project_version "$projectVersion"
       ppl--npm.FULL-BUILD --no-tagging
       ;;

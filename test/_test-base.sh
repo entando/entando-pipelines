@@ -140,3 +140,24 @@ TEST.mock.context() {
   PPL_PARSED_CONTEXT=""
   _ppl-load-context --disable-overrides "$PPL_CONTEXT"
 }
+
+TEST.mock.kube.oc() {
+  export TEST_MOCK_NAMESPACE_EXISTS=false
+  kube.oc() {
+    sleep 0.3
+    case "$@" in
+      create\ namespace*|create\ ns*) TEST_MOCK_NAMESPACE_EXISTS=true;;
+      delete\ namespace*|delete\ ns*) TEST_MOCK_NAMESPACE_EXISTS=false;;
+      get\ namespace*|get\ ns*)
+        $TEST_MOCK_NAMESPACE_EXISTS && return 0
+        return 1
+        ;;
+      apply*|create*)
+        echo "[kube.oc] kube.oc $*" >> "$TEST__TECHNICAL_LOG_FILE"
+        ;;
+      *) 
+          _FATAL XXXXXXXXXXXXXXXXXXXX > /dev/null
+        return 0;;
+    esac
+  }
+}

@@ -12,7 +12,7 @@
 #
 ppl--pr-preflight-checks() {
   (
-    START_MACRO "PREFLIGHT-CHECKS" "$@"
+    START_MACRO --no-repo "PREFLIGHT-CHECKS" "$@"
     _pkg_get "xmlstarlet"
     
     _get_arg ONLY --only
@@ -65,7 +65,7 @@ ppl--pr-preflight-checks.CHECK_MAINLINE() {
 ppl--pr-preflight-checks.CHECK_PROJECT_VERSION_FORMAT() {
   local projectVersion="$1"
   
-  if $PPL_ON_RELEASE_MAIN_BRANCH || $PPL_ON_RELEASE_PR_BRANCH; then
+  if [ "$PPL_BRANCHING_TYPE" = "release" ]; then
       # ON A RELEASE MAIN BRANCH OR PR BRANCH
     
       _semver_ex_parse maj min ptc "" tag "$projectVersion"

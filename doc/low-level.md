@@ -312,8 +312,8 @@
 
 ```
  Params:
- $1 macro name
- $2 pipeline context to parse
+ $1   macro name
+ $..  macro-specific parameters
 
  shellcheck disable=SC2034
 ```
@@ -818,6 +818,24 @@
 ```
  Params:
  $@: all params are forwarded to the docker command
+```
+
+</details>
+
+
+---
+
+### `_docker_is_image_on_registry()`
+
+**Tells if a image is present on the registry**
+
+<details>
+
+```
+ registry is taken from the given address or falls back as for docker standard policies
+
+ Params:
+ $1: the image address
 ```
 
 </details>
@@ -1279,8 +1297,8 @@
 
 ```
  Params:
- $1 macro name
- $2 pipeline context to parse
+ $1   macro name
+ $..  macro-specific parameters
 
  shellcheck disable=SC2034
 ```
@@ -1785,6 +1803,24 @@
 ```
  Params:
  $@: all params are forwarded to the docker command
+```
+
+</details>
+
+
+---
+
+### `_docker_is_image_on_registry()`
+
+**Tells if a image is present on the registry**
+
+<details>
+
+```
+ registry is taken from the given address or falls back as for docker standard policies
+
+ Params:
+ $1: the image address
 ```
 
 </details>

@@ -38,3 +38,13 @@ _docker_parse_image_address() {
   [ -n "$2" ] && _set_var "$2" "${BASH_REMATCH[1]}"
   [ -n "$3" ] && _set_var "$3" "${BASH_REMATCH[2]}"
 }
+
+# Tells if a image is present on the registry
+# registry is taken from the given address or falls back as for docker standard policies
+#
+# Params:
+# $1: the image address
+#
+_docker_is_image_on_registry() {
+  DOCKER_CLI_EXPERIMENTAL=enabled docker manifest inspect "$1" &>/dev/null
+}

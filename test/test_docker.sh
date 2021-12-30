@@ -128,4 +128,22 @@ test.docker.ppl--docker() {
   ASSERT TMP =~ "\[DOK\] docker push entando/entando-test-repo-base:$EXPECTED_VERSION_TAG-mode2"
 }
 
+#TEST:lib
+TEST.ppl--docker.is_release_version_name() {
+  print_current_function_name "RUNNING TEST> "  ".."
+
+  ppl--docker.is_release_version_name "myimage:1.2.3"
+  ASSERT -v RES $? = 0
+  ppl--docker.is_release_version_name "myimage:1.2.3-SNAPSHOT"
+  ASSERT -v RES $? != 0
+
+  ppl--docker.is_release_version_name "my-registry.io/myimage:1.2.3"
+  ASSERT -v RES $? = 0
+  ppl--docker.is_release_version_name "my-registry.io/myimage:1.2.3-SNAPSHOT"
+  ASSERT -v RES $? != 0
+  
+  # Tag patterns are more thoroughly tested by _ppl_is_release_version_name's tests,
+  # on which this function depends
+}
+
 true

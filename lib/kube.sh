@@ -23,10 +23,10 @@ kube.oc.wait_for_resource() {
     timeout "$TMO" bash -c 'kube.oc.wait_for_resource 0 "$@"' "" "$@"
   else
     while true; do
-      if [ "$1" == "until-not-present" ]; then
-        ! kube.oc get "$2" "$3" &>/dev/null && return 0
+      if [ "$2" == "until-not-present" ]; then
+        ! kube.oc get "$3" "$4" &>/dev/null && return 0
       else
-        kube.oc get "$2" "$3" &>/dev/null && return 0
+        kube.oc get "$3" "$4" &>/dev/null && return 0
       fi
       sleep 0.5
     done
@@ -64,4 +64,19 @@ kube.oc-login() {
   kube.oc project "$ENTANDO_OPT_OKD_LOGIN_NAMESPACE" || {
     _FATAL "Unable to switch to namespace \"$ENTANDO_OPT_OKD_LOGIN_NAMESPACE\""
   }
+}
+
+
+kube.oc.reset-namespace() {
+  local ns="$1" tmo="$2"
+  kube.oc get namespace "$ns" &> /dev/null && {
+    _log_d "Deleting the old test namespace"
+    kube.oc delete namespace "$ns" &> /dev/null
+    _log_d "Waiting for namespace deletion.."
+    kube.oc.wait_for_resource "$tmo" until-not-present namespace "$ns"
+  }
+  _log_d "Creating the new test namespace"
+  kube.oc create namespace "$ns"
+  _log_d "Waiting for namespace creation.."
+  kube.oc.wait_for_resource "$tmo" until-present namespace "$ns"
 }

@@ -390,13 +390,87 @@ _ppl_create_pr() {
   gh pr create --title "$1" --base "$2" --head "$3" ${4:+--reviewer "$4"} --web
 }
 
-# Tells if the current execution is about a PR branch
+# Determine PPL_CURRENT_REPO_BRANCH, PPL_BRANCHING_TYPE and PPL_IN_PR_BRANCH
 #
-__ppl_currently_in_pr() {
-  _set_var "$1" false
-  # PR SYNC
-  [[ -n "$PPL_BASE_REF" ]] && _set_var "$1" true
-  # Push of a tag on a PR commit
-  [[ -z "$PPL_BASE_REF" && -z "$PPL_HEAD_REF" ]] && _set_var "$1" true
+_ppl_determine_branch_info() {
+  _ppl_determine_branch_info.step1
+  
+  _ppl_is_feature_enabled "EPIC-BRANCHES" true && {
+    if [ "$PPL_BRANCHING_TYPE" == "epic" ]; then
+      _ppl_extract_branch_short_name PPL_EPIC_NAME "$PPL_NEAREST_WELL_KNOWN_BRANCH"
+    fi
+  }
+}
+
+_ppl_determine_branch_info.step1() {
+  if ! $PPL_NO_REPO; then
+    [ -n "$PPL_LOCAL_CLONE_DIR" ] && __exist -d "$PPL_LOCAL_CLONE_DIR"
+    PPL_CURRENT_REPO_BRANCH="$(_ppl_print_current_branch_of_dir "$PPL_LOCAL_CLONE_DIR")"
+  fi
+
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # > PR-SYNC EVENTS (PPL_REF_NAME=the feature branch, PPL_BASE_REF=the base well-known branch)
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # shellcheck disable=SC2034
+  [[ -n "$PPL_BASE_REF" ]] && {
+    PPL_IN_PR_BRANCH=true
+    PPL_BASE_BRANCH="$PPL_BASE_REF"
+    PPL_NEAREST_WELL_KNOWN_BRANCH="$PPL_BASE_REF"
+    ! _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_BASE_REF" && {
+      _FATAL "PR with invalid base branch \"$PPL_BASE_REF\""
+    }
+    return 0
+  }
+  
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # > NON-TAGGING EVENTS on "well-known" branches, like bumps (PPL_REF_NAME=a well-known branch)
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # shellcheck disable=SC2153
+  _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_REF_NAME" && {
+    _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_REF_NAME"
+    PPL_NEAREST_WELL_KNOWN_BRANCH="$PPL_REF_NAME"
+    return 0
+  }
+
+ ##############  $PPL_NO_REPO && { return 0 }  # Preliminar steps of an action don't need the below details
+
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # > STANDARD VERSION TAGGING :: IN WELL-KNOWN BRANCH - .. (PPL_REF_NAME=tag with KB segment, PPL_BASE_REF="")
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  _ppl_extract_version_name_part PPL_NEAREST_WELL_KNOWN_BRANCH "$PPL_REF_NAME" "meta:kb" && {
+    _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_NEAREST_WELL_KNOWN_BRANCH"
+    return 0
+  }
+
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # > STANDARD VERSION TAGGING :: IN FEATURE BRANCH - .. (PPL_REF_NAME=tag with BB segment, PPL_BASE_REF="")
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  _ppl_extract_version_name_part PPL_NEAREST_WELL_KNOWN_BRANCH "$PPL_REF_NAME" "meta:bb" && {
+    _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_NEAREST_WELL_KNOWN_BRANCH"
+      return 0
+  }
+  
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # > NON-STANDARD VERSION TAGGING (no well-known-branch metadata segment is present)
+  # - likely a tag set manually and likely a release tag on a well-known branch
+  # - any other case can be considered illegal
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  [ -z "$PPL_CURRENT_REPO_BRANCH" ] && return 0
+  _ppl_is_release_version_name "$PPL_CURRENT_REPO_BRANCH" && {
+    PPL_NEAREST_WELL_KNOWN_BRANCH="$PPL_CURRENT_REPO_BRANCH"
+    _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_CURRENT_REPO_BRANCH" && return 0
+  }
+  set +x
+  
+  _FATAL "Illegal tag format detected: No metadata and it's not a release tag"
+}
+
+_github._parse_known_branch() {
+  case "$2" in
+    develop|master) _set_var "$1" "$2";;
+    epic/*) _set_var "$1" "epic";;
+    release/*) _set_var "$1" "release";;
+    *) _set_var "$1" "";return 1;;
+  esac
   return 0
 }

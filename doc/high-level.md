@@ -197,6 +197,13 @@
 
 ---
 
+### `_ppl_determine_branch_info()`
+
+**Determine PPL_CURRENT_REPO_BRANCH, PPL_BRANCHING_TYPE and PPL_IN_PR_BRANCH**
+
+
+---
+
 ### `_ppl_get_current_project_version()`
 
 **Extacts the version of a artifactId from a pom**
@@ -377,7 +384,7 @@
 
 ---
 
-### `_ppl_extract_snapshot_version_name_part()`
+### `_ppl_extract_version_name_part()`
 
 **Extracts a part of the snapshot version name**
 
@@ -385,9 +392,16 @@
 
 ```
  Params:
+
  $1  output var
- $1  snapshot version name
- $2  part: "base-version" or "qualifier" or "pr-num"
+ $2  snapshot version name
+ $3  part:
+     - base-version        the initial 3digit version with or without prefix (eg: v7.0.0 or 7.0.0)
+     - qualifier           usually a ticket number (eg: ENT-999)
+     - pr-num              pull request number
+     - meta:kb             current branch of event that generated the tag
+     - meta:bb             bash branch branch of event that generated the tag
+     - effective-name      the effective part of the version (all the version but with no metadata)
 ```
 
 </details>
@@ -402,9 +416,9 @@
 
 ---
 
-### `_ppl-determine-branch-qualifier()`
+### `_ppl_extract_branch_short_name()`
 
-**Determine the current branch qualified (the part after the first -)**
+**Determine the current branch short name (the part after the first /)**
 
 <details>
 
@@ -419,6 +433,48 @@
  - "develop" => ""
  - "epic/mylongrunningbranch" => "mylongrunningbranch"
  - "epic/my-long-running-branch" => "my-long-running-branch"
+```
+
+</details>
+
+
+---
+
+### `_ppl_is_release_version_name()`
+
+**Tells if a version name is a release**
+
+
+---
+
+### `_ppl_split_version_tag()`
+
+**Extracts from the version tag the version and the original reference branch**
+
+<details>
+
+```
+ Params:
+ $1  the version receiver
+ $2  the metadata receiver
+ $3  the full-version
+```
+
+</details>
+
+
+---
+
+### `_ppl_encode-branch-for-tagging()`
+
+**Encodes a branch name for tagging**
+
+<details>
+
+```
+ > adds the segment-tag "KB-"
+ > encodes any forward slash to "+2F+"
+ > encodes the escape char "+" to "++"
 ```
 
 </details>
@@ -490,8 +546,10 @@
 
 ```
  Params:
- $1: receiver of the effective test namespace
- $2: proposed test namespace (defaults to ENTANDO_OPT_TEST_NAMESPACE)
+ $1: project name
+ $2: project version
+ $3: test namespace
+ $4: hostname suffix
 ```
 
 </details>
@@ -522,4 +580,11 @@
 ### `_ppl_autoset_snapshot_version()`
 
 **Sets the the project snapshot version according with the current pr information**
+
+
+---
+
+### `_ppl_print_current_branch_of_dir()`
+
+**Reads the current branch from a give dir, or the current one if none is given**
 

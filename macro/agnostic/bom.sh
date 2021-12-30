@@ -59,7 +59,10 @@ ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM() {
   local projectArtifactId="$1" projectVersion="$2" token="$3" bomQualifier="$4"
   _NONNULL projectArtifactId projectVersion
   
-  _git_full_clone --as-work-area "$ENTANDO_OPT_REPO_BOM_URL" "" "$ENTANDO_OPT_REPO_BOM_MAIN_BRANCH" "$token"
+  local bom_branch="$ENTANDO_OPT_REPO_BOM_MAIN_BRANCH"
+  [ -z "$bom_branch" ] && bom_branch="$PPL_NEAREST_WELL_KNOWN_BRANCH"
+  [ -z "$bom_branch" ] && bom_branch="$DEFAULT_BOM_BRANCH"
+  _git_full_clone --as-work-area "$ENTANDO_OPT_REPO_BOM_URL" "" "$bom_branch" "$token"
   
   # set the new version
   _log_i "Setting $projectArtifactId => $projectVersion"

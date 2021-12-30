@@ -35,7 +35,7 @@ ppl--docker() {
     case "$action" in
       publish)
         local builds
-        _get_arg builds 2 || _EXIT -d "Docker image publication is not enabled"
+        _get_arg builds 2 "${ENTANDO_OPT_DOCKER_BUILDS}" || _EXIT "Docker image publication is not enabled"
         
         [[ "${builds:0:3}" = "###" ]] && builds="${builds:3}"
         
@@ -108,10 +108,26 @@ ppl--docker.publish.BUILD_AND_PUSH_ALL() {
       after-tag) finalAddr="$dockerOrg/${dockerImageName,,}:${dockerImageTag}${buildQualifier,,}";;
       *) _FATAL "Invalid image qualifier position \"$ENTANDO_OPT_DOCKER_BUILD_QUALIFIER_POSITION\""
     esac
+    
+    ppl--docker.is_release_version_name "$finalAddr" && {
+      _docker_is_image_on_registry "$finalAddr" && {
+        _FATAL "Overwriting a release image is not allowed"
+      }
+    }
 
     __docker build . -t "$finalAddr" -f "$dockerFile"
     __docker image inspect "$finalAddr"
     __docker push "$finalAddr"
 
   done <<<  "${dockerBuilds//,/$'\n'}"
+}
+
+# Tells if a docker image tag is a release tag
+#
+ppl--docker.is_release_version_name() {
+  local ignore tag
+  # shellcheck disable=SC2034
+  IFS=':' read -r ignore tag <<<"$1"
+  _NONNULL tag
+  _ppl_is_release_version_name "$tag"
 }

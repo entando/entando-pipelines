@@ -2,10 +2,10 @@
 
 # BRIEF
 
-Epic branches are long running feature branches that work like main branches but
-for a topic that can't be exausted in a single topic branch/PR. Since they work
-in the same way, developers also operate on it with the usual workflow but by
-using the epic branch as base branch, instead of the main one.
+Epic branches are long running feature that can't be completed in a single big interaction. 
+They behaves like main branches with the diffecence that they are eventually terminated and 
+merged back to their base. Developers in fact operate on them with the usual PR workflow, but
+by using the epic branch as base branch, instead of the main one.
 
 
 # THE SHAPE OR AN EPIC BRANCH
@@ -65,17 +65,6 @@ a-long-change/ENG-999 Some change
 The Epic Branch will be eventually merged back to the main branch by using a
 so-called "Epic PR" that follows the PR rules of the main branch.
 
-### Please note
-
-- The epic version of the variables might not be exported by default on the
-workflow files of the CI/CD provider and so they might not be available by
-default to the pipelines.
-
-- There is a small chance of naming conflict between epic and non epic var that
-we chose to accepted in order to keep the syntax clean. This possibility anyway
-turn to zero if you keep the epic names lowercase.
-
-
 # IMPACT ON THE PIPELINES
 
 ## Snapshot version tags
@@ -94,5 +83,5 @@ As they are generated after the snapshot tags their naming will change according
 
 ## BOM
 
-In case of BOM these pipelines assumes the use of a corresponding 
-epic branch, with the same name, on the BOM repository.
+In case of BOM these pipelines assume the use of a corresponding 
+epic branch (with the same name) on the BOM repository.

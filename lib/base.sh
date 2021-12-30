@@ -3,56 +3,19 @@
 # Setups the enviroment for a macro execution
 #
 # Params:
-# $1 macro name
-# $2 pipeline context to parse
+# $1   macro name
+# $..  macro-specific parameters
 #
 # shellcheck disable=SC2034
 START_MACRO() {
+  # BASICS
   START_SIMPLE_MACRO "$@"
   
+  # PIPELINES CONTEXT
   _ppl-load-context "$PPL_CONTEXT"
   
-  # IN PR?
-  __ppl_currently_in_pr PPL_IN_PR_BRANCH
-  
-  # RELEASE BRANCH INDICATORS
-  PPL_ON_RELEASE_PR_BRANCH=false
-  PPL_ON_RELEASE_MAIN_BRANCH=false
-  if [[ "$PPL_BASE_REF" =~ ^"release/" ]]; then
-    PPL_ON_RELEASE_PR_BRANCH=true
-  elif [[ "$PPL_REF" =~ ^"release/" ]]; then
-    PPL_ON_RELEASE_MAIN_BRANCH=true
-  fi
-  
-  # RELATIVE MAIN BRANCH
-  # it's the actual MAIN BRANCH or an EPIC branch if currently under an EPIC branch
-  PPL_RELATIVE_MAIN_BRANCH=""
-  if [ -n "$PPL_BASE_REF" ]; then
-    PPL_RELATIVE_MAIN_BRANCH="$PPL_BASE_REF"
-  elif [ -n "$PPL_HEAD_REF" ]; then
-    PPL_RELATIVE_MAIN_BRANCH="$PPL_HEAD_REF"
-  fi
-  if [ -z "$PPL_RELATIVE_MAIN_BRANCH" ]; then
-    PPL_RELATIVE_MAIN_BRANCH="$(
-      # shellcheck disable=SC2164
-      cd "$PPL_LOCAL_CLONE_DIR"
-      git rev-parse --abbrev-ref HEAD 2>/dev/null
-    )"
-  fi
-  
-  # EPIC NAME
-  # the short name (qualifier) of the current epic branch
-  PPL_EPIC_NAME=""
-  _ppl_is_feature_enabled "EPIC-BRANCHES" true && {
-    if ! "$PPL_ON_RELEASE_PR_BRANCH" && ! "$PPL_ON_RELEASE_MAIN_BRANCH"; then
-      if [[ "$PPL_RELATIVE_MAIN_BRANCH" =~ ^"epic/" ]]; then
-        _ppl-determine-branch-qualifier PPL_EPIC_NAME "$PPL_RELATIVE_MAIN_BRANCH"
-      fi
-    fi
-  }
-  
-  # TARGET BOM BRANCH
-  ENTANDO_OPT_REPO_BOM_MAIN_BRANCH="${PPL_RELATIVE_MAIN_BRANCH:-${ENTANDO_OPT_REPO_BOM_MAIN_BRANCH:-"$DEFAULT_MAIN_BRANCH"}}"
+  # INFO ABOUT THE CURRENT BRANCHING
+  _ppl_determine_branch_info
   
   # FEATURES
   _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_FEATURES}"
@@ -77,9 +40,7 @@ START_MACRO() {
   fi
 }
 
-
 START_SIMPLE_MACRO() {
-  local defaultMacroName="$1"; shift
   set +e
   
   DEFAULT_MAIN_BRANCH="develop"
@@ -87,15 +48,20 @@ START_SIMPLE_MACRO() {
   _auto_decode_entando_opts
   
   ${ENTANDO_OPT_STEP_DEBUG:-false} && {
+    #export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+    export PS4='\033[0;33m+[${SECONDS}][${BASH_SOURCE}:${LINENO}]:\033[0m ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
     set -x
   }
   
-  ARGS_FLAGS=(--no-skip)
+  ARGS_FLAGS=(--no-skip --no-repo)
   PARSE_ARGS "$@"
   
-  local noSkip
+  local noSkip defaultMacroName=""
+  _get_arg defaultMacroName 1
+  _shift_positional_args 1
   _get_arg noSkip --no-skip
   _get_arg PPL_CURRENT_MACRO --id "$defaultMacroName"
+  _get_arg PPL_NO_REPO --no-repo
   
   _get_arg PPL_LOCAL_CLONE_DIR --lcd
   _get_arg PPL_TOKEN_OVERRIDE --token
@@ -107,14 +73,19 @@ START_SIMPLE_MACRO() {
     local comment="user macro "
   fi
 
+  # MISC
   TEST__EXECUTION="${TEST__EXECUTION:-false}"
+  
   if [ "$ENTANDO_OPT_SUDO" != "-" ]; then
     ENTANDO_OPT_SUDO="${ENTANDO_OPT_SUDO:-"sudo"}"
   else
     ENTANDO_OPT_SUDO=""
   fi
-  ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-INFO}"
+
   ENTANDO_OPT_REPO_BOM_URL="${ENTANDO_OPT_REPO_BOM_URL}"
+
+  # LOG LEVEL
+  ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-INFO}"
 }
 
 # Stops the execution with a success result and an info message
@@ -192,5 +163,6 @@ _set_var() {
   else
     read -r -d '' "$1" <<< "$2"
   fi
+
   return 0
 }

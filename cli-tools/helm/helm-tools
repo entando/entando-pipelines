@@ -1,0 +1,71 @@
+#!/bin/bash
+
+ENTANDO_AGNOSTIC=true
+# shellcheck disable=SC1090
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../../lib/all.sh"
+
+RUN() {
+  cmd="$1";shift
+  case "$cmd" in
+    rsv|resolve) #H: resolved the entando dynamic placholders and opens a shell
+      resolve "$@";;
+    *) _FATAL "Unknown action \"$cmd\"";;
+  esac
+}
+
+resolve() {
+  (
+    export -f __exist _FATAL _set_var _print_callstack _log_e _to_col _to_nll _pp _log_d _log_i
+    export -f kube.oc kube.oc.wait_for_resource kube.oc.reset-namespace
+    kube.oc project "$ENTANDO_NAMESPACE"
+    oc.reset-namespace() {
+      kube.oc.reset-namespace "${1:-$ENTANDO_NAMESPACE}" 30
+    }
+    helm.autogen() {
+      ( __exist -f "Chart.yaml" ) || return "$?"
+      {
+        env | grep "^ENTANDO_"
+        helm dep update || _FATAL "Heml update failed"
+      } 1>&2
+      helm template -n "$ENTANDO_NAMESPACE" "$ENTANDO_PROJECT_NAME" ./
+    }
+    export -f "helm.autogen" "oc.reset-namespace"
+    _log_i "Function \"helm.autogen\" and \"oc.reset-namespace\" generated"
+    
+    charts_dir="$1"; shift
+    __exist -d "$charts_dir"
+    
+    ARGS_FLAGS=()
+    PARSE_ARGS "$@"
+    
+    _get_arg -m -e ENTANDO_PROJECT_NAME 1
+    _get_arg -m -e ENTANDO_PROJECT_VERSION 2
+    _get_arg -m -e ENTANDO_NAMESPACE --namespace "test-$ENTANDO_PROJECT_NAME"
+    _get_arg -p -e ENTANDO_NAMESPACE -n
+    _get_arg -m -e ENTANDO_HOSTMAME_SUFFIX --hostname-suffix
+    
+    ENTANDO_OPT_IMAGE_REGISTRY="registry.hub.docker.com/"
+    ENTANDO_OPT_DOCKER_ORG="entando"
+    ENTANDO_IMAGE_REPO="$(path-concat "$ENTANDO_OPT_REPO_BASE" "$ENTANDO_PROJECT_NAME")"
+    ENTANDO_IMAGE_TAG="$ENTANDO_PROJECT_VERSION"
+    ENTANDO_OPT_LOG_LEVEL="DEBUG"
+    _read_entando_options_from_args -e
+    
+    _pp ENTANDO_PROJECT_NAME ENTANDO_PROJECT_VERSION ENTANDO_NAMESPACE ENTANDO_HOSTMAME_SUFFIX \
+        ENTANDO_IMAGE_REPO ENTANDO_IMAGE_TAG 
+    
+    __mk_tmp_work_area WD
+    cp -R "$charts_dir" "$WD"
+    cd "$WD/$charts_dir"
+    shift
+    _helm_update_placeholder_parameters \
+      "$ENTANDO_PROJECT_NAME" "$ENTANDO_PROJECT_VERSION" \
+      "$ENTANDO_NAMESPACE" "$ENTANDO_HOSTMAME_SUFFIX" \
+    ;
+    
+    sys.shell
+  ) || exit "$?"
+}
+
+
+RUN "$@"

@@ -73,7 +73,7 @@ _to_col() {
 #
 _print_callstack() {
   if [[ "$1" == "-d" && -n "$ENTANDO_DEBUG_TTY" ]]; then
-    shuft
+    shift
     _print_callstack "$@" >"$ENTANDO_DEBUG_TTY"
   fi
   local NOFRAME=false

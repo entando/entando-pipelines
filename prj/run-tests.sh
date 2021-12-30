@@ -10,6 +10,7 @@ cd "$SCRIPT_DIR/.." || { echo "Unable to enter the script dir"; exit 99; }
   exit "$?"
 }
 
+. "./lib/debug.sh"
 . "./lib/base.sh"
 . "./lib/misc.sh"     # only for the itmlst functions
 

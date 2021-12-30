@@ -22,6 +22,25 @@
 
 ---
 
+### `ppl--gate-check()`
+
+**EXECUTES PRELIMINAR CHECKS ABOUT THE CURRENT PR**
+
+<details>
+
+```
+ Business Rules:
+ - The PR title must match the given format rules
+
+ Params:
+ $1: the label to check
+```
+
+</details>
+
+
+---
+
 ### `ppl--check-pr-bom-state()`
 
 **EXECUTES THE BOM ALIGNMENT CHECK ABOUT THE CURRENT PR**
@@ -86,6 +105,43 @@
 
 ---
 
+### `ppl--publication()`
+
+**HELPER for triggering publications**
+
+<details>
+
+```
+ Params:
+ $1: the release action to apply
+
+ Actions:
+ - tag-git-version:         applies the snapshot tag to the current commit
+ - tag-git-pseudo-version:  applies a tag similar to the snapshot tag but that doesn't triggers workflows
+```
+
+</details>
+
+
+---
+
+### `ppl--publication._determine_snapshot_version_tag()`
+
+**Determine the current snapshot version names**
+
+<details>
+
+```
+ Supported Conditions:
+ - On a PR creation/update commit
+ - On a PR merge commit
+```
+
+</details>
+
+
+---
+
 ### `ppl--bom()`
 
 **MACRO OPERATIONS RELATED TO THE BOM**
@@ -129,9 +185,9 @@
 
 ---
 
-### `ppl--release()`
+### `ppl--publication()`
 
-**STARTS THE CREATION OF A VERSION**
+**HELPER for triggering publications**
 
 <details>
 
@@ -140,9 +196,8 @@
  $1: the release action to apply
 
  Actions:
- - tag-snapshot-version:         applies the snapshot tag to the current commit
- - tag-pseudo-snapshot-version:  applies a tag similar to the snapshot tag but that doesn't triggers workflows
- - tag-release-version           applies the final release tag to the current commit
+ - tag-git-version:         applies the snapshot tag to the current commit
+ - tag-git-pseudo-version:  applies a tag similar to the snapshot tag but that doesn't triggers workflows
 ```
 
 </details>
@@ -150,7 +205,7 @@
 
 ---
 
-### `ppl--release._determine_snapshot_version_name()`
+### `ppl--publication._determine_snapshot_version_tag()`
 
 **Determine the current snapshot version names**
 
@@ -160,6 +215,25 @@
  Supported Conditions:
  - On a PR creation/update commit
  - On a PR merge commit
+```
+
+</details>
+
+
+---
+
+### `ppl--check-pr-format()`
+
+**EXECUTES PRELIMINAR CHECKS ABOUT THE CURRENT PR**
+
+<details>
+
+```
+ Business Rules:
+ - The PR title must match the given format rules
+
+ Params:
+ $1: the format rules to respect or nothing for the default
 ```
 
 </details>
@@ -211,6 +285,13 @@
 
 ---
 
+### `ppl--mvn.generate-build-cache-key()`
+
+**Generates the key to store the build cache**
+
+
+---
+
 ### `ppl--docker()`
 
 **MACRO OPERATIONS RELATED TO DOCKER**
@@ -232,6 +313,13 @@
 ```
 
 </details>
+
+
+---
+
+### `ppl--docker.is_release_version_name()`
+
+**Tells if a docker image tag is a release tag**
 
 
 ---
@@ -296,6 +384,7 @@
   - MTX-MVN-SCAN-*   see equivalent on ppl--npm
   - MTX-NPM-SCAN-*   see equivalent on ppl--npm
   - MTX-SCAN-SNYK    runs a snyk scan (see ppl--scan)
+  - GENERATE-BUILD-CACHE-KEY generate the key to store the build cache
 ```
 
 </details>

@@ -4,7 +4,7 @@
 . "$PROJECT_DIR/test/_test-base.sh"
 
 # shellcheck disable=SC2034
-#TEST:lib
+#TEST:macro
 test_flow_pr_check() {
   print_current_function_name "RUNNING TEST> "  ".."
   # shellcheck disable=SC2034
@@ -31,7 +31,7 @@ test_flow_pr_check() {
   #~
   (
     ppl--check-pr-bom-state --lcd "local-clone"
-    ASSERT -v "BOM_CHECK_RESULfile:///home/wrt/work/prj/entando/main/tools/entando-pipelines/test/github/test_github_full_pipeline.shT" "$?" = 0
+    ASSERT -v "BOM_CHECK_RESULT" "$?" = 0
     __cd "$ENTANDO_OPT_REPO_BOM_URL"
     echo "something-new" > something-new
     __git_ACTP "something-new" "v9.9.9"
@@ -88,10 +88,10 @@ test_flow_pr_check() {
       PPL_PR_SHA="5a98877358d1322130cbde49628bdb796a100e89"
     }
 
-    ppl--release tag-snapshot-version --lcd "local-clone" || _SOE
+    ppl--publication tag-git-version --lcd "local-clone" || _SOE
     
     cd local-clone
-    ASSERT -v SNAPSHOT-TAG "$(git tag | grep v10.9.8.0-ENG-2471-PR-154)" = "v10.9.8.0-ENG-2471-PR-154"
+    ASSERT -v SNAPSHOT-TAG "$(git tag | grep "ENG-")" = "v10.9.8.0-ENG-2471-PR-154+BB-develop"
   ) || _SOE
   
   #~
@@ -118,7 +118,7 @@ test_flow_pr_check() {
   #     TEST__APPLY_OVERRIDES() {
   #       PPL_PR_SHA="5a98877358d1322130cbde49628bdb796a100e89"
   #     }
-  #     ppl--release tag-snapshot-version --lcd "local-clone" || _SOE
+  #     ppl--publication tag-git-version --lcd "local-clone" || _SOE
   #   ) || _SOE
   
   # ~
@@ -131,7 +131,7 @@ test_flow_pr_check() {
   #~
   (
     TEST__APPLY_OVERRIDES() {
-      PPL_REF="refs/tags/v6.4.0-ENG-2704-PR-126"
+      PPL_REF="refs/tags/v6.4.0-ENG-2704-PR-126+KB-epic+++ENG-999"
     }
     
     (
@@ -179,8 +179,9 @@ test_generate_build_cache_key() {
   
   (
     TEST.mock.initial_checkout "local-clone" > /dev/null
+    export ENTANDO_OPT_LOG_LEVEL=TRACE
     # shellcheck disable=SC2034
     RES="$(ppl--generic GENERATE-BUILD-CACHE-KEY "BUILD_CACHE_KEY" --lcd "local-clone")"
-    ASSERT RES =~ "BUILD_CACHE_KEY=[a-z0-9]{64}"
+    ASSERT RES =~ "^BUILD_CACHE_KEY=[a-z0-9]{64}"
   ) || _SOE
 }

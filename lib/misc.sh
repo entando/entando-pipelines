@@ -214,6 +214,7 @@ PARSE_ARGS() {
   local eoo=false
 
   ARGS_POS=("")
+  ARGS_POS_SHIFT=0
   unset ARGS_OPT
   declare -A -g ARGS_OPT
 
@@ -232,18 +233,35 @@ PARSE_ARGS() {
           continue
           ;;
         --*|-*)
+          shift
+          #~ FLAGS..
           if [[ " ${ARGS_FLAGS[*]} " == *" ${K} "* ]]; then
+            #.. NORMAL FLAG
             ARGS_OPT["$K"]=true
-            shift
-          else
-            if [[ "${2:0:1}" = "-" && "${2:0:2}" != "-" ]]; then
-              ! $QUIET && _log_w "Detected undeclared flag \"$1\""
-              shift
-            else
-              ARGS_OPT["$K"]="$2"
-              shift;shift
-            fi
+            continue
+          fi          
+          if [[ " --no-${ARGS_FLAGS[*]} " == *" --no-${K} "* ]]; then
+            #.. FLAGS NEGATION
+            ARGS_OPT["$K"]=false
+            continue
           fi
+
+          #~ ASSIGNMENTS..
+          #~ .. --OPT=A-VAL
+          IFS='=' read -r KK VV <<< "$K"
+          if [[ -n "$VV" ]]; then
+            ARGS_OPT["$KK"]="$VV"
+            continue
+          fi
+          #~ .. --OPT --NOT-A-VAL
+          if [[ "${1:0:1}" = "-" && "${1:0:2}" != "-" ]]; then
+            ! $QUIET && _log_w "Detected undeclared flag \"$1\""
+            shift
+            continue
+          fi
+          #~ .. --OPT A-VAL
+          ARGS_OPT["$K"]="$1"
+          shift
           continue
           ;;
       esac
@@ -262,7 +280,9 @@ PARSE_ARGS() {
 # $3 the fallback value
 #
 # Options:
-# [-m] is specified the function fails if no value can be extracted from argument or fallback
+# [-m] if specified the function fails if no value can be extracted from argument or fallback
+# [-p] if specified the receiver var is not affected if no value can be extracted from argument or fallback
+# [-e] if specified the receiver var is also exported
 #
 # Examples:
 # _get_arg arg1 1         # sets the var "arg1" with the first positional argument
@@ -270,6 +290,8 @@ PARSE_ARGS() {
 #
 _get_arg() {
   local MANDATORY=false;[ "$1" = "-m" ] && { MANDATORY=true; shift; }
+  local PRESERVE=false;[ "$1" = "-p" ] && { PRESERVE=true; shift; }
+  local EXPORT=false;[ "$1" = "-e" ] && { EXPORT=true; shift; }
   local _tmp_
   case "$2" in
     ''|*[!0-9]*) _tmp_="${ARGS_OPT[$2]}";;
@@ -277,8 +299,11 @@ _get_arg() {
   esac
   _tmp_="${_tmp_:-$3}"
   [ -n "${_tmp_}" ] || { "$MANDATORY" && _FATAL "No value or fallback available for mandatory param \"$2\" ($1)" ; }
+  $PRESERVE && [ -z "${_tmp_:-$3}" ] && return 1
   _set_var "$1" "$_tmp_"
   [ -z "${_tmp_:-$3}" ] && return 1
+  # shellcheck disable=SC2163
+  $EXPORT && export "$1"
   return 0
 }
 
@@ -350,6 +375,17 @@ _auto_decode_entando_opts() {
   done
 }
 
+# Scans args for --ENTANDO_OPT_XXX arguments and uses them to set the related environment vars
+#
+_read_entando_options_from_args() {
+  local tmp
+  for i in "${!ARGS_OPT[@]}"; do
+    if [ "${i:0:14}" == "--ENTANDO_OPT_" ]; then
+      _get_arg "$@" "${i:2}" "$i"
+    fi
+  done
+}
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Successfully changes dir or fatals
@@ -358,7 +394,7 @@ __cd() {
   local L="$1"
   [ "${L:0:7}" = "file://" ] && L="${L:7}"
   [ -z "$L" ] && _FATAL "Null directory provided"
-  cd "$L" 1>/dev/null || _FATAL -S 1 "Unable to enter directory \"$1\""
+  cd "$L" 1>/dev/null || _FATAL -S 2 "Unable to enter directory \"$1\""
   _log_t "Entered directory \"$L\""
 }
 
@@ -375,6 +411,7 @@ __exist() {
     "-d") [ ! -d "$2" ] && _FATAL "Unable to find the dir \"$2\" $where";;
     *) _FATAL "Invalid mode \"$1\"";;
   esac
+  return 0
 }
 
 # Executes a jq command
@@ -694,17 +731,26 @@ _ppl_is_feature_action() {
 # Extracts a part of the snapshot version name
 #
 # Params:
-# $1  output var
-# $1  snapshot version name
-# $2  part: "base-version" or "qualifier" or "pr-num"
 #
-_ppl_extract_snapshot_version_name_part() {
+# $1  output var
+# $2  snapshot version name
+# $3  part: 
+#     - base-version        the initial 3digit version with or without prefix (eg: v7.0.0 or 7.0.0)
+#     - qualifier           usually a ticket number (eg: ENT-999)
+#     - pr-num              pull request number
+#     - meta:kb             current branch of event that generated the tag
+#     - meta:bb             bash branch branch of event that generated the tag
+#     - effective-name      the effective part of the version (all the version but with no metadata)
+#
+_ppl_extract_version_name_part() {
   local _tmp1_ _tmp2_ _tmp2a_ _tmp3_ _tmp4_ _tmp5_ _tmp_res_
+  local _tmpV_ _tmpM_
+  _ppl_split_version_tag _tmpV_ _tmpM_ "$2"
   if [[ "$2" == *"-fix."* ]]; then
     # shellcheck disable=SC2034
-    IFS='-' read -r _tmp1_ _tmp2a_ _tmp2_ _tmp3_ _tmp4_ _tmp5_ <<<"$2"
+    IFS='-' read -r _tmp1_ _tmp2a_ _tmp2_ _tmp3_ _tmp4_ _tmp5_ <<< "$_tmpV_"
   else
-    IFS='-' read -r _tmp1_ _tmp2_ _tmp3_ _tmp4_ _tmp5_ <<<"$2"
+    IFS='-' read -r _tmp1_ _tmp2_ _tmp3_ _tmp4_ _tmp5_<<< "$_tmpV_"
   fi
   case "$3" in
     "base-version") 
@@ -713,6 +759,19 @@ _ppl_extract_snapshot_version_name_part() {
       ;;
     "qualifier") _tmp_res_="$_tmp2_-$_tmp3_";;
     "pr-num") _tmp_res_="$_tmp5_";;
+    "meta:kb"|"meta:bb")
+      if [[ "${_tmpM_:0:3}" =~ ^..- ]]; then
+        _tmp_res_="${_tmpM_:3}"
+        _tmp_res_="${_tmp_res_//++/+}"
+        _tmp_res_="${_tmp_res_//+2F+/\/}"
+      else
+        _tmp_res_=""
+      fi
+      ;;
+    "effective-name")
+      _tmp_res_="$_tmpV_"
+      [[ "${_tmp_res_:0:1}" = "v" ]] && _tmp_res_="${_tmp_res_:1}"
+      ;;
     *) _FATAL "Invalid part name \"$3\" provided";;
   esac
   [[ -z "$_tmp_res_" || "$_tmp4_" != "PR" ]] && _FATAL "Provided snapshot version name \"$2\" is not valid"
@@ -886,7 +945,7 @@ _ppl_extract_branch_name_from_ref() {
   return 0
 }
 
-# Determine the current branch qualified (the part after the first "-")
+# Determine the current branch short name (the part after the first "/")
 # It's usuful as discriminant for identifiers related to a long running branch.
 # 
 # Params:
@@ -898,9 +957,100 @@ _ppl_extract_branch_name_from_ref() {
 # - "epic/mylongrunningbranch" => "mylongrunningbranch"
 # - "epic/my-long-running-branch" => "my-long-running-branch"
 #
-_ppl-determine-branch-qualifier() {
+_ppl_extract_branch_short_name() {
   local _tmp1_ _tmp2_
   IFS='/' read -r _tmp1_ _tmp2_ <<<"$2"
   _set_var "$1" "$_tmp2_"
 }
 
+# Tells if a version name is a release
+#
+_ppl_is_release_version_name() {
+  _semver_parse _maj_ _min_ _ptc_ _tag_ "$1"
+  # shellcheck disable=SC2154
+  [[ -z "$_tag_" ]] || [[ "${_tag_:0:4}" == "fix." && ! "$_tag_" = *"-"* ]]
+}
+
+# Extracts from the version tag the version and the original reference branch
+#
+# Params:
+# $1  the version receiver
+# $2  the metadata receiver
+# $3  the full-version
+#
+_ppl_split_version_tag() {
+  local _tmp1_ strip_pre=false; [ "$1" = "--strip-prefix" ] && { strip_pre=true; shift; }
+  IFS='+' read -r _tmp1_ _tmp2_ <<< "$3"
+  [ -n "$1" ] && {
+    if $strip_pre; then
+      _set_var "$1" "${_tmp1_:1}"
+    else
+      _set_var "$1" "$_tmp1_"
+    fi
+  }
+  [ -n "$2" ] && {
+    _set_var "$2" "$_tmp2_"
+  }
+}
+
+# Encodes a branch name for tagging
+# 
+# > adds the segment-tag "KB-" 
+# > encodes any forward slash to "+2F+"
+# > encodes the escape char "+" to "++"
+#
+_ppl_encode-branch-for-tagging() {
+  local tmp="${2//+/++}"
+  echo "$1-${tmp//\//+2F+}"
+}
+
+# Concatenates two or more path parts
+#
+# Note that the function tries to preserve local paths, so:
+# - path-concat "" "b"
+# generates:
+# - "b"
+#
+# For further info check `test_path_functions`
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# $1: destination var name 
+# $2: the source value #1 
+# $3: the source value #2
+#
+path-concat() {
+  local ACC="$1"; shift
+  while true; do
+    local terminated=false
+    [[ "$ACC" = "-t" ]] && terminated=true && shift
+    local NEXT="$1"
+    shift
+    
+    if [[ -n "$ACC" ]]; then
+      [[ "$ACC" =~ ^.*/$ ]] && {
+        ACC_len="${#ACC}"
+        ACC="${ACC::$ACC_len-1}"
+      }
+      [[ -n "$NEXT" ]] && [[ "$NEXT" =~ ^/.*$ ]] && NEXT="${NEXT:1}"
+      ACC="${ACC}/${NEXT}"
+    else
+      ACC="${NEXT}"
+    fi
+    
+    if $terminated; then
+      [[ ! "$ACC" =~ ^.*/$ ]] && ACC+="/"
+    fi
+    [ "$#" = 0 ] && break
+  done
+  echo "$ACC"
+}
+
+# Runs a shell prompt or a shell command
+#
+sys.shell() {
+  local s="${ENTANDO_SHELL_CMD:-bash}"
+  case "$s" in
+    zsh|bash|fizsh) "$s" "$@";;
+    *) _FATAL "Unsupported shell provided in variable \"ENTANDO_SHELL_CMD\"";;
+  esac
+}
