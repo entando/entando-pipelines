@@ -86,7 +86,7 @@ ppl--release._determine_snapshot_version_name() {
 
     if $PPL_ON_RELEASE_PR_BRANCH; then
       # ON THE RELEASE PR BRANCH
-      _semver_ex_parse maj min ptc "" _tmp_fix_tag_ "v10.9.8-fix.1"
+      _semver_ex_parse maj min ptc "" _tmp_fix_tag_ "$_tmp_ver_"
       if [ "${_tmp_fix_tag_:0:3}" = "fix" ]; then
         _tmp_fix_tag_="${_tmp_fix_tag_}-"
       elif [ "$_tmp_fix_tag_" != "" ]; then

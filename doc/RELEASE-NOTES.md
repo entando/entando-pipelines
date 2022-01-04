@@ -1,3 +1,11 @@
+# `v1.1.3`
+
+## Relevant additions
+
+- Support for epic branches
+
+---
+
 # `v1.1.2`
 
 ## Relevant additions

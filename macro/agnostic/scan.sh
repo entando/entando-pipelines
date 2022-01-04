@@ -25,7 +25,7 @@ ppl--scan() {
     case "$action" in
       snyk)
         ppl--scan.PREREQUIREMENTS
-        
+        ppl--scan.SCAN
         ;;
       *)
         _FATAL "Invalid scan macro action \"$action\""
