@@ -10,8 +10,6 @@
 #
 # Actions
 # - publish:  Builds one or more artifacts, image and pushes it to the image regitry.
-#             Params:   
-#              - $2: the list of builds directives
 #             Mandatory Vars:
 #              - ENTANDO_OPT_DOCKER_ORG
 #              - ENTANDO_OPT_DOCKER_USERNAME
@@ -34,14 +32,13 @@ ppl--docker() {
 
     case "$action" in
       publish)
-        local builds
-        _get_arg builds 2 "${ENTANDO_OPT_DOCKER_BUILDS}" || _EXIT "Docker image publication is not enabled"
+        local builds="$ENTANDO_OPT_DOCKER_BUILDS"
+        [ -z "${builds}" ] && _EXIT "Docker image publication is not enabled"
         
         [[ "${builds:0:3}" = "###" ]] && builds="${builds:3}"
         
         local projectArtifactId projectVersion
         ppl--docker.publish.INIT projectArtifactId projectVersion
-        
         ppl--docker.publish.LOGIN
         ppl--docker.publish.BUILD_AND_PUSH_ALL "$builds" "$projectArtifactId" "$projectVersion"
         ;;
@@ -61,7 +58,6 @@ ppl--docker.publish.INIT() {
     __mvn_exec package -B -Pjvm
   }
 }
-
 ppl--docker.publish.LOGIN() {
   _NONNULL ENTANDO_OPT_DOCKER_USERNAME ENTANDO_OPT_DOCKER_PASSWORD
   __docker login -u "$ENTANDO_OPT_DOCKER_USERNAME" --password-stdin <<<"$ENTANDO_OPT_DOCKER_PASSWORD"
@@ -90,7 +86,7 @@ ppl--docker.publish.BUILD_AND_PUSH_ALL() {
     fi
 
     _docker_parse_image_address dockerOrg dockerImageName dockerImageTag "$dockerImageAddress"
-
+    
     [ -z "$dockerOrg" ] && dockerOrg="$ENTANDO_OPT_DOCKER_ORG"
     _NONNULL dockerOrg
     
@@ -108,26 +104,26 @@ ppl--docker.publish.BUILD_AND_PUSH_ALL() {
       after-tag) finalAddr="$dockerOrg/${dockerImageName,,}:${dockerImageTag}${buildQualifier,,}";;
       *) _FATAL "Invalid image qualifier position \"$ENTANDO_OPT_DOCKER_BUILD_QUALIFIER_POSITION\""
     esac
-    
-    ppl--docker.is_release_version_name "$finalAddr" && {
+
+    ppl--docker.is_release_version_number "$finalAddr" && {
       _docker_is_image_on_registry "$finalAddr" && {
         _FATAL "Overwriting a release image is not allowed"
       }
     }
 
-    __docker build . -t "$finalAddr" -f "$dockerFile"
-    __docker image inspect "$finalAddr"
-    __docker push "$finalAddr"
+    __docker_exec --ppl-pg 5000 build . -t "$finalAddr" -f "$dockerFile"
+    __docker_exec --ppl-pg 5000 image inspect "$finalAddr"
+    __docker_exec --ppl-pg 5000 push "$finalAddr"
 
   done <<<  "${dockerBuilds//,/$'\n'}"
 }
 
 # Tells if a docker image tag is a release tag
 #
-ppl--docker.is_release_version_name() {
+ppl--docker.is_release_version_number() {
   local ignore tag
   # shellcheck disable=SC2034
   IFS=':' read -r ignore tag <<<"$1"
   _NONNULL tag
-  _ppl_is_release_version_name "$tag"
+  _ppl_is_release_version_number "$tag"
 }

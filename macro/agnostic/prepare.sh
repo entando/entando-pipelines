@@ -6,7 +6,7 @@
 # EXECUTES PRELIMINAR CHECKS ABOUT THE CURRENT PR
 #
 # > Checks the format of the PR title:
-# > Checks the format of the project version name on PR
+# > Checks the format of the project version number on PR
 # > Checks that the development PR is compatible with the current mainline version (optional via ENTANDO_OPT_MAINLINE)
 # > Runs optional custom check (user provided script "custom-pr-check.sh")
 #

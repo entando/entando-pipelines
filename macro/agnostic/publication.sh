@@ -52,7 +52,7 @@ ppl--publication.tag-git-version() {
     __git checkout "$PPL_HEAD_REF"
     pr_num="$PPL_PR_NUM"
   else
-    _ppl_extract_version_name_part pr_num "$snapshotVersionTag" "pr-num"
+    _ppl_extract_version_part pr_num "$snapshotVersionTag" "pr-num"
   fi
 
   _NONNULL pr_num
@@ -65,13 +65,15 @@ ppl--publication.tag-git-version() {
   __git_add_tag -f "$snapshotVersionTag" "$PPL_RUN_ID" "$PPL_COMMIT_ID"
   __git push origin "$snapshotVersionTag" -f
   
-  local versionName
-  _ppl_extract_version_name_part versionName "${snapshotVersionTag}" "effective-name"
+  local versionNumber
+  _ppl_extract_version_part versionNumber "${snapshotVersionTag}" "effective-number"
   
-  _ppl-pr-submit-comment "$pr_num" "Requested publication of version \`${versionName}\`"
+  if [ "${versionNumber:0:1}" = "v" ]; then
+    _ppl-pr-submit-comment "$pr_num" "   \`${versionNumber:1}\`"
+  fi
 }
 
-# Determine the current snapshot version names
+# Determine the current snapshot version numbers
 #
 # Supported Conditions:
 # - On a PR creation/update commit
@@ -109,10 +111,10 @@ ppl--publication._determine_snapshot_version_tag.in_pr_event() {
     _set_var "$1" "$_tmp_ver_+$(_ppl_encode-branch-for-tagging "BB" "$PPL_BASE_REF")"
 }
 
-ppl--publication._determine_snapshot_version_name() {
+ppl--publication._determine_snapshot_version_number() {
   local _tmp_dssvn_
   ppl--publication._determine_snapshot_version_tag.in_pr_event _tmp_dssvn_
-  _ppl_extract_version_name_part "$1" "${_tmp_dssvn_}" "effective-name"
+  _ppl_extract_version_part "$1" "${_tmp_dssvn_}" "effective-number"
 }
 
 ppl--publication._determine_snapshot_version_tag.in_non_pr_event() {
@@ -122,11 +124,9 @@ ppl--publication._determine_snapshot_version_tag.in_non_pr_event() {
   # ON THE BASE BRANCH
   __git_get_commit_tag --snapshot-tag _tmp_ver_tag_ "$PPL_COMMIT_ID"
   
-  _pp _tmp_ver_tag_
-  
   if [[ -n "$_tmp_ver_tag_" ]]; then
     # development branch was already published
-    if _ppl_is_release_version_name "$_tmp_ver_tag_"; then
+    if _ppl_is_release_version_number "$_tmp_ver_tag_"; then
       _FATAL "Overwriting a release publication version tag is not allowed"
     else
       _log_i "This merge commit was already tagged => Reusing tag \"$_tmp_ver_tag_\""
@@ -137,8 +137,7 @@ ppl--publication._determine_snapshot_version_tag.in_non_pr_event() {
     __git_get_parent_pr pr_parent "$PPL_COMMIT_ID"
     __git_get_commit_tag --snapshot-tag _tmp_ver_tag_ "$pr_parent"
     
-    _pp _tmp_ver_tag_ pr_parent PPL_COMMIT_ID
-    git tlog --topo-order -n 2 
+    _git_log_topo_summary
     
     [ -z "$_tmp_ver_tag_" ] && __git_get_commit_tag --pseudo-snapshot-tag _tmp_ver_tag_ "$pr_parent"
   fi

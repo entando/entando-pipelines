@@ -14,7 +14,7 @@
 #                          -public-url                    the path on which app-builder is exposed (default: /app-builder)
 #                          --domain                        the path of the main application (default: /entando-de-app)
 #                          --admin-console-integration     flag for the admin console integration enabling (default: false)
-# - PUBLISH              Prepares the repo for publication by setting on it the proper version name
+# - PUBLISH              Prepares the repo for publication by setting on it the proper version number
 # - MTX-NPM-SCAN-{type}  Runs a type of npm scan (LINT, SASS-LINT, COVERAGE)
 #
 ppl--npm() {
@@ -93,7 +93,7 @@ ppl---npm.PUBLISH() {
       _log_i "Preparing for publication"
 
       local projectVersion
-      _ppl_extract_version_name_part projectVersion "$PPL_REF_NAME" "effective-name"
+      _ppl_extract_version_part projectVersion "$PPL_REF_NAME" "effective-number"
       _ppl_set_current_project_version "$projectVersion"
       ppl--npm.FULL-BUILD --no-tagging
       ;;

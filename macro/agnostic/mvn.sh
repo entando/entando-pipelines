@@ -11,7 +11,7 @@
 # Actions:
 # - FULL-BUILD        executes a full and clean npm build+test
 # - PUBLISH           publishes the maven artifact for development
-#                     in the process, sets on it the proper version name and rebuilds the artifact
+#                     in the process, sets on it the proper version number and rebuilds the artifact
 # - GA-PUBLICATION    publishes the maven artifact for general availability
 #                     doesn't alter the sources like PUBLISH
 # - MTX-MVN-SCAN-SONAR          Executes a full sonar scan, including the coverage report
@@ -35,6 +35,10 @@ ppl--mvn() {
     case "$action" in
       "FULL-BUILD")
         _log_i "Building and testing"
+        
+        if [ -n "$ENTANDO_OPT_TEST_COMPOSE_FILE" ]; then
+          docker-compose -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" up -d 2>&1 | _summarize_stream --ppl-pg 500 "COMPOSE-UP"
+        fi
         
         _ppl_is_feature_action "INTEGRATION-TESTS" "D" && {
           _log_i "INTEGRATION TESTS SKIPPED"
@@ -62,6 +66,10 @@ ppl--mvn() {
         fi
         
         _SOE
+        
+        if [ -n "$ENTANDO_OPT_TEST_COMPOSE_FILE" ]; then
+          docker-compose -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" down 2>&1 | _summarize_stream --ppl-pg 500 "COMPOSE-DOWN"
+        fi
         
         if _ppl_is_feature_enabled "MVN-QUARKUS-NATIVE"; then
           _log_i "Executing the quarkus native packaging"
@@ -104,17 +112,68 @@ ppl--mvn() {
         ;;
       "MTX-MVN-SCAN-OWASP")
         _log_i "Starting the owasp analysis"
-        __mvn_exec verify -B -Powasp-dependency-check
+        __mvn_exec -B verify -Powasp-dependency-check
         ;;
       "MTX-MVN-POST-DEPLOYMENT-TESTS"|"MVN-POST-DEPLOYMENT-TESTS")
-        _log_i "Starting the post-deployment task"
+        _log_i "Starting the post-deployment task with plan: $ENTANDO_OPT_TEST_POSTDEP_PLAN"
+        export ENTANDO_OPT_LOG_LEVEL=DEBUG
         _pkg_get "xmlstarlet"
-
-        ppl--mvn.post-deloyment.configure projectName projectVersion ENTANDO_OPT_TEST_NAMESPACE || _SOE
-        ppl--mvn.post-deloyment.prepare-environment "$projectName" "$projectVersion" || _SOE
-        ppl--mvn.post-deloyment.install-operator || _SOE
-        ppl--mvn.post-deloyment.deploy-image "$projectName" "$projectVersion" || _SOE
-        ppl--mvn.post-deloyment.run-test "$projectName" "$projectVersion" || _SOE
+        
+        local projectName projectVersion prNumber
+        
+        if [ "$PPL_BRANCHING_TYPE" != "release" ]; then
+          # If snapshot version sets the proper version semver according with the version tag
+          ppl--publication._determine_snapshot_version_number projectVersion
+          _pom_set_project_version "$projectVersion" "./pom.xml"
+        fi
+        
+        _ppl_extract_version_part prNumber "$projectVersion" "pr-num"
+        
+        ppl--mvn.post-deloyment.configure projectName projectVersion ENTANDO_TEST_NAMESPACE || _SOE
+        
+        local TMP
+        IFS=, read -ra TMP <<< "$ENTANDO_OPT_TEST_POSTDEP_PLAN"
+        for step in "${TMP[@]}"; do
+          _log_d "Running post-deployment-tests step: $step"
+          
+          case "$step" in
+            "RUN-TESTS")
+              ppl--mvn.post-deloyment.run-test "$projectName" "$projectVersion" || _SOE
+              ;;
+            "PUBLISH-PROJECT-IMAGE")
+              ppl--mvn.post-deloyment.publish-image "$projectName" "$projectVersion" "$prNumber" || _SOE
+              ;;
+            "DEPLOY-PROJECT-HELM")
+              ppl--mvn.post-deloyment.deploy-project-helm "$projectName" "$projectVersion" | _group_stream "$step"
+              _SOE --pipe
+              ;;
+            "DEPLOY-OPERATOR-CLUSTER-REQUIREMENTS")
+              ppl--mvn.post-deloyment.operator install-cluster-requirements | _group_stream "$step"
+              _SOE --pipe
+              ;;
+            "DEPLOY-OPERATOR-NAMESPACE-REQUIREMENTS")
+              ppl--mvn.post-deloyment.operator install-namespace-requirements | _group_stream "$step"
+              _SOE --pipe
+              ;;
+            "DEPLOY-OPERATOR")
+              ppl--mvn.post-deloyment.operator install | _group_stream "$step"
+              _SOE --pipe
+              ;;
+            "SUSPEND-TEST-NAMESPACE")
+              kube.oc.namespace.suspend "$ENTANDO_TEST_NAMESPACE" 30
+              ;;
+            "RESET-TEST-NAMESPACE")
+              kube.oc.namespace.reset "$ENTANDO_TEST_NAMESPACE" 30
+              ;;
+            "DELETE-TEST-NAMESPACE")
+              kube.oc.namespace.delete "$ENTANDO_TEST_NAMESPACE" 30
+              ;;
+            *)
+              _FATAL "Uknown plan step \"$step\""
+              ;;
+            esac
+            true
+        done
         ;;
       "PUBLISH")
         case "$PPL_REF_NAME" in
@@ -127,7 +186,7 @@ ppl--mvn() {
             #~ UPDATES the version on the MVN and REBUILDS the module
             # shellcheck disable=SC2034
             local projectVersion
-            _ppl_extract_version_name_part projectVersion "$PPL_REF_NAME" "effective-name"
+            _ppl_extract_version_part projectVersion "$PPL_REF_NAME" "effective-number"
             _pom_set_project_version "$projectVersion" "./pom.xml"
             __mvn_deploy "internal-nexus" "$ENTANDO_OPT_MAVEN_REPO_PROD"
             ;;
@@ -150,75 +209,113 @@ ppl--mvn() {
 }
 
 ppl--mvn.post-deloyment.configure() {
-  local projectName projectVersion
-  _ppl_get_current_project_artifact_id projectName
-  _ppl_get_current_project_version projectVersion
-  _NONNULL projectName projectVersion
+  local _tmp_projectName _tmp_projectVersion
   
-  _set_var "$1" "$projectName"
-  _set_var "$2" "$projectVersion"
+  if [ -n "$ENTANDO_PROJECT_NAME_OVERRIDE" ]; then
+    _tmp_projectName="$ENTANDO_PROJECT_NAME_OVERRIDE"
+  else
+    _ppl_get_current_project_artifact_id _tmp_projectName
+  fi
+  if [ -n "$ENTANDO_PROJECT_VERSION_OVERRIDE" ]; then
+    _tmp_projectVersion="$ENTANDO_PROJECT_VERSION_OVERRIDE"
+  else
+    _ppl_get_current_project_version _tmp_projectVersion
+  fi
+  _NONNULL _tmp_projectName _tmp_projectVersion
   
-  local ns="${2:-"$ENTANDO_OPT_TEST_NAMESPACE"}"
-  [[ "$ns" == "[auto]" || -z "$ns" ]] && ns="test-${projectName}";
-  [[ "${ns:0:5}" != "test-" ]] && _FATAL "The test namespace name must start with the prefix \"test-\""
-  _set_var "$3" "$ns"
+  _set_var "$1" "$_tmp_projectName"
+  _set_var "$2" "$_tmp_projectVersion"
+  
+  local _tmp_ns="$ENTANDO_OPT_TEST_NAMESPACE"
+  [[ "$_tmp_ns" == "[auto]" || -z "$_tmp_ns" ]] && _tmp_ns="test-${_tmp_projectName}";
+  [[ "${_tmp_ns:0:5}" != "test-" ]] && _FATAL "The test namespace name must start with the prefix \"test-\""
+  _set_var "$3" "$_tmp_ns"
 }
 
-ppl--mvn.post-deloyment.deploy-image() {
-  local projectName="$1" projectVersion="$2"
+ppl--mvn.post-deloyment.publish-image() {
+  local projectName="$1" projectVersion="$2" prNumber="$3"
 
-  _log_d "Buiding and deploying the image"
+  _log_d "Buiding and deploying the image for project \"${projectName}\" of version \"${projectVersion}\""
   
   _ppl_is_feature_enabled "MVN-QUARKUS-NATIVE" && {
-    __mvn_exec package -B -Pjvm
+    __mvn_exec -B package -Pjvm
   }
 
-  ppl--docker.publish.INIT projectName projectVersion
   ppl--docker.publish.LOGIN
   ppl--docker.publish.BUILD_AND_PUSH_ALL "$ENTANDO_OPT_DOCKER_BUILDS" "$projectName" "$projectVersion"
+  
+  if [ -n "$prNumber" ]; then
+    _ppl-pr-submit-comment "$prNumber" "Requested publication of version \`${projectVersion}\`"
+  fi
 }
 
-ppl--mvn.post-deloyment.prepare-environment() {
+ppl--mvn.post-deloyment.deploy-project-helm() {
   local projectName="$1" projectVersion="$2"
   
-  _log_d "Setting up the post-deployment execution environment"
+  _log_d "Applying the project helm charts"
 
   local ORIGDIR="$PWD"
   
-  ENTANDO_OPT_TEST_NAMESPACE="$ENTANDO_OPT_TEST_NAMESPACE"
   _ppl_provision_helm_preview_environment \
     "$projectName" "$projectVersion" \
-    "$ENTANDO_OPT_TEST_NAMESPACE" "$ENTANDO_OPT_TEST_HOSTNAME_SUFFIX"
+    "$ENTANDO_TEST_NAMESPACE" "$ENTANDO_OPT_TEST_HOSTNAME_SUFFIX"
 
   local RV="$?"
   
   [[ "$RV" == 99 ]] && {
-    _EXIT "No post-deployment setup method found, skipped"
+    _log_i "No helm setup method found, skipped"
+    __cd "$ORIGDIR"
+    return 0
   }
   [[ "$RV" != 0 ]] && exit "$RV"
   
   __cd "$ORIGDIR"
 }
 
-ppl--mvn.post-deloyment.install-operator() {
-  _NONNULL ENTANDO_OPT_TEST_OPERATOR_GIT_REPO_URL ENTANDO_OPT_TEST_OPERATOR_VERSION
+ppl--mvn.post-deloyment.operator() {
+  case "$1" in
+    install-cluster-requirements)
+      ppl--mvn.post-deloyment._operator_installation apply "cluster-resources.yaml" "operator cluster dependencies";;
+    uninstall-cluster-requirements)
+      ppl--mvn.post-deloyment._operator_installation delete "cluster-resources.yaml" "operator cluster dependencies";;
+    install-namespace-requirements)
+      ppl--mvn.post-deloyment._operator_installation --skip-kind "Deployment" apply "namespace-resources.yaml" \
+        "operator namespace dependencies";;
+    uninstall-namespace-requirements)
+      ppl--mvn.post-deloyment._operator_installation --skip-kind "Deployment" delete "namespace-resources.yaml" \
+        "operator namespace dependencies";;
+    install)
+      ppl--mvn.post-deloyment._operator_installation apply "namespace-resources.yaml" "operator";;
+    uninstall)
+      ppl--mvn.post-deloyment._operator_installation delete "namespace-resources.yaml" "operator";;
+    *)
+      _FATAL "Invalid action \"$1\"";;
+  esac
+}
+
+
+ppl--mvn.post-deloyment._operator_installation() {
+  local skip_kind=''; [ "$1" == "--skip-kind" ] && { skip_kind="$2"; shift 2; }
+  case "$1" in
+    apply|create) _log_d "Deloying the $3 \"$ENTANDO_OPT_TEST_OPERATOR_BUNDLE_VERSION\" to the namespace";;
+    delete) _log_d "Undeploying the $3 \"$ENTANDO_OPT_TEST_OPERATOR_BUNDLE_VERSION\" to the namespace";;
+  esac
   
-  # shellcheck disable=SC2034
-  local _ignored_
-  local local_operator_clone_dir="$HOME/.entando/ppl/operator-clone"
-  local operator_project_name="${ENTANDO_OPT_TEST_OPERATOR_PROJECT_NAME:-entando-k8s-controller-coordinator}"
-  rm -rf "$local_operator_clone_dir"
+  _NONNULL ENTANDO_OPT_TEST_OPERATOR_BUNDLE_URL ENTANDO_OPT_TEST_OPERATOR_BUNDLE_VERSION
   
-  ppl--checkout-branch.checkout \
-    "$ENTANDO_OPT_TEST_OPERATOR_GIT_REPO_URL" \
-    "$local_operator_clone_dir" \
-    "$ENTANDO_OPT_TEST_OPERATOR_VERSION"
-    
-  export ENTANDO_OPT_LOG_LEVEL=TRACE
-    
-  _ppl_provision_helm_preview_environment \
-    "$operator_project_name" "$ENTANDO_OPT_TEST_OPERATOR_VERSION" \
-    "$ENTANDO_OPT_TEST_NAMESPACE" "$ENTANDO_OPT_TEST_HOSTNAME_SUFFIX"
+  _tpl_set_var url "$ENTANDO_OPT_TEST_OPERATOR_BUNDLE_URL" version "$ENTANDO_OPT_TEST_OPERATOR_BUNDLE_VERSION"
+  url="$(path-concat "$url" "$2")"
+  
+  kube.manifest.filter-document-by-kind "$skip_kind" < <(curl -sL "$url") \
+    | _summarize_stream --ppl-pg 5000 MANIFEST
+  
+  if [ -z "$skip_kind" ]; then
+    curl -sL "$url" | kube.oc -n "$ENTANDO_TEST_NAMESPACE" "$1" -f -
+  else
+    {
+      kube.manifest.filter-document-by-kind "$skip_kind" < <(curl -sL "$url")
+    } | kube.oc -n "$ENTANDO_TEST_NAMESPACE" "$1" -f -
+  fi
 }
 
 ppl--mvn.post-deloyment.run-test() {
@@ -228,11 +325,12 @@ ppl--mvn.post-deloyment.run-test() {
   # shellcheck disable=SC2030 disable=SC2031
   (
     export ENTANDO_OPT_PREVIEW_TESTS=true
-    export ENTANDO_OPT_TEST_NAMESPACE
+    export ENTANDO_TEST_NAMESPACE
     export ENTANDO_OPT_TEST_HOSTNAME_SUFFIX
     export ENTANDO_DEFAULT_ROUTING_SUFFIX="$ENTANDO_OPT_TEST_HOSTNAME_SUFFIX"
-    export ENTANDO_TEST_NAMESPACE_OVERRIDE="$ENTANDO_OPT_TEST_NAMESPACE"
-
+    export ENTANDO_TEST_NAMESPACE_OVERRIDE="$ENTANDO_TEST_NAMESPACE"
+    export ENTANDO_TEST_IMAGE_VERSION="$projectVersion"
+    
     __mvn_exec --ppl-timestamp -B verify -Ppost-deployment-verification
   ) || _SOE
 }

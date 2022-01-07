@@ -7,6 +7,7 @@
 - Overwrite protection of git version tags of type release \[*1\]
 - Version tags now include branch info in semver metadata (encoded, see `_ppl_encode-branch-for-tagging`)
 - Activated SNYK scans for NPM projects
+- Support for docker-compose execution before the maven tests
 
 _*1: semver with no labels, except for the special 4-digits fix-release format (X.Y.Z-fix.W)_
 
@@ -16,6 +17,7 @@ _*1: semver with no labels, except for the special 4-digits fix-release format (
 - Renamed `tag-snaphot-*` codes to `tag-git-*` as they also tag releases now
 - Renamed `ppl--release` to `ppl--publication`
 - Potential: Version tagging format slightly changed (but not the artifact and image names)
+- `ppl--docker` doesn't accept anymore the build instructions as parameter, use `ENTANDO_OPT_DOCKER_BUILDS`
 
 ## Notes
 

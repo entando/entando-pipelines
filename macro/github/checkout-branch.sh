@@ -22,7 +22,7 @@ ppl--checkout-branch() {
     
     ppl--checkout-branch.checkout "$PPL_CLONE_URL" "$PPL_LOCAL_CLONE_DIR" "$branchToCheckout" "${PPL_TOKEN_OVERRIDE:-$PPL_TOKEN}"
     
-    _log_i "Checkout of repo \"$url\" and branch \"$branch\" completed"
+    _log_i "Checkout of repo \"$PPL_CLONE_URL\" and branch \"$branchToCheckout\" completed"
   )
 }
     

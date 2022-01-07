@@ -217,28 +217,46 @@ test_str() {
 test_stream_utils() {
   print_current_function_name "RUNNING TEST> "  ".."
 
-  
+  local LOREM_IPSUM="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod"
+  LOREM_IPSUM+=" tempor incididunt ut labore et dolore magna aliqua."
+    
   local RES="$(
-    _summarize_stream --lf --li 3 --ti 0 TEST < <(
-      for ((i=0;i<10;i++)); do
-        echo "dsaas   ERROR  das"
-        echo "saad WARN asdsa"
+    _summarize_stream --ppl-pg 3 TEST < <(
+      for i in {1..9}; do
+          echo "LINE$i: $LOREM_IPSUM"
+          [ "$i" = "5" ] && echo -e "LINE${i}.b: ERROR: RANDOM ERROR\nat this #1\nat this #2\nat this #3"
       done
-    ) | sed 's/SEC:\s*[0-9]*/../';
+    ) | sed 's/SEC:\s*[0-9]*/SEC: ../';
     echo "X"
   )"
   
   RES="${RES:0:-1}"
-  
-  local EXP
-  EXP+="~ TEST > | .. | TOT:      1  | ERR:      1 | WRN:      0 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:      4  | ERR:      2 | WRN:      2 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:      7  | ERR:      4 | WRN:      3 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:     10  | ERR:      5 | WRN:      5 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:     13  | ERR:      7 | WRN:      6 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:     16  | ERR:      8 | WRN:      8 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:     19  | ERR:     10 | WRN:      9 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:     20  | ERR:     10 | WRN:     10 | DNL:      0 |       "$'\n'
+
+  EXP+="::group::~ TEST > | START:      1 || SEC: .. | ERR:     0 (+0)   | WRN:     0 (+0)   | DNL:      0 |"$'\n'
+  EXP+="LINE1: $LOREM_IPSUM"$'\n'
+  EXP+="LINE2: $LOREM_IPSUM"$'\n'
+  EXP+="LINE3: $LOREM_IPSUM"$'\n'
+  EXP+="::endgroup::"$'\n'
+  EXP+="::group::~ TEST > | START:      4 || SEC: .. | ERR:     1 (+1)   | WRN:     0 (+0)   | DNL:      0 |"$'\n'
+  EXP+="LINE4: $LOREM_IPSUM"$'\n'
+  EXP+="LINE5: $LOREM_IPSUM"$'\n'
+  EXP+="LINE5.b: ERROR: RANDOM ERROR"$'\n'
+  EXP+="at this #1"$'\n'
+  EXP+="at this #2"$'\n'
+  EXP+="at this #3"$'\n'
+  EXP+="::endgroup::"$'\n'
+  EXP+="::group::~ TEST > | START:     10 || SEC: .. | ERR:     1 (+0)   | WRN:     0 (+0)   | DNL:      0 |"$'\n'
+  EXP+="LINE6: $LOREM_IPSUM"$'\n'
+  EXP+="LINE7: $LOREM_IPSUM"$'\n'
+  EXP+="LINE8: $LOREM_IPSUM"$'\n'
+  EXP+="::endgroup::"$'\n'
+  EXP+="::group::~ TEST > | START:     13 || SEC: .. | ERR:     1 (+0)   | WRN:     0 (+0)   | DNL:      0 |"$'\n'
+  EXP+="LINE9: $LOREM_IPSUM"$'\n'
+  EXP+="::endgroup::"$'\n'
+
+ # echo "$RES" > /tmp/a
+  #echo "$EXP" > /tmp/b
+  #meld /tmp/a /tmp/b
   
   ASSERT RES = "$EXP"
 }
@@ -272,8 +290,6 @@ test_exec_cmd() {
     RES="$(_exec_cmd \
       --hide "Progress.* kB" \
       --hide "Error message = null" \
-      --pe \
-      --po "$TMPFILE" \
       "_TEXT__EXEC_CMD_SAMPLE"
 
       ASSERT -v RESCODE "$?" = 55
@@ -288,21 +304,10 @@ test_exec_cmd() {
     # Both summarised and full log are printed
     
     ASSERT -v RES "$N1" = 100       # Standard lines are only printed in the full log 
-    ASSERT -v RES "$N2" = 200       # Error lines if not explicitly filtered appears on both
+    ASSERT -v RES "$N2" = 100       # Error lines if not explicitly
     ASSERT -v RES "$N3" = 100       # "  at" strings following an error shares the same visibility
     ASSERT -v RES "$N4" = 0         # Even error lines when explicitly filtered are hidden
     ASSERT -v RES "$N5" = 100       # Filtered lines only on the full log
-    
-    N1="$(grep -c "Line" "$TMPFILE")"
-    N2="$(grep -c "Important Error" "$TMPFILE")"
-    N3="$(grep -c "Error message" "$TMPFILE")"
-    N4="$(grep -c "Progress" "$TMPFILE")"
-    
-    ASSERT -v RES "$N1" = 100       # In nor filtered, normal lines are printed in the file log
-    ASSERT -v RES "$N2" = 100       # In nor filtered, error lines are printed in the file log
-    ASSERT -v RES "$N3" = 0         # when filtered, error lines are not printed in the file log
-    ASSERT -v RES "$N4" = 100       # when filtered, normal lines are not printed in the file log
-
   ) || _SOE
 }
 
@@ -314,17 +319,17 @@ test_versioning_utils() {
   ASSERT ENCODED_REF = "KB-epic+2F+an-epic-branch"
   
   local RES
-  _ppl_extract_version_name_part RES "6.4.0-ENG-2268-PR-143+$ENCODED_REF" "base-version"
+  _ppl_extract_version_part RES "6.4.0-ENG-2268-PR-143+$ENCODED_REF" "base-version"
   ASSERT RES = "6.4.0"
-  _ppl_extract_version_name_part RES "6.4.0-ENG-2268-PR-143+$ENCODED_REF" "qualifier"
+  _ppl_extract_version_part RES "6.4.0-ENG-2268-PR-143+$ENCODED_REF" "qualifier"
   ASSERT RES = "ENG-2268"
-  _ppl_extract_version_name_part RES "6.4.0-ENG-2268-PR-143+$ENCODED_REF" "pr-num"
+  _ppl_extract_version_part RES "6.4.0-ENG-2268-PR-143+$ENCODED_REF" "pr-num"
   ASSERT RES = "143"
-  _ppl_extract_version_name_part RES "v6.4.0-ENG-2268-PR-143+$ENCODED_REF" "base-version"
+  _ppl_extract_version_part RES "v6.4.0-ENG-2268-PR-143+$ENCODED_REF" "base-version"
   ASSERT RES = "6.4.0"
-  _ppl_extract_version_name_part RES "v6.4.0-ENG-2268-PR-143+$ENCODED_REF" "base-version"
+  _ppl_extract_version_part RES "v6.4.0-ENG-2268-PR-143+$ENCODED_REF" "base-version"
   ASSERT RES = "6.4.0"
-  _ppl_extract_version_name_part RES "v6.4.0-ENG-2268-PR-143+$ENCODED_REF" "meta:kb"
+  _ppl_extract_version_part RES "v6.4.0-ENG-2268-PR-143+$ENCODED_REF" "meta:kb"
   ASSERT RES = "epic/an-epic-branch"
 }
 
@@ -397,19 +402,19 @@ test__ppl_extract_branch_short_name() {
 }
 
 #TEST:lib
-test__ppl_is_release_version_name() {
+test__ppl_is_release_version_number() {
   print_current_function_name "RUNNING TEST> "  ".."
-  _ppl_is_release_version_name "v1.2.3"
+  _ppl_is_release_version_number "v1.2.3"
   ASSERT -v RES $? = 0
-  _ppl_is_release_version_name "1.2.3"
+  _ppl_is_release_version_number "1.2.3"
   ASSERT -v RES $? = 0
-  _ppl_is_release_version_name "1.2.3-fix.1"
+  _ppl_is_release_version_number "1.2.3-fix.1"
   ASSERT -v RES $? = 0
-  _ppl_is_release_version_name "v1.2.3-SNAPSHOT"
+  _ppl_is_release_version_number "v1.2.3-SNAPSHOT"
   ASSERT -v RES $? != 0
-  _ppl_is_release_version_name "1.2.3-SNAPSHOT"
+  _ppl_is_release_version_number "1.2.3-SNAPSHOT"
   ASSERT -v RES $? != 0
-  _ppl_is_release_version_name "1.2.3-fix.1-SNAPSHOT"
+  _ppl_is_release_version_number "1.2.3-fix.1-SNAPSHOT"
   ASSERT -v RES $? != 0
 }
 

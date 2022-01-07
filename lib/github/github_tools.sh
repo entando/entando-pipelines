@@ -432,12 +432,12 @@ _ppl_determine_branch_info.step1() {
     return 0
   }
 
- ##############  $PPL_NO_REPO && { return 0 }  # Preliminar steps of an action don't need the below details
+  ##### $PPL_NO_REPO && { return 0; }  # Preliminar steps of an action don't need the below details
 
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # > STANDARD VERSION TAGGING :: IN WELL-KNOWN BRANCH - .. (PPL_REF_NAME=tag with KB segment, PPL_BASE_REF="")
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  _ppl_extract_version_name_part PPL_NEAREST_WELL_KNOWN_BRANCH "$PPL_REF_NAME" "meta:kb" && {
+  _ppl_extract_version_part PPL_NEAREST_WELL_KNOWN_BRANCH "$PPL_REF_NAME" "meta:kb" && {
     _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_NEAREST_WELL_KNOWN_BRANCH"
     return 0
   }
@@ -445,7 +445,7 @@ _ppl_determine_branch_info.step1() {
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # > STANDARD VERSION TAGGING :: IN FEATURE BRANCH - .. (PPL_REF_NAME=tag with BB segment, PPL_BASE_REF="")
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  _ppl_extract_version_name_part PPL_NEAREST_WELL_KNOWN_BRANCH "$PPL_REF_NAME" "meta:bb" && {
+  _ppl_extract_version_part PPL_NEAREST_WELL_KNOWN_BRANCH "$PPL_REF_NAME" "meta:bb" && {
     _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_NEAREST_WELL_KNOWN_BRANCH"
       return 0
   }
@@ -456,7 +456,7 @@ _ppl_determine_branch_info.step1() {
   # - any other case can be considered illegal
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   [ -z "$PPL_CURRENT_REPO_BRANCH" ] && return 0
-  _ppl_is_release_version_name "$PPL_CURRENT_REPO_BRANCH" && {
+  _ppl_is_release_version_number "$PPL_CURRENT_REPO_BRANCH" && {
     PPL_NEAREST_WELL_KNOWN_BRANCH="$PPL_CURRENT_REPO_BRANCH"
     _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_CURRENT_REPO_BRANCH" && return 0
   }

@@ -369,6 +369,15 @@
 
 **STOP ON ERROR**
 
+<details>
+
+```
+ Options:
+ --pipe  checks the result of the left part of a pipe expression (eg: cat file | grep "something")
+```
+
+</details>
+
 
 ---
 
@@ -432,6 +441,29 @@
    ENTANDO_OPT_OKD_CLI_URL         the URL from which the download tool should be downloaded
                                    Note that this is a semicolon-delimited list, where the first element
                                    is the url and the others are the optional curl options
+```
+
+</details>
+
+
+---
+
+### `kube.oc.namespace.reset()`
+
+**Deletes and recreates a namespace**
+
+
+---
+
+### `kube.manifest.filter-document-by-kind()`
+
+**Filters out from the standard-input the triple-dash (---) separed documents that matches the given kind**
+
+<details>
+
+```
+ Params:
+ $1 document kind
 ```
 
 </details>
@@ -805,6 +837,29 @@
 ### `_git_commit_exists()`
 
 **Tells if a given commit reference exists on the repo**
+
+
+---
+
+### `_git_is_dirty()`
+
+**Fails if the worktre has uncommitted or untracked files**
+
+
+---
+
+### `__docker_exec()`
+
+**Runs a docker operation and summarise the output**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the docker command and params of _summarize_stream
+```
+
+</details>
 
 
 ---
@@ -1354,6 +1409,15 @@
 
 **STOP ON ERROR**
 
+<details>
+
+```
+ Options:
+ --pipe  checks the result of the left part of a pipe expression (eg: cat file | grep "something")
+```
+
+</details>
+
 
 ---
 
@@ -1417,6 +1481,29 @@
    ENTANDO_OPT_OKD_CLI_URL         the URL from which the download tool should be downloaded
                                    Note that this is a semicolon-delimited list, where the first element
                                    is the url and the others are the optional curl options
+```
+
+</details>
+
+
+---
+
+### `kube.oc.namespace.reset()`
+
+**Deletes and recreates a namespace**
+
+
+---
+
+### `kube.manifest.filter-document-by-kind()`
+
+**Filters out from the standard-input the triple-dash (---) separed documents that matches the given kind**
+
+<details>
+
+```
+ Params:
+ $1 document kind
 ```
 
 </details>
@@ -1794,6 +1881,29 @@
 
 ---
 
+### `_git_is_dirty()`
+
+**Fails if the worktre has uncommitted or untracked files**
+
+
+---
+
+### `__docker_exec()`
+
+**Runs a docker operation and summarise the output**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the docker command and params of _summarize_stream
+```
+
+</details>
+
+
+---
+
 ### `__docker()`
 
 **Runs a docker operation**
@@ -2084,4 +2194,11 @@
 ### `_git_commit_exists()`
 
 **Tells if a given commit reference exists on the repo**
+
+
+---
+
+### `_git_is_dirty()`
+
+**Fails if the worktre has uncommitted or untracked files**
 

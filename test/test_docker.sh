@@ -79,15 +79,16 @@ test.docker.ppl--docker-skipped-due-to-no-dockerfile() {
   ASSERT TMP =~ "\[REM\] STARTED AT .*"
 }
 
-#TEST:macro
+#TEST:lib
 test.docker.ppl--docker() {
  print_current_function_name "RUNNING TEST> " ".."
 
   # shellcheck disable=SC2034
-  {
+  TEST__APPLY_OVERRIDES() {
     ENTANDO_OPT_DOCKER_ORG="${ENTANDO_OPT_DOCKER_ORG:-entando}"
     ENTANDO_OPT_DOCKER_USERNAME="the-user"
     ENTANDO_OPT_DOCKER_PASSWORD="the-pass"    
+    ENTANDO_OPT_DOCKER_BUILDS="Dockerfile.mode1,Dockerfile.mode2"
   }
   
   rm -rf local-checkout
@@ -95,7 +96,7 @@ test.docker.ppl--docker() {
  
   #~ CASE #1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Simulate docker build commands for two dockerfiles
-  ppl--docker publish "Dockerfile.mode1,Dockerfile.mode2" \
+  ppl--docker publish \
     --id "TEST" --lcd "local-checkout" || _SOE
   
   #~ expectations
@@ -129,20 +130,20 @@ test.docker.ppl--docker() {
 }
 
 #TEST:lib
-TEST.ppl--docker.is_release_version_name() {
+TEST.ppl--docker.is_release_version_number() {
   print_current_function_name "RUNNING TEST> "  ".."
 
-  ppl--docker.is_release_version_name "myimage:1.2.3"
+  ppl--docker.is_release_version_number "myimage:1.2.3"
   ASSERT -v RES $? = 0
-  ppl--docker.is_release_version_name "myimage:1.2.3-SNAPSHOT"
+  ppl--docker.is_release_version_number "myimage:1.2.3-SNAPSHOT"
   ASSERT -v RES $? != 0
 
-  ppl--docker.is_release_version_name "my-registry.io/myimage:1.2.3"
+  ppl--docker.is_release_version_number "my-registry.io/myimage:1.2.3"
   ASSERT -v RES $? = 0
-  ppl--docker.is_release_version_name "my-registry.io/myimage:1.2.3-SNAPSHOT"
+  ppl--docker.is_release_version_number "my-registry.io/myimage:1.2.3-SNAPSHOT"
   ASSERT -v RES $? != 0
   
-  # Tag patterns are more thoroughly tested by _ppl_is_release_version_name's tests,
+  # Tag patterns are more thoroughly tested by _ppl_is_release_version_number's tests,
   # on which this function depends
 }
 

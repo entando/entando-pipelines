@@ -1,5 +1,17 @@
 #!/bin/bash
 
+
+# Runs a docker operation and summarise the output
+#
+# Params:
+# $@: all params are forwarded to the docker command and params of _summarize_stream
+#
+__docker_exec() {
+  local PAGE=""; [ "$1" = "--ppl-pg" ] && { PAGE="$2"; shift 2; }
+  __docker "$@" | _summarize_stream ${PAGE:+--ppl-pg "$PAGE"} "DOCKER-${1^^}"
+  _SOE --pipe
+}
+
 # Runs a docker operation
 #
 # Params:

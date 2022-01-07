@@ -384,9 +384,9 @@
 
 ---
 
-### `_ppl_extract_version_name_part()`
+### `_ppl_extract_version_part()`
 
-**Extracts a part of the snapshot version name**
+**Extracts a part of the snapshot version number**
 
 <details>
 
@@ -394,14 +394,14 @@
  Params:
 
  $1  output var
- $2  snapshot version name
+ $2  snapshot version number
  $3  part:
      - base-version        the initial 3digit version with or without prefix (eg: v7.0.0 or 7.0.0)
      - qualifier           usually a ticket number (eg: ENT-999)
      - pr-num              pull request number
      - meta:kb             current branch of event that generated the tag
      - meta:bb             bash branch branch of event that generated the tag
-     - effective-name      the effective part of the version (all the version but with no metadata)
+     - effective-number      the effective part of the version (all the version but with no metadata)
 ```
 
 </details>
@@ -440,9 +440,9 @@
 
 ---
 
-### `_ppl_is_release_version_name()`
+### `_ppl_is_release_version_number()`
 
-**Tells if a version name is a release**
+**Tells if a version number is a release**
 
 
 ---

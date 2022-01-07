@@ -1,5 +1,11 @@
 #!/bin/bash
 
+
+BASE.init_default_vars() {
+  # shellcheck disable=SC2034
+  ENTANDO_DEFAULT_DOCKER_ORG="entando"
+}
+
 # Setups the enviroment for a macro execution
 #
 # Params:
@@ -43,8 +49,6 @@ START_MACRO() {
 START_SIMPLE_MACRO() {
   set +e
   
-  DEFAULT_MAIN_BRANCH="develop"
-  
   _auto_decode_entando_opts
   
   ${ENTANDO_OPT_STEP_DEBUG:-false} && {
@@ -52,10 +56,12 @@ START_SIMPLE_MACRO() {
     export PS4='\033[0;33m+[${SECONDS}][${BASH_SOURCE}:${LINENO}]:\033[0m ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
     set -x
   }
-  
+
+  # shellcheck disable=SC2034
   ARGS_FLAGS=(--no-skip --no-repo)
   PARSE_ARGS "$@"
   
+  # shellcheck disable=SC2034
   local noSkip defaultMacroName=""
   _get_arg defaultMacroName 1
   _shift_positional_args 1
@@ -68,6 +74,7 @@ START_SIMPLE_MACRO() {
   _get_arg PPL_OUTPUT_FILE --out
   
   if [ "${PPL_CURRENT_MACRO:0:1}" = "@" ]; then
+    # shellcheck disable=SC2034
     PPL_CURRENT_MACRO_PREFIX="@"
     PPL_CURRENT_MACRO="${PPL_CURRENT_MACRO:1}"
     local comment="user macro "
@@ -103,7 +110,7 @@ _EXIT() {
   else
     _log_i "$@"
   fi
-  exit 0
+  _exit 0
 }
 
 # Stops the execution with a fatal error
@@ -130,15 +137,19 @@ _FATAL() {
     _log_e "$@" 1>&2
   fi
 
-  exit "$rv"
+  _exit "$rv"
 }
 
 # STOP ON ERROR
 #
+# Options:
+# --pipe  checks the result of the left part of a pipe expression (eg: cat file | grep "something")
+#
 _SOE() {
   local R="$?"
+  [ "$1" == "--pipe" ] && { R="${PIPESTATUS[0]}"; shift; }
   [ -n "$1" ] && _log_e "$1 didn't complete properly"
-  [ "$R" != 0 ] && exit "$R"
+  [ "$R" != 0 ] && _exit "$R"
   return "$R"
 }
 
@@ -165,4 +176,12 @@ _set_var() {
   fi
 
   return 0
+}
+
+_exit() {
+  if [ "$ENTANDO_OPT_STOP_ON_EXIT" == "true" ]; then
+    kill -INT $$
+  else
+    exit "$@"
+  fi
 }

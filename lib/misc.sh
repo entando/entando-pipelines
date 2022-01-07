@@ -334,6 +334,7 @@ _str_quote() {
   local tmp="$1"
   tmp="${tmp//\\/\\\\}"
   tmp="${tmp//\"/\\\"}"
+  tmp="${tmp//$'\n'/"\$'\\n'"}"
   if $_sq_simple_; then
     echo "$tmp"
   else
@@ -427,69 +428,99 @@ __jq() {
 # $1    the title of the summary
 #
 # Options:
-# --lf      uses LF instead of CR when terminating the summmary
-# --no-tlf  the latest summary update will not be terminated by line-feedd
-# --li      number of lines before updating the summary (default: 73)
-# --ti      number of seconds before updating the summary (default: 5)
-# --pe      immediately prints errors to stdout
-# -f file   adds the command output to the given file
+# --no-tlf        the latest summary update will not be terminated by line-feedd
+# --pg page-size  activates pagination and specifies the page size
 #
 _summarize_stream() {
-  local EOL=$'\r'; [ "$1" = "--lf" ] && { EOL=$'\n'; shift; }
-  local TLF=$'\n'; [ "$1" = "--no-tlf" ] && { TLF=''; shift; }
-  local LI=73; [ "$1" = "--li" ] && { LI="$2"; shift 2; }
-  local TI=5; [ "$1" = "--ti" ] && { TI="$2"; shift 2; }
-  local PE=false; [ "$1" = "--pe" ] && { PE=true; shift; }
-  local OUTFILE; [ "$1" = "-f" ] && { OUTFILE="$2"; shift 2; }
-  local _stat_nt=0 _stat_ne=0 _stat_nw=0 _stat_nd=0 _last_nt=-1000
+  local PAGE=""; [ "$1" = "--ppl-pg" ] && { PAGE="$2"; shift 2; }
+  local _stat_nt=0 _stat_ne=0 _stat_nw=0 _stat_nd=0
+  local _stat_pg_ne=0 _stat_pg_nw=0
   local started_at="$SECONDS" 
-  local latest="$((started_at-100))" now elapsed
+  local now elapsed
   local sln TITLE="${1:-SUMMARY}"
-  local showNext=0
+  local page_title=""
   
+  local break_page_now min_page_size=2 _page_nt _prev_page_nt=0 _page_buf="" _error_tail_size=0 error_tail_max_size=20
+
   while IFS= read -r ln; do
-    [ -n "$OUTFILE" ] && echo "$ln" >> "$OUTFILE"
+    if [ -z "$PAGE" ]; then
+      echo "$ln"
+      continue
+    fi
     
-    sln="${ln:0:20}"
+    _page_buf+="$ln"$'\n'
+
+    sln="${ln:0:30}"
     
     ((_stat_nt++))
+    _page_nt="$((_stat_nt - _prev_page_nt))"
+    
+    if [ "$_page_nt" -lt "$min_page_size" ]; then
+      break_page_now=false
+    else
+      break_page_now=false
+    fi
     
     case "${sln,,}" in
-      *error*) 
-        ((_stat_ne++))
-        "$PE" && {
-          echo "$ln"
-          showNext=2
-        }
-      ;;
-      *warning*) ((_stat_nw++));;
-      *warn*) ((_stat_nw++));;
+      *error*) _error_tail_size=1; ((_stat_ne++));((_stat_pg_ne++));;
+      *warning*) ((_stat_nw++));((_stat_pg_nw++));;
+      *warn*) ((_stat_nw++));((_stat_pg_nw++));;
       *downloaded*) ((_stat_nd++));;
-      *)
-        if [ "$showNext" -gt 0 ]; then
-          echo "$ln" | grep -E '^\s+at\s'
-        fi
+      *) break_page_now=false;;
     esac
+    
+    if [[ "$_error_tail_size" -gt 0 ]]; then
+      [[ "$_error_tail_size" -lt "$error_tail_max_size" ]] &&
+      [[ "$_page_nt" -lt "$((PAGE*2))" ]] && {
+        ((_error_tail_size++))
+        continue   # <= CONTINUE
+      }
+      _error_tail_size=0
+    fi
 
-    [ "$showNext" -gt 0 ] && ((showNext--))
-
-    if [ $((_stat_nt - _last_nt)) -ge "$LI" ]; then
+    if [[ "$_page_nt" -ge "$PAGE" || "$break_page_now" == "true" ]]; then
       now="$SECONDS"
-      if [ "$((now-latest))" -ge "$TI" ]; then
-        latest="$now"
-        _last_nt="$_stat_nt"
-        elapsed="$((now-started_at))"
-        printf "~ $TITLE > | SEC: %4d | TOT: %6d  | ERR: %6d | WRN: %6d | DNL: %6d |       %s" \
-          "$elapsed" "$_stat_nt" "$_stat_ne" "$_stat_nw" "$_stat_nd" "$EOL"
-      fi
+      elapsed="$((now - started_at))"
+      printf -v page_title "~ $TITLE > | START: %6d || SEC: %4d | ERR: %5s %-6s | WRN: %5s %-6s | DNL: %6d |" \
+        "$((_prev_page_nt+1))" "$elapsed"  \
+        "$_stat_ne" "(+$_stat_pg_ne)" \
+        "$_stat_nw" "(+$_stat_pg_nw)" \
+        "$_stat_nd"
+
+      _ppl-stdout-group start "$page_title"
+      echo -n "$_page_buf"
+      _ppl-stdout-group stop
+      _page_buf=""
+      _error_tail_size=0
+      _prev_page_nt="$_stat_nt"
+      _stat_pg_ne=0;_stat_pg_nw=0
     fi
   done < "/dev/stdin"
   
-  now="$SECONDS"
-  elapsed="$((now-started_at))"
-  printf "~ $TITLE > | SEC: %4d | TOT: %6d  | ERR: %6d | WRN: %6d | DNL: %6d |       %s" \
-    "$elapsed" "$_stat_nt" "$_stat_ne" "$_stat_nw" "$_stat_nd" "$TLF"
+  if [ -n "$_page_buf" ]; then
+      now="$SECONDS"
+      elapsed="$((now - started_at))"
+      printf -v page_title "~ $TITLE > | START: %6d || SEC: %4d | ERR: %5s %-6s | WRN: %5s %-6s | DNL: %6d |" \
+        "$((_prev_page_nt+1))" "$elapsed"  \
+        "$_stat_ne" "(+$_stat_pg_ne)" \
+        "$_stat_nw" "(+$_stat_pg_nw)" \
+        "$_stat_nd"
+    _ppl-stdout-group start "$page_title"
+    echo -n "$_page_buf"
+    _ppl-stdout-group stop
+  fi
 }
+
+# Puts a stream in a group given the group name
+#
+_group_stream() {
+  _ppl-stdout-group start "$1"
+  while IFS= read -r ln; do
+    echo "$ln"
+  done
+  _ppl-stdout-group stop
+}
+
 
 # Executes a command and handle the output
 # 
@@ -500,7 +531,6 @@ _summarize_stream() {
 # --ppl-simple    no summarization is executed
 # --ppl-timestamp a timestamp is added to the output lines
 # --hide regex    suppress the given regex from the output, can be repeated up to 4 times
-# --pe            see _summarize_stream
 #
 _exec_cmd() {
   local SIMPLE=false; [ "$1" = "--ppl-simple" ] && { SIMPLE=true; shift; }
@@ -509,7 +539,6 @@ _exec_cmd() {
   local F2=""; [ "$1" = "--hide" ] && { F2="$(_str_quote "$2")"; shift 2; }
   local F3=""; [ "$1" = "--hide" ] && { F3="$(_str_quote "$2")"; shift 2; }
   local F4=""; [ "$1" = "--hide" ] && { F4="$(_str_quote "$2")"; shift 2; }
-  local PE=''; [ "$1" = "--pe" ] && { PE="--pe"; shift; }
   local PO=''; [ "$1" = "--po" ] && { PO="$2"; shift 2; }
   # shellcheck disable=SC2016
   {
@@ -551,7 +580,7 @@ _exec_cmd() {
         trap "rm \"$TMPFILE\" \"$RVFILE\"" exit
       fi
       
-      _summarize_stream --lf ${PE:+"$PE"} -f "$TMPFILE" "$1" < <(
+      _summarize_stream ${PE:+"$PE"} --ppl-pg 50 "$1" < <(
         (
           # shellcheck disable=SC2068
           $@ 2>&1
@@ -562,32 +591,11 @@ _exec_cmd() {
 
     local RV="$(cat "$RVFILE")"
     if [ "$RV" = "0" ]; then
-      # SUCCESS
-      
-      if $SIMPLE; then
-        _log_d "$1 execution was successful"
-      else
-        _log_t "$1 execution was successful; log tail:"
-        # shellcheck disable=SC2088
-        echo '~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~'
-        _ppl-print-file-paginated "$TMPFILE" 200 "LOG"
-        sleep 0.3
-      fi
+      _log_d "$1 execution was successful"
     else
-      # FAILURE
-      
-      if $SIMPLE; then
-        _log_e "Command \"$1\" completed with error code \"$RV\""
-      else
-        _log_e "Command \"$1\" completed with error code \"$RV\"; full log:"
-        # shellcheck disable=SC2088
-        echo '~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~'
-        _ppl-print-file-paginated "$TMPFILE" 200 "LOG"
-        sleep 0.3
-      fi
-      
-      return "$RV"
+      _log_e "Command \"$1\" completed with error code \"$RV\""
     fi
+    exit "$RV"
   )
 }
 
@@ -728,21 +736,21 @@ _ppl_is_feature_action() {
 
 
 
-# Extracts a part of the snapshot version name
+# Extracts a part of the snapshot version number
 #
 # Params:
 #
 # $1  output var
-# $2  snapshot version name
+# $2  snapshot version number
 # $3  part: 
 #     - base-version        the initial 3digit version with or without prefix (eg: v7.0.0 or 7.0.0)
 #     - qualifier           usually a ticket number (eg: ENT-999)
 #     - pr-num              pull request number
 #     - meta:kb             current branch of event that generated the tag
 #     - meta:bb             bash branch branch of event that generated the tag
-#     - effective-name      the effective part of the version (all the version but with no metadata)
+#     - effective-number      the effective part of the version (all the version but with no metadata)
 #
-_ppl_extract_version_name_part() {
+_ppl_extract_version_part() {
   local _tmp1_ _tmp2_ _tmp2a_ _tmp3_ _tmp4_ _tmp5_ _tmp_res_
   local _tmpV_ _tmpM_
   _ppl_split_version_tag _tmpV_ _tmpM_ "$2"
@@ -768,13 +776,13 @@ _ppl_extract_version_name_part() {
         _tmp_res_=""
       fi
       ;;
-    "effective-name")
+    "effective-number")
       _tmp_res_="$_tmpV_"
       [[ "${_tmp_res_:0:1}" = "v" ]] && _tmp_res_="${_tmp_res_:1}"
       ;;
     *) _FATAL "Invalid part name \"$3\" provided";;
   esac
-  [[ -z "$_tmp_res_" || "$_tmp4_" != "PR" ]] && _FATAL "Provided snapshot version name \"$2\" is not valid"
+  [[ -z "$_tmp_res_" || "$_tmp4_" != "PR" ]] && _FATAL "Provided snapshot version \"$2\" is not valid"
   _set_var "$1" "$_tmp_res_"
 }
 
@@ -963,9 +971,9 @@ _ppl_extract_branch_short_name() {
   _set_var "$1" "$_tmp2_"
 }
 
-# Tells if a version name is a release
+# Tells if a version number is a release
 #
-_ppl_is_release_version_name() {
+_ppl_is_release_version_number() {
   _semver_parse _maj_ _min_ _ptc_ _tag_ "$1"
   # shellcheck disable=SC2154
   [[ -z "$_tag_" ]] || [[ "${_tag_:0:4}" == "fix." && ! "$_tag_" = *"-"* ]]
@@ -1043,14 +1051,4 @@ path-concat() {
     [ "$#" = 0 ] && break
   done
   echo "$ACC"
-}
-
-# Runs a shell prompt or a shell command
-#
-sys.shell() {
-  local s="${ENTANDO_SHELL_CMD:-bash}"
-  case "$s" in
-    zsh|bash|fizsh) "$s" "$@";;
-    *) _FATAL "Unsupported shell provided in variable \"ENTANDO_SHELL_CMD\"";;
-  esac
 }

@@ -96,45 +96,8 @@
                           -public-url                    the path on which app-builder is exposed (default: /app-builder)
                           --domain                        the path of the main application (default: /entando-de-app)
                           --admin-console-integration     flag for the admin console integration enabling (default: false)
- - PUBLISH              Prepares the repo for publication by setting on it the proper version name
+ - PUBLISH              Prepares the repo for publication by setting on it the proper version number
  - MTX-NPM-SCAN-{type}  Runs a type of npm scan (LINT, SASS-LINT, COVERAGE)
-```
-
-</details>
-
-
----
-
-### `ppl--publication()`
-
-**HELPER for triggering publications**
-
-<details>
-
-```
- Params:
- $1: the release action to apply
-
- Actions:
- - tag-git-version:         applies the snapshot tag to the current commit
- - tag-git-pseudo-version:  applies a tag similar to the snapshot tag but that doesn't triggers workflows
-```
-
-</details>
-
-
----
-
-### `ppl--publication._determine_snapshot_version_tag()`
-
-**Determine the current snapshot version names**
-
-<details>
-
-```
- Supported Conditions:
- - On a PR creation/update commit
- - On a PR merge commit
 ```
 
 </details>
@@ -185,6 +148,27 @@
 
 ---
 
+### `ppl--repl()`
+
+**Development shell to test the pipeline code in interactive mode**
+
+<details>
+
+```
+ > It generates a temporary area where the current project is git-cloned
+ > It can access almost all the internal function and global variables
+
+ Please note these two helpers:
+
+ - @r    command prefix (@r ppl-...) to prevent the called function to unexpectedly close the repl session
+ - @rr   command to reload the scripts if you made some change to the code
+```
+
+</details>
+
+
+---
+
 ### `ppl--publication()`
 
 **HELPER for triggering publications**
@@ -207,7 +191,7 @@
 
 ### `ppl--publication._determine_snapshot_version_tag()`
 
-**Determine the current snapshot version names**
+**Determine the current snapshot version numbers**
 
 <details>
 
@@ -249,7 +233,7 @@
 
 ```
  > Checks the format of the PR title:
- > Checks the format of the project version name on PR
+ > Checks the format of the project version number on PR
  > Checks that the development PR is compatible with the current mainline version (optional via ENTANDO_OPT_MAINLINE)
  > Runs optional custom check (user provided script "custom-pr-check.sh")
 ```
@@ -272,7 +256,7 @@
  Actions:
  - FULL-BUILD        executes a full and clean npm build+test
  - PUBLISH           publishes the maven artifact for development
-                     in the process, sets on it the proper version name and rebuilds the artifact
+                     in the process, sets on it the proper version number and rebuilds the artifact
  - GA-PUBLICATION    publishes the maven artifact for general availability
                      doesn't alter the sources like PUBLISH
  - MTX-MVN-SCAN-SONAR          Executes a full sonar scan, including the coverage report
@@ -304,8 +288,6 @@
 
  Actions
  - publish:  Builds one or more artifacts, image and pushes it to the image regitry.
-             Params:
-              - $2: the list of builds directives
              Mandatory Vars:
               - ENTANDO_OPT_DOCKER_ORG
               - ENTANDO_OPT_DOCKER_USERNAME
@@ -317,7 +299,7 @@
 
 ---
 
-### `ppl--docker.is_release_version_name()`
+### `ppl--docker.is_release_version_number()`
 
 **Tells if a docker image tag is a release tag**
 

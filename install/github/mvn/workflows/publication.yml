@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-      - 'v**'
 
 env:
   ENTANDO_OPT_USE_PPL_TAG: "v1.2.0"

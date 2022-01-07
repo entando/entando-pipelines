@@ -83,8 +83,6 @@ _ppl_provision_helm_preview_environment() {
   # EXECUTION
   _log_i "Provisioning - PHASE2"
   __cd "preview"
-
-  kube.oc.reset-namespace "$ns" 30
   
   _log_d "Deploying.."
   _helm_apply "$projectName" "$ns"
@@ -114,7 +112,7 @@ _helm_apply() {
     local TMPFILE="$(mktemp --suffix=".yaml")"
     # shellcheck disable=SC2064
     trap "rm \"${TMPFILE}\"" exit
-    helm dep update || _FATAL "Heml update failed"
+    [ -f "./requirements.yaml" ] && { helm dep update || _FATAL "Heml update failed"; }
     helm template -n "$ns" "$name" . > "${TMPFILE}" || _FATAL "Heml template failed"
     kube.oc apply -n "$ns" -f "${TMPFILE}" || _FATAL "OC apply failed"
   ) || _SOE
@@ -148,8 +146,9 @@ _ppl_set_provisioning_placeholders_in_files() {
              -e "s/{{ENTANDO_IMAGE_ORG}}/$ENTANDO_OPT_DOCKER_ORG/g" \
              -e "s/{{ENTANDO_IMAGE_REPO}}/$image_repo/g" \
              -e "s/{{ENTANDO_IMAGE_TAG}}/$prj_ver/g" \
-             -e "s/{{ENTANDO_OPT_TEST_NAMESPACE}}/$ns/g" \
+             -e "s/{{ENTANDO_TEST_NAMESPACE}}/$ns/g" \
              -e "s/{{ENTANDO_OPT_TEST_HOSTNAME_SUFFIX}}/$hostname_suffix/g" \
+             -e "s/{{ENTANDO_OPT_TEST_NAMESPACE}}/$ENTANDO_OPT_TEST_NAMESPACE/g" \
              -e "s/{{ENTANDO_OPT_TEST_TLS_CRT}}/$tls_crt/g" \
              -e "s/{{ENTANDO_OPT_TEST_TLS_KEY}}/$tls_key/g" \
              -e "s/{{ENTANDO_OPT_IMAGE_REGISTRY_CREDENTIALS}}/$reg_cred/g" \
@@ -163,9 +162,9 @@ _ppl_set_provisioning_placeholders_in_files() {
 #
 _ppl_autoset_snapshot_version() {
   _pkg_get "xmlstarlet"
-  local snapshotVersionName
-  ppl--publication._determine_snapshot_version_name snapshotVersionName
-  _pom_set_project_version "$snapshotVersionName" "./pom.xml"
+  local snapshotversionNumber
+  ppl--publication._determine_snapshot_version_number snapshotversionNumber
+  _pom_set_project_version "$snapshotversionNumber" "./pom.xml"
 }
 
 # Reads the current branch from a give dir, or the current one if none is given
