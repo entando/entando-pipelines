@@ -9,7 +9,8 @@
 __docker_exec() {
   local PAGE=""; [ "$1" = "--ppl-pg" ] && { PAGE="$2"; shift 2; }
   __docker "$@" | _summarize_stream ${PAGE:+--ppl-pg "$PAGE"} "DOCKER-${1^^}"
-  _SOE --pipe
+  _SOE --pipe 0
+
 }
 
 # Runs a docker operation

@@ -62,7 +62,6 @@ ppl--mvn() {
             export ENTANDO_TEST_NAMESPACE_OVERRIDE="$ENTANDO_TEST_NAMESPACE"
             export ENTANDO_DEFAULT_ROUTING_SUFFIX="$ENTANDO_OPT_TEST_HOSTNAME_SUFFIX"
 
-
             __mvn_exec --ppl-timestamp -B clean test \
               ${ENTANDO_OPT_SONAR_PROJECT_KEY:+-Dsonar.projectKey="$ENTANDO_OPT_SONAR_PROJECT_KEY"} \
               org.jacoco:jacoco-maven-plugin:prepare-agent \
@@ -152,19 +151,23 @@ ppl--mvn() {
               ;;
             "DEPLOY-PROJECT-HELM")
               ppl--mvn.post-deloyment.deploy-project-helm "$projectName" "$projectVersion" | _group_stream "$step"
-              _SOE --pipe
+              _SOE --pipe 0
+
               ;;
             "DEPLOY-OPERATOR-CLUSTER-REQUIREMENTS")
               ppl--mvn.post-deloyment.operator install-cluster-requirements | _group_stream "$step"
-              _SOE --pipe
+              _SOE --pipe 0
+
               ;;
             "DEPLOY-OPERATOR-NAMESPACE-REQUIREMENTS")
               ppl--mvn.post-deloyment.operator install-namespace-requirements | _group_stream "$step"
-              _SOE --pipe
+              _SOE --pipe 0
+
               ;;
             "DEPLOY-OPERATOR")
               ppl--mvn.post-deloyment.operator install | _group_stream "$step"
-              _SOE --pipe
+              _SOE --pipe 0
+
               ;;
             "SUSPEND-TEST-NAMESPACE")
               kube.oc.namespace.suspend "$ENTANDO_TEST_NAMESPACE" 30
@@ -262,6 +265,7 @@ ppl--mvn.post-deloyment.deploy-project-helm() {
   _log_d "Applying the project helm charts"
 
   local ORIGDIR="$PWD"
+
   # shellcheck disable=SC2031
   _ppl_provision_helm_preview_environment \
     "$projectName" "$projectVersion" \
@@ -314,7 +318,7 @@ ppl--mvn.post-deloyment._operator_installation() {
   url="$(path-concat "$url" "$2")"
   
   kube.manifest.filter-document-by-kind "$skip_kind" < <(curl -sL "$url") \
-    | _summarize_stream --ppl-pg 5000 MANIFEST
+    | _group_stream MANIFEST
   
   if [ -z "$skip_kind" ]; then
     # shellcheck disable=SC2031
@@ -323,7 +327,9 @@ ppl--mvn.post-deloyment._operator_installation() {
     # shellcheck disable=SC2031
     {
       kube.manifest.filter-document-by-kind "$skip_kind" < <(curl -sL "$url")
-    } | kube.oc -n "$ENTANDO_TEST_NAMESPACE" "$1" -f -
+    } | kube.oc -n "$ENTANDO_TEST_NAMESPACE" "$1" -f - | _summarize_stream --ppl-pg 200 MANIFEST-APPLY
+    
+    _SOE --pipe 0 --pipe 1
   fi
 }
 

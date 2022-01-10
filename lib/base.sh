@@ -163,11 +163,13 @@ _LOW_LEVEL_FATAL() {
 # STOP ON ERROR
 #
 # Options:
-# --pipe  checks the result of the left part of a pipe expression (eg: cat file | grep "something")
+# --pipe N  checks the result of the part #N of a pipe expression, can be specified up to 3 times
 #
 _SOE() {
   local R="$?"
-  [ "$1" == "--pipe" ] && { R="${PIPESTATUS[0]}"; shift; }
+  [[ "$1" == "--pipe" ]] && { R="${PIPESTATUS["$2"]}"; shift 2; }
+  [[ "$R" = "0" && "$1" == "--pipe" ]] && { R="${PIPESTATUS["$2"]}"; shift 2; }
+  [[ "$R" = "0" && "$1" == "--pipe" ]] && { R="${PIPESTATUS["$2"]}"; shift 2; }
   [ -n "$1" ] && _log_e "$1 didn't complete properly"
   [ "$R" != 0 ] && _exit "$R"
   return "$R"
