@@ -24,6 +24,7 @@ ppl--pr-preflight-checks() {
     }
     
     local projectVersion
+    
     _ppl_get_current_project_version projectVersion
     
     [[ -z "$ONLY" || "$ONLY" = "checks" ]] && {

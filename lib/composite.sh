@@ -201,14 +201,18 @@ _ppl_print_current_branch_of_dir() {
 __ppl_determine_current_project_type() {
   local _tmp_
   
-  if [[ -f ".ent/ent-prj" || -f "entando-project" ]]; then
-    _tmp_="ENP"
-  elif [ -f "pom.xml" ]; then
-    _tmp_="MVN"
-  elif [ -f "package.json" ]; then
-    _tmp_="NPM"
+  if [ -n "$ENTANDO_OPT_PROJECT_TYPE" ]; then
+    _tmp_="$ENTANDO_OPT_PROJECT_TYPE"
   else
-    _FATAL "Unable to determine the project type"
+    if [[ -f ".ent/ent-prj" || -f "entando-project" ]]; then
+      _tmp_="ENP"
+    elif [ -f "pom.xml" ]; then
+      _tmp_="MVN"
+    elif [ -f "package.json" ]; then
+      _tmp_="NPM"
+    else
+      _FATAL "Unable to determine the project type"
+    fi
   fi
 
   if [ "$1" == "--print" ]; then
