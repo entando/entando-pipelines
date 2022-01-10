@@ -34,6 +34,7 @@ __mvn_exec() {
     RV="$?"    
     [ -n "$TORESTORE" ] && chmod -x "$TORESTORE"
     [ "$RV" != 0 ] && _FATAL "mvn command failed with status \"$RV\""
+    return "$RV"
 }
   
 # Runs a maven deploy over the received environment params
