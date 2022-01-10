@@ -92,7 +92,7 @@ test.docker.ppl--docker-skipped-due-to-no-dockerfile() {
   ASSERT TMP =~ "\[REM\] STARTED AT .*"
 }
 
-#TEST:x
+#TEST:lib
 test.docker.ppl--docker() {
  print_current_function_name "RUNNING TEST> " ".."
 

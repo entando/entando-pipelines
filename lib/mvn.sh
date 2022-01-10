@@ -10,8 +10,14 @@
 __mvn_exec() {
   local SIMPLE=""; [ "$1" = "--ppl-simple" ] && { SIMPLE="$1"; shift; }
   local TS=""; [ "$1" = "--ppl-timestamp" ] && { TS="$1"; shift; }
-  local MVN="mvn"
-  [ -f "./mvnw" ] && MVN="./mvnw"
+  local MVN="mvn" TORESTORE
+  [ -f "./mvnw" ] && {
+    MVN="./mvnw"
+    [ ! -x "$MVN" ] && {
+      chmod +x $MVN
+      TORESTORE="$MVN"
+    }
+  }
   
   _log_d "Running mvn $1${2:+ $2}${3:+ $3}..."
   
@@ -22,9 +28,12 @@ __mvn_exec() {
     --hide "Error message = null" \
     --hide "Downloading from" \
     ${PPL_OUTPUT_FILE:+--po "$PPL_OUTPUT_FILE"} \
-    "$MVN" "$@" || {
-      _FATAL "mvn command failed with status \"$?\""
-    }
+    
+    "$MVN" "$@" 
+
+    RV="$?"    
+    [ -n "$TORESTORE" ] && chmod -x "$TORESTORE"
+    [ "$RV" != 0 ] && _FATAL "mvn command failed with status \"$RV\""
 }
   
 # Runs a maven deploy over the received environment params

@@ -31,8 +31,10 @@ _enp_determine_project_file_name() {
 
 _enp_load() {
   _enp_determine_project_file_name
-  _ppl_load_settings --var-sep $'\n' --stdin < "$ENTANDO_PRJ_FILE"
-  # shellcheck disable=SC2034
-  ENTANDO_PRJ_LOADED=true
+  [ -n "$ENTANDO_PRJ_FILE" ] && {
+    _ppl_load_settings --var-sep $'\n' --stdin < "$ENTANDO_PRJ_FILE"
+    # shellcheck disable=SC2034
+    ENTANDO_PRJ_LOADED=true
+  }
 }
 
