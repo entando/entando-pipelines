@@ -51,7 +51,7 @@ ppl--bom.update-bom.SHOULD_RUN() {
 
 ppl--bom.EXTRACT_PROJECT_INFORMATION() {
   __cd "$3"
-  _ppl_get_current_project_artifact_id "$1"
+  _ppl_get_current_project_name "$1"
   _ppl_get_current_project_version "$2"
 }
 

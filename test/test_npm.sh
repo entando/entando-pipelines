@@ -16,7 +16,7 @@ test_npm() {
 
   _git_full_clone --as-work-area "file://$TEST__WORK_DIR/repo-mocks/app-builder"
   
-  _ppl_get_current_project_artifact_id artifactId
+  _ppl_get_current_project_name artifactId
   _ppl_get_current_project_version projectVersion
   ASSERT artifactId = "app-builder"
   ASSERT projectVersion = "6.4.0"

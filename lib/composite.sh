@@ -18,28 +18,44 @@ _ppl_query_latest_bom_version() {
   [ -n "$TMP" ] && _set_var "$1" "$TMP"
 }
 
-# Setup a custom evironment given a semicolon-delimited list of assignments
+# Sets one ore more evironment variables given a semicolon-delimited list of assignments
 #
 # WARNING: the parser interprets the backslash
-# WARNING: the parser doesn't support quotes, however you can still escape the colon with the backslash ("\;")
+# WARNING: the parser doesn't support quotes like a CSV, however you can still escape the colon with the backslash ("\;")
+#
+# Options:
+# --var-sep value    the var separator to assume
+# --stdin            reads the environment the stdin
+#
+# Paramers:
+# $1                unless "--stdin" is provider it's the environment to be loaded
 #
 # eg:
-# - LEGAL:   _ppp_setup_custom_environment 'A=1;B=hey there;C=true'
-# - ILLEGAL: _ppp_setup_custom_environment 'A=1;B="hey;there";C=true'
-# - LEGAL:   _ppp_setup_custom_environment 'A=1;B=hey\;there;C=true'
+# - LEGAL:   _ppl_load_settings 'A=1;B=hey there;C=true'
+# - ILLEGAL: _ppl_load_settings 'A=1;B="hey;there";C=true'
+# - LEGAL:   _ppl_load_settings 'A=1;B=hey\;there;C=true'
 #
-_ppl_setup_custom_environment() {
-  local arr
-  # shellcheck disable=SC2162
-  IFS=';' read -a arr <<< "$1"
-  for assign in "${arr[@]}"; do
-    if [ -n "$assign" ]; then
-      IFS='=' read -r name value <<< "$assign"
-      _set_var "$name" "$value"
-      # shellcheck disable=SC2163
-      export "$name"
+_ppl_load_settings() {
+  local LNSEP=';';[ "$1" = "--var-sep" ] && { LNSEP="$2"; shift 2; }
+  {
+    if [ "$1" != "--stdin" ]; then
+      exec <<< "$1"
     fi
-  done
+    
+    local last=false
+    
+    while true; do
+      # shellcheck disable=SC2162
+      read -d "$LNSEP" assign || last=true
+      if [ -n "$assign" ]; then
+        IFS='=' read -r name value <<< "$assign"
+        _set_var "$name" "$value"
+        # shellcheck disable=SC2163
+        export "$name"
+      fi
+      $last && break
+    done
+  }
 }
 
 # Runs a the preview environment provisioning script
@@ -175,3 +191,32 @@ _ppl_print_current_branch_of_dir() {
   git rev-parse --abbrev-ref HEAD 2>/dev/null
   [ -n "$1" ] && __cd "$old_dir"
 }
+
+
+# Determines the type of project in the current dir
+#
+# Params:
+# $1: dest var
+#
+__ppl_determine_current_project_type() {
+  local _tmp_
+  
+  if [[ -f ".ent/ent-prj" || -f "entando-project" ]]; then
+    _tmp_="ENP"
+  elif [ -f "pom.xml" ]; then
+    _tmp_="MVN"
+  elif [ -f "package.json" ]; then
+    _tmp_="NPM"
+  else
+    _FATAL "Unable to determine the project type"
+  fi
+
+  if [ "$1" == "--print" ]; then
+    echo "$_tmp_"
+  elif [ "$1" == "--check" ]; then
+    true
+  else
+    _set_var "$1" "$_tmp_"
+  fi
+}
+

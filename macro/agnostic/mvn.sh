@@ -54,17 +54,24 @@ ppl--mvn() {
           
           __mvn_exec --ppl-timestamp -B install
         else
-          _log_i "Build mode: STANDARD"
+          # shellcheck disable=SC2030
+          (
+            _log_i "Build mode: STANDARD"
+            
+            export ENTANDO_TEST_NAMESPACE
+            export ENTANDO_TEST_NAMESPACE_OVERRIDE="$ENTANDO_TEST_NAMESPACE"
+            export ENTANDO_DEFAULT_ROUTING_SUFFIX="$ENTANDO_OPT_TEST_HOSTNAME_SUFFIX"
 
-          __mvn_exec --ppl-timestamp -B clean test \
-            ${ENTANDO_OPT_SONAR_PROJECT_KEY:+-Dsonar.projectKey="$ENTANDO_OPT_SONAR_PROJECT_KEY"} \
-            org.jacoco:jacoco-maven-plugin:prepare-agent \
-            org.jacoco:jacoco-maven-plugin:report \
-            org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Ppre-deployment-verification \
-          ;
+
+            __mvn_exec --ppl-timestamp -B clean test \
+              ${ENTANDO_OPT_SONAR_PROJECT_KEY:+-Dsonar.projectKey="$ENTANDO_OPT_SONAR_PROJECT_KEY"} \
+              org.jacoco:jacoco-maven-plugin:prepare-agent \
+              org.jacoco:jacoco-maven-plugin:report \
+              org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+              -Ppre-deployment-verification \
+            ;
+          )
         fi
-        
         _SOE
         
         if [ -n "$ENTANDO_OPT_TEST_COMPOSE_FILE" ]; then
@@ -116,7 +123,6 @@ ppl--mvn() {
         ;;
       "MTX-MVN-POST-DEPLOYMENT-TESTS"|"MVN-POST-DEPLOYMENT-TESTS")
         _log_i "Starting the post-deployment task with plan: $ENTANDO_OPT_TEST_POSTDEP_PLAN"
-        export ENTANDO_OPT_LOG_LEVEL=DEBUG
         _pkg_get "xmlstarlet"
         
         local projectName projectVersion prNumber
@@ -133,6 +139,7 @@ ppl--mvn() {
         
         local TMP
         IFS=, read -ra TMP <<< "$ENTANDO_OPT_TEST_POSTDEP_PLAN"
+        # shellcheck disable=SC2031
         for step in "${TMP[@]}"; do
           _log_d "Running post-deployment-tests step: $step"
           
@@ -214,7 +221,7 @@ ppl--mvn.post-deloyment.configure() {
   if [ -n "$ENTANDO_PROJECT_NAME_OVERRIDE" ]; then
     _tmp_projectName="$ENTANDO_PROJECT_NAME_OVERRIDE"
   else
-    _ppl_get_current_project_artifact_id _tmp_projectName
+    _ppl_get_current_project_name _tmp_projectName
   fi
   if [ -n "$ENTANDO_PROJECT_VERSION_OVERRIDE" ]; then
     _tmp_projectVersion="$ENTANDO_PROJECT_VERSION_OVERRIDE"
@@ -255,7 +262,7 @@ ppl--mvn.post-deloyment.deploy-project-helm() {
   _log_d "Applying the project helm charts"
 
   local ORIGDIR="$PWD"
-  
+  # shellcheck disable=SC2031
   _ppl_provision_helm_preview_environment \
     "$projectName" "$projectVersion" \
     "$ENTANDO_TEST_NAMESPACE" "$ENTANDO_OPT_TEST_HOSTNAME_SUFFIX"
@@ -310,8 +317,10 @@ ppl--mvn.post-deloyment._operator_installation() {
     | _summarize_stream --ppl-pg 5000 MANIFEST
   
   if [ -z "$skip_kind" ]; then
+    # shellcheck disable=SC2031
     curl -sL "$url" | kube.oc -n "$ENTANDO_TEST_NAMESPACE" "$1" -f -
   else
+    # shellcheck disable=SC2031
     {
       kube.manifest.filter-document-by-kind "$skip_kind" < <(curl -sL "$url")
     } | kube.oc -n "$ENTANDO_TEST_NAMESPACE" "$1" -f -
@@ -325,10 +334,11 @@ ppl--mvn.post-deloyment.run-test() {
   # shellcheck disable=SC2030 disable=SC2031
   (
     export ENTANDO_OPT_PREVIEW_TESTS=true
+    
     export ENTANDO_TEST_NAMESPACE
-    export ENTANDO_OPT_TEST_HOSTNAME_SUFFIX
-    export ENTANDO_DEFAULT_ROUTING_SUFFIX="$ENTANDO_OPT_TEST_HOSTNAME_SUFFIX"
     export ENTANDO_TEST_NAMESPACE_OVERRIDE="$ENTANDO_TEST_NAMESPACE"
+    
+    export ENTANDO_DEFAULT_ROUTING_SUFFIX="$ENTANDO_OPT_TEST_HOSTNAME_SUFFIX"
     export ENTANDO_TEST_IMAGE_VERSION="$projectVersion"
     
     __mvn_exec --ppl-timestamp -B verify -Ppost-deployment-verification

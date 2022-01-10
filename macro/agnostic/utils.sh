@@ -68,8 +68,13 @@ ppl--repl() {
   
     [ -z "$ENTANDO_OPT_LOG_LEVEL" ] && export ENTANDO_OPT_LOG_LEVEL="TRACE"
     
-    __exist -f "$ENVFILE"
-    cat "$ENVFILE" >> "$rcfile"
+    export PPL_CONTEXT="{{test-run}}"
+    export PPL_PARSED_CONTEXT=true
+    
+    [ -n "$ENVFILE" ] && {
+      __exist -f "$ENVFILE"
+      echo ". '$ENVFILE'" >> "$rcfile"
+    }
   }
   
   # shellcheck disable=SC2034

@@ -46,7 +46,7 @@ test.docker.publish.LOGIN() {
   ASSERT TMP =~ "\[DOK\] docker login -u the-user --password-stdin" 
 }
 
-#TEST:macro
+#TEST:lib
 test.docker.publish.BUILD_AND_PUSH() {
   print_current_function_name "RUNNING TEST> " ".."
 
@@ -55,14 +55,27 @@ test.docker.publish.BUILD_AND_PUSH() {
     ENTANDO_OPT_DOCKER_ORG="${ENTANDO_OPT_DOCKER_ORG:-entando}"
   }
 
-  ppl--docker.publish.BUILD_AND_PUSH_ALL "Dockerfile" "entando-de-app" "6.3.2"
+  local dockerFile imageAddress
   
-  TEST.GET_TLOG_COMMAND TMP -3
-  ASSERT TMP = "[DOK] docker build . -t entando/entando-de-app:6.3.2 -f Dockerfile"
-  TEST.GET_TLOG_COMMAND TMP -2
-  ASSERT TMP = "[DOK] docker image inspect entando/entando-de-app:6.3.2"
-  TEST.GET_TLOG_COMMAND TMP -1
-  ASSERT TMP = "[DOK] docker push entando/entando-de-app:6.3.2"
+  (
+    __docker() {
+      _log_d "Running docker $1.."
+      echo "[DOK] docker $*" >> "$TEST__TECHNICAL_LOG_FILE"
+      [ "$1 $2" != "manifest inspect" ]
+    }
+
+    ppl--docker.publish.DETERMINE_BUILD_INFO dockerFile imageAddress "Dockerfile=>[simple]" "entando-de-app" "6.3.2"
+    ppl--docker.publish.BUILD_AND_PUSH "$dockerFile" "$imageAddress"
+    
+    TEST.GET_TLOG_COMMAND TMP -4
+    ASSERT TMP = "[DOK] docker manifest inspect entando/entando-de-app:6.3.2"
+    TEST.GET_TLOG_COMMAND TMP -3
+    ASSERT TMP = "[DOK] docker build . -t entando/entando-de-app:6.3.2 -f Dockerfile"
+    TEST.GET_TLOG_COMMAND TMP -2
+    ASSERT TMP = "[DOK] docker image inspect entando/entando-de-app:6.3.2"
+    TEST.GET_TLOG_COMMAND TMP -1
+    ASSERT TMP = "[DOK] docker push entando/entando-de-app:6.3.2"
+  ) || _SEO
 }
 
 #TEST:macro
@@ -79,7 +92,7 @@ test.docker.ppl--docker-skipped-due-to-no-dockerfile() {
   ASSERT TMP =~ "\[REM\] STARTED AT .*"
 }
 
-#TEST:lib
+#TEST:x
 test.docker.ppl--docker() {
  print_current_function_name "RUNNING TEST> " ".."
 
@@ -93,6 +106,12 @@ test.docker.ppl--docker() {
   
   rm -rf local-checkout
   ppl--checkout-branch --id "PR-CHECKOUT" --lcd "local-checkout" || _SOE
+
+  (
+    __cd "local-checkout"
+    echo "FROM SCRATCH" > Dockerfile.mode1
+    echo "FROM SCRATCH" > Dockerfile.mode2
+  )
  
   #~ CASE #1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Simulate docker build commands for two dockerfiles

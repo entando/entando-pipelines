@@ -34,7 +34,7 @@ START_MACRO() {
   }
   
   # CUSTOM ENVIRONMENT
-  _ppl_setup_custom_environment "$ENTANDO_OPT_CUSTOM_ENV"
+  _ppl_load_settings "$ENTANDO_OPT_CUSTOM_ENV"
   
   # ..
   if _log_on_level DEBUG; then
@@ -126,18 +126,38 @@ _EXIT() {
 #
 _FATAL() {
   local rv=77
-  if [ "$1" != "-s" ]; then
-    SKIP=1;[ "$1" = "-S" ] && { SKIP="$((SKIP+$2))"; shift 2; }
-    [ "$1" = "-99" ] && shift && rv=99
-    LOGGER() { _log_e "$*" 1>&2; }
-    _print_callstack "$SKIP" 5 "" LOGGER "$@" 1>&2
-  else
-    shift
-    [ "$1" = "-99" ] && shift && rv=99
-    _log_e "$@" 1>&2
-  fi
+
+  {
+    # shellcheck disable=SC2076
+    if [[ -n "$TEST__EXPECTED_ERROR" && "$*" =~ "$TEST__EXPECTED_ERROR" ]]; then
+      LOGGER() { _log_d "==== EXPECTED ERROR DETECTED ====: $*" 1>&2; }
+    else
+      LOGGER() { _log_e "$*" 1>&2; }
+    fi
+
+    if [ "$1" != "-s" ]; then
+      SKIP=1;[ "$1" = "-S" ] && { SKIP="$((SKIP+$2))"; shift 2; }
+      [ "$1" = "-99" ] && shift && rv=99
+      _print_callstack "$SKIP" 5 "" LOGGER "$@"  1>&2
+    else
+      shift
+      [ "$1" = "-99" ] && shift && rv=99
+      LOGGER "$@"
+    fi
+  }
 
   _exit "$rv"
+}
+
+_LOW_LEVEL_FATAL() {
+  if [[ -n "$TEST__EXPECTED_ERROR" && "$*" =~ $TEST__EXPECTED_ERROR ]]; then
+    LOGGER() { _log_d "==== EXPECTED ERROR DETECTED ====: $*"; }
+  else
+    LOGGER() { _log_e "$*" 1>&2; }
+  fi
+  LOGGER "$*" 1>&2
+  _print_callstack "$SKIP" 5 "" LOGGER "$@" 1>&2
+  _exit 66
 }
 
 # STOP ON ERROR
@@ -155,7 +175,7 @@ _SOE() {
 
 # Sets a variable given the name and the value
 #
-# IMPORTANT:
+# WARNING:
 # This function can be used to set a variable of the caller's scope and this tecnique
 # is commonly used to return values to the caller.
 # But note that if there is a variable with same name in the local scope, the local one
@@ -168,7 +188,8 @@ _SOE() {
 # - $2: value
 #
 _set_var() {
-  [ -z "$1" ] && _FATAL "null var_name provided"
+  [ -z "$1" ] && _LOW_LEVEL_FATAL "null var_name provided"
+  _is_valid_var_name "$1" || _LOW_LEVEL_FATAL "invalid var_name \"$1\" provided"
   if [ -z "$2" ]; then
     read -r -d '' "$1" <<< ""
   else
@@ -176,6 +197,11 @@ _set_var() {
   fi
 
   return 0
+}
+
+_is_valid_var_name() {
+  # shellcheck disable=SC2234
+  ([[ "$1" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]])  # NOTE: the subshell restricts the side effects, don't remove it
 }
 
 _exit() {

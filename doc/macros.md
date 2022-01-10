@@ -141,6 +141,11 @@
 
  Actions:
  - snyk:   runs a snyk based scan of the current project
+
+ Env vars:
+ - ENTANDO_OPT_SNYK_ORG                the project organization under the snyk cloud service
+ - ENTANDO_OPT_SNYK_PRJ                the project name under the snyk cloud service
+ - ENTANDO_OPT_SNYK_SCAN_BASE_IMAGES   if true activates the scan of the base images in container scans
 ```
 
 </details>
@@ -276,6 +281,26 @@
 
 ---
 
+### `ppl--enp()`
+
+**MACRO OPERATIONS RELATED TO ENTANDO PROJECT FILES**
+
+<details>
+
+```
+ Params:
+ $1: action to apply
+
+ Actions:
+ - FULL-BUILD        executes a full and clean npm build+test
+ - PUBLISH           executes a publication
+```
+
+</details>
+
+
+---
+
 ### `ppl--docker()`
 
 **MACRO OPERATIONS RELATED TO DOCKER**
@@ -367,6 +392,7 @@
   - MTX-NPM-SCAN-*   see equivalent on ppl--npm
   - MTX-SCAN-SNYK    runs a snyk scan (see ppl--scan)
   - GENERATE-BUILD-CACHE-KEY generate the key to store the build cache
+  - GENERATE-BUILD-TARGET-DIR generates statement to set the target dir
 ```
 
 </details>

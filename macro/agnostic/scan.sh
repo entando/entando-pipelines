@@ -11,6 +11,11 @@
 # Actions:
 # - snyk:   runs a snyk based scan of the current project
 #
+# Env vars:
+# - ENTANDO_OPT_SNYK_ORG                the project organization under the snyk cloud service
+# - ENTANDO_OPT_SNYK_PRJ                the project name under the snyk cloud service
+# - ENTANDO_OPT_SNYK_SCAN_BASE_IMAGES   if true activates the scan of the base images in container scans
+#
 ppl--scan() {
   (
     START_MACRO "SCAN" "$@"
@@ -21,11 +26,20 @@ ppl--scan() {
 
     local action
     _get_arg action 1
+    
+    export ENTANDO_OPT_LOG_LEVEL=DEBUG
 
     case "$action" in
       snyk)
         ppl--scan.PREREQUIREMENTS
         ppl--scan.SCAN
+        ;;
+      snyk-container)
+        local imageAddress dockerFile
+        _get_arg imageAddress 2
+        _get_arg dockerFile 3
+        ppl--scan.PREREQUIREMENTS
+        ppl--scan.SCAN --container "$imageAddress" "$dockerFile"
         ;;
       *)
         _FATAL "Invalid scan macro action \"$action\""
@@ -44,20 +58,26 @@ ppl--scan.PREREQUIREMENTS() {
 }
 
 ppl--scan.SCAN() {
+  local O1="" O2="";[ "$1" = "--container" ] && { O1="$2";O2="$3";shift 3; }
+  local O3=""; [ -z "$O1" ] && O3="$PPL_REPO_GIT_URL"
+  local O4=""; [ "$ENTANDO_OPT_SNYK_SCAN_BASE_IMAGES" != "true" ] && O4="--exclude-base-image-vulns"
   local org prj
-  _get_arg -m org "--org" "$SNYK_ORG"
-  _get_arg prj "--prj"
+  _get_arg -m org "--org" "$ENTANDO_OPT_SNYK_ORG"
+  _get_arg prj "--prj" "$ENTANDO_OPT_SNYK_PRJ"
   
   local RV=0
-
-  _log_i "Running snyk scan.."
+  
+  _log_i "Running snyk test.."
   
   local RESFILE="$(mktemp)"
   
-  snyk test \
+  snyk ${O1:+container} test \
+    ${O1:+"$O1"} \
+    ${O2:+--file="$O2"} \
     --org="$org" \
     ${prj:+--project-name="$prj"} \
-    --remote-repo-url="$PPL_REPO_GIT_URL" \
+    ${O3:+--remote-repo-url="$O3"} \
+    "$O4" \
   > "$RESFILE"
   
   RV="$?"
@@ -75,10 +95,14 @@ ppl--scan.SCAN() {
     echo "▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒"
   fi
   
-  snyk monitor \
-  --org="$org" \
-  ${prj:+--project-name="$prj"} \
-  --remote-repo-url="$PPL_REPO_GIT_URL" || true
+  _log_i "Running snyk monitor.."
+  
+  snyk ${O1:+container} monitor \
+    ${O1:+"$O1"} \
+    --org="$org" \
+    ${prj:+--project-name="$prj"} \
+    ${O3:+--remote-repo-url="$O3"} \
+  || true
 
   if [ "$RV" != "0" ]; then
     _FATAL "Snyk reported error code \"$RV\""

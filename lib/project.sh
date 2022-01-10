@@ -10,7 +10,8 @@ _ppl_get_current_project_version() {
   case "$(__ppl_determine_current_project_type --print)" in
     "MVN") _pom_get "$1" "${2:-pom.xml}" "/pom:project" "./pom:version";;
     "NPM") _npm_get "$1" "${2:-package.json}" "version";;
-    *) _FATAL  "Unable to detect the project type"
+    "ENP") _enp_get "$1" "version";;
+    *) _FATAL  "Unable to determine the project type";;
   esac
 }
 
@@ -26,7 +27,8 @@ _ppl_set_current_project_version() {
   case "$(__ppl_determine_current_project_type --print)" in
     "MVN") _pom_set_project_version "$1" "${2:-pom.xml}";;
     "NPM") _npm_set "${2:-package.json}" "version" "$1";;
-    *) _FATAL  "Unable to detect the project type"
+    "ENP") _enp_set "version" "$1";;
+    *) _FATAL  "Unable to determine the project type";;
   esac
 }
 
@@ -36,10 +38,11 @@ _ppl_set_current_project_version() {
 # $1: dest var
 # [$2]: the optional project file pathname
 #
-_ppl_get_current_project_artifact_id() {
+_ppl_get_current_project_name() {
   case "$(__ppl_determine_current_project_type --print)" in
     "MVN") _pom_get "$1" "${2:-pom.xml}" "/pom:project" "./pom:artifactId";;
     "NPM") _npm_get "$1" "${2:-package.json}" "name";;
-    *) _FATAL  "Unable to detect the project type"
+    "ENP") _enp_get "$1" "name";;
+    *) _FATAL  "Unable to determine the project type"
   esac
 }

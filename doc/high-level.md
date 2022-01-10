@@ -238,7 +238,7 @@
 
 ---
 
-### `_ppl_get_current_project_artifact_id()`
+### `_ppl_get_current_project_name()`
 
 **Extacts the version of a artifactId from a pom**
 
@@ -499,20 +499,27 @@
 
 ---
 
-### `_ppl_setup_custom_environment()`
+### `_ppl_load_settings()`
 
-**Setup a custom evironment given a semicolon-delimited list of assignments**
+**Sets one ore more evironment variables given a semicolon-delimited list of assignments**
 
 <details>
 
 ```
  WARNING: the parser interprets the backslash
- WARNING: the parser doesn't support quotes, however you can still escape the colon with the backslash ("\;")
+ WARNING: the parser doesn't support quotes like a CSV, however you can still escape the colon with the backslash ("\;")
+
+ Options:
+ --var-sep value    the var separator to assume
+ --stdin            reads the environment the stdin
+
+ Paramers:
+ $1                unless "--stdin" is provider it's the environment to be loaded
 
  eg:
- - LEGAL:   _ppp_setup_custom_environment 'A=1;B=hey there;C=true'
- - ILLEGAL: _ppp_setup_custom_environment 'A=1;B="hey;there";C=true'
- - LEGAL:   _ppp_setup_custom_environment 'A=1;B=hey\;there;C=true'
+ - LEGAL:   _ppl_load_settings 'A=1;B=hey there;C=true'
+ - ILLEGAL: _ppl_load_settings 'A=1;B="hey;there";C=true'
+ - LEGAL:   _ppl_load_settings 'A=1;B=hey\;there;C=true'
 ```
 
 </details>

@@ -29,7 +29,6 @@ test_ppl_provision_helm_preview_environment() {
 
   # shellcheck disable=SC2034
   local count="$(grep -F "{{ENTANDO_" . -r  2>/dev/null | wc -l)"
-  DBGSHELL
   ASSERT count = 0
   
   ASSERT -v CHECK_DOCKER_ORG "$(grep "$ENTANDO_OPT_DOCKER_ORG" . -r 2>/dev/null | wc -l)" = 2

@@ -58,5 +58,5 @@ _docker_parse_image_address() {
 # $1: the image address
 #
 _docker_is_image_on_registry() {
-  DOCKER_CLI_EXPERIMENTAL=enabled docker manifest inspect "$1" &>/dev/null
+  DOCKER_CLI_EXPERIMENTAL=enabled __docker manifest inspect "$1" &>/dev/null
 }

@@ -342,29 +342,6 @@
 
 ---
 
-### `_FATAL()`
-
-**Stops the execution with a fatal error**
-
-<details>
-
-```
- and prints the callstack
-
- Options
- [-s]  simple: omits the stacktrace
- [-S n] skips n levels of the call stack
- [-99] uses 99 as exit code, which indicates test assertion
-
- Params:
- $1  error message
-```
-
-</details>
-
-
----
-
 ### `_SOE()`
 
 **STOP ON ERROR**
@@ -388,7 +365,7 @@
 <details>
 
 ```
- IMPORTANT:
+ WARNING:
  This function can be used to set a variable of the caller's scope and this tecnique
  is commonly used to return values to the caller.
  But note that if there is a variable with same name in the local scope, the local one
@@ -1382,29 +1359,6 @@
 
 ---
 
-### `_FATAL()`
-
-**Stops the execution with a fatal error**
-
-<details>
-
-```
- and prints the callstack
-
- Options
- [-s]  simple: omits the stacktrace
- [-S n] skips n levels of the call stack
- [-99] uses 99 as exit code, which indicates test assertion
-
- Params:
- $1  error message
-```
-
-</details>
-
-
----
-
 ### `_SOE()`
 
 **STOP ON ERROR**
@@ -1428,7 +1382,7 @@
 <details>
 
 ```
- IMPORTANT:
+ WARNING:
  This function can be used to set a variable of the caller's scope and this tecnique
  is commonly used to return values to the caller.
  But note that if there is a variable with same name in the local scope, the local one

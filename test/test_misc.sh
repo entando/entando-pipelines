@@ -14,7 +14,6 @@ test_misc() {
   test_itmlst_utils
   test_semver_cmp
   test_args
-  test_str
   
   true
 }
@@ -170,6 +169,7 @@ test_args() {
   ASSERT RES = a-fallback
 }
 
+#TEST:lib
 test_str() {
   print_current_function_name "RUNNING TEST> "  ".."
   
@@ -178,7 +178,8 @@ test_str() {
   ASSERT RES = 4
   _str_last_pos RES ",10,11,12,*,13" "*"
   ASSERT RES = 4
-  
+
+  #~
   local RES='hey'
   _decode_entando_opt RES
   ASSERT RES = 'hey'
@@ -189,10 +190,50 @@ test_str() {
   _decode_entando_opt RES
   ASSERT RES = 'hey'
 
+
+  #~
   # shellcheck disable=SC2034
   ENTANDO_OPT_A_TEST="###a-test"
-  _auto_decode_entando_opts
-  ASSERT ENTANDO_OPT_A_TEST = 'a-test'
+  
+  # shellcheck disable=SC2034 disable=SC2016
+  (
+    ENTANDO_OPT_ANOTHER_TEST1='$ENTANDO_OPT_A_TEST'
+    ENTANDO_OPT_ANOTHER_TEST2='${ENTANDO_OPT_A_TEST}'
+    ENTANDO_OPT_ANOTHER_TEST3='###${ENTANDO_OPT_A_TEST}'
+    ENTANDO_OPT_ANOTHER_TEST4='\${ENTANDO_OPT_A_TEST}'
+
+    _auto_decode_entando_opts
+    
+    ASSERT ENTANDO_OPT_A_TEST = 'a-test'
+    ASSERT ENTANDO_OPT_ANOTHER_TEST1 = 'a-test'
+    ASSERT ENTANDO_OPT_ANOTHER_TEST2 = 'a-test'
+    ASSERT ENTANDO_OPT_ANOTHER_TEST3 = 'a-test'
+    ASSERT ENTANDO_OPT_ANOTHER_TEST4 = '${ENTANDO_OPT_A_TEST}'
+  )
+  exit
+
+  # shellcheck disable=SC2034 disable=SC2016
+  (
+    TEST__EXPECTED_ERROR='Invalid reference'
+    ENTANDO_OPT_ANOTHER_TEST='$ENTANDO_OPT_A_TEST '
+    _auto_decode_entando_opts
+  ) && _SOE
+
+  # shellcheck disable=SC2034 disable=SC2016
+  (
+    TEST__EXPECTED_ERROR='Invalid reference'
+    ENTANDO_OPT_ANOTHER_TEST='$ENTANDO_OPT_A_TEST '
+    _auto_decode_entando_opts
+  ) && _SOE
+
+  
+  # shellcheck disable=SC2034 disable=SC2016
+  (
+    TEST__EXPECTED_ERROR='Invalid reference'
+    ANOTHER_VAR='a-test'
+    ENTANDO_OPT_A_FAILED_TEST='${ANOTHER_VAR}'
+    _auto_decode_entando_opts
+  ) && _SOE
   
   #~
   RES="$(_str_quote "Started publication as 101")"
@@ -356,15 +397,21 @@ test__features() {
 }
 
 #TEST:lib
-test__ppl_setup_custom_environment() {
+test__ppl_load_settings() {
   print_current_function_name "RUNNING TEST> "  ".."
   
   # shellcheck disable=SC2034
   local Z="_Z" K="_K"
-  _ppl_setup_custom_environment "X=XX;Y=YY;Z=ZZ;W=W\;W"
+  _ppl_load_settings "X=XX;Y=YY;Z=ZZ;W=W\;W"
   RES="$(bash -c 'echo "$X/$Y/$Z/$K/$W"')"
-  echo "$RES"
   ASSERT RES = "XX/YY/ZZ//W;W"
+  
+    # shellcheck disable=SC2034
+  local TESTENV="X=1"$'\n'$'\n'"Y=2"
+  _ppl_load_settings --var-sep $'\n' --stdin <<< "$TESTENV"
+
+  RES="$(bash -c 'echo "$X/$Y"')"
+  ASSERT RES = "1/2"
 }
 
 #TEST:lib

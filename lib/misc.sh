@@ -348,31 +348,83 @@ _str_escape_char() {
   echo "${1//$2/\\$2}"
 }
 
-# Decodes an ENTANDO_OPT variable encoded with a triple-hash prefix to evade the censoring
-#
-# Params:
-# $@ a list of vars to decode
+# Decodes an environment variable encoded with a triple-hash prefix to evade the censoring
 #
 _decode_entando_opt() {
-  for _deo_var_name in "$@"; do
-    local _deo_var_value="${!_deo_var_name}"
-    if [ "${_deo_var_value:0:4}" = '###'$'\n' ]; then
-      _deo_var_value="${_deo_var_value:4}"
-    elif [ "${_deo_var_value:0:3}" = '###' ]; then
-      _deo_var_value="${_deo_var_value:3}"
-    else
-      continue
-    fi
-    _set_var "$_deo_var_name" "$_deo_var_value"
-  done
+  local _deo_var_value="${!1}"
+  if [ "${_deo_var_value:0:4}" = '###'$'\n' ]; then
+    _deo_var_value="${_deo_var_value:4}"
+  elif [ "${_deo_var_value:0:3}" = '###' ]; then
+    _deo_var_value="${_deo_var_value:3}"
+  else
+    return 0
+  fi
+  _set_var "$1" "$_deo_var_value"
 }
 
-# Scans the environment for ENTANDO_OPT_XXX variables and decodes them
-# See also _decode_entando_opt
+
+# Resolve an environment variable by interpreting the standard bash dereferencing syntax
+# it intentionally only supports full-lenght-instruction variable dereferencing like:
+#
+# - VAR="$REFVAR" 
+# - VAR="${REFVAR}"
+#
+# Therefore it DOESN'T SUPPORT syntax line this:
+#
+# - VAR="${REFVAR}_test"
+#
+# Also note that the dereference can be escaped with the backslash
+#
+_resolve_entando_opt() {
+  local FIN=false;[ "$1" == "--finalize" ] && { FIN=true; shift; }
+  
+  local _reo_var_name="${!1}"
+  
+  if [[ "${_reo_var_name:0:2}" = '\$' ]]; then
+    # NOT A REF
+    if $FIN; then
+      _set_var "$1" "${_reo_var_name:1}"
+    else
+      _set_var "$1" "${_reo_var_name}"
+    fi
+    return 0
+  fi
+
+  # shellcheck disable=SC2016
+  if [[ "${_reo_var_name:0:2}" = '${' && "${_reo_var_name:((${#_reo_var_name}-1)):1}" = '}' ]]; then
+    # A REF
+    _reo_var_name="${_reo_var_name:2:-1}"
+  elif [ "${_reo_var_name:0:1}" = '$' ]; then
+    # A REF
+    _reo_var_name="${_reo_var_name:1}"
+  else
+    # NOT A REF
+    _set_var "$1" "$_reo_var_name"
+    return 0
+  fi
+    
+  _is_valid_var_name "$_reo_var_name" || _FATAL "Invalid reference \"$_reo_var_name\""
+  _set_var "$1" "${!_reo_var_name}"
+}
+
+# Scans the environment for ENTANDO_OPT_XXX variables and decodes/derefence them
+# See also _decode_entando_opt and _resolve_entando_opt
+#
+# NOTE 
+# 1) The reference resolution process is limited to 3 passes, so a sequence of 
+# nested references that goes beyond that limit will not be properly satisfied.
 #
 _auto_decode_entando_opts() {
   for varname in ${!ENTANDO_OPT*}; do
     _decode_entando_opt "$varname"
+  done
+  for i in {1..3}; do
+    for varname in ${!ENTANDO_OPT*}; do
+      _resolve_entando_opt "$varname"
+    done
+  done
+  for varname in ${!ENTANDO_OPT*}; do
+    _resolve_entando_opt --finalize "$varname"
   done
 }
 
@@ -428,8 +480,7 @@ __jq() {
 # $1    the title of the summary
 #
 # Options:
-# --no-tlf        the latest summary update will not be terminated by line-feedd
-# --pg page-size  activates pagination and specifies the page size
+# --ppl-pg page-size  activates pagination and specifies the page size
 #
 _summarize_stream() {
   local PAGE=""; [ "$1" = "--ppl-pg" ] && { PAGE="$2"; shift 2; }
@@ -802,31 +853,6 @@ _ppl_validate_command_version() {
   REQ_VER="${REQ_VER//x/}"
   
   [[ "${maj}.${min}." =~ $REQ_VER. ]] || _FATAL "Command \"$DESC\" has invalid version ($VER)"
-}
-
-# Determines the type of project in the current dir
-#
-# Params:
-# $1: dest var
-#
-__ppl_determine_current_project_type() {
-  local _tmp_
-
-  if [ -f "pom.xml" ]; then
-    _tmp_="MVN"
-  elif [ -f "package.json" ]; then
-    _tmp_="NPM"
-  else
-    _FATAL "Unable to determine the project type"
-  fi
-    
-  if [ "$1" == "--print" ]; then
-    echo "$_tmp_"
-  elif [ "$1" == "--check" ]; then
-    true
-  else
-    _set_var "$1" "$_tmp_"
-  fi
 }
 
 # Creates a temporary directory that self destructs

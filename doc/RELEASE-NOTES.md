@@ -1,3 +1,11 @@
+# `v1.2.1`
+
+## Relevant additions
+
+- Support for "ENP" projects (see repo docs)
+- Support for a second docker login via "ALT" docker vars (see repo docs)
+- Support for docker images scans by using snyk container test and monitor (see snyk-container on the code)
+
 # `v1.2.0`
 
 ## Relevant additions

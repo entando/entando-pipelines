@@ -36,6 +36,7 @@ test_flow_pr_check() {
     echo "something-new" > something-new
     __git_ACTP "something-new" "v9.9.9"
     __cd -
+    TEST__EXPECTED_ERROR="The BOM version requested"
     ppl--check-pr-bom-state --lcd "local-clone"
     ASSERT -v "BOM_CHECK_RESULT" "$?" = 77
     __cd -
@@ -56,12 +57,14 @@ test_flow_pr_check() {
   ) || FAILED
   
   (
+    TEST__EXPECTED_ERROR="In non-release branches the project version"
     ENTANDO_OPT_MAINLINE="99.99"
     ppl--pr-preflight-checks --lcd "local-clone"
   ) && FAILED
 
   (
     TEST__APPLY_OVERRIDES() { PPL_PR_TITLE="ENG-999-Hey There!"; }
+    TEST__EXPECTED_ERROR="The Pull Request title"
     ppl--pr-preflight-checks --lcd "local-clone"
   ) && FAILED "I was expecting an error, but I've got success"
 

@@ -35,7 +35,7 @@ Look for the ENTANDO_OPT_XXX vars in the below the placeholders table.
 - `ENTANDO_OPT_TEST_NAMESPACE`
 
 Namespace name to use to run the tests.
-If set to `[auto]` tells the pipelies to derive it from the project name.
+If set to `[auto]` or not provided tells the pipelies to derive it from the project name.
 
 
 ### Example for testing K8S controllers:
