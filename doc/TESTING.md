@@ -124,3 +124,7 @@ Examples:
 ```
 ENTANDO_OPT_LOG_LEVEL=DEBUG ENTANDO_OPT_SHELL_ON_TEST_ASSERT=true prj/run-tests.sh macro
 ```
+
+### TEST__EXPECTED_ERROR
+
+If non-empty it's used as regex to recognize and mark the errors that were actually expected to happen.

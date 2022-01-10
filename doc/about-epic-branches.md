@@ -2,10 +2,11 @@
 
 # BRIEF
 
-Epic branches are long running topic branches that work like main branches but
-for a topic that can't be exausted in a single topic branch/PR. Since they work
-in the same way, developers also operate on it with the usual workflow but by
-using the epic branch as base branch, instead of the main one.
+Epic branches are long running feature that can't be completed in a single big interaction. 
+They behaves like main branches with the diffecence that they are eventually terminated and 
+merged back to their base. Developers in fact operate on them with the usual PR workflow, but
+by using the epic branch as base branch, instead of the main one.
+
 
 # THE SHAPE OR AN EPIC BRANCH
 
@@ -21,19 +22,27 @@ using the epic branch as base branch, instead of the main one.
 
 ```
 
+#  FEATURE FLAG
+
+- `EPIC_BRANCHES` (enabled by default)
+
 # RULES
 
-## 1) The Epic Branch should be named after the main branch.
+## 1) The Epic Branch should be named using the syntax
+
+```
+- epic/{epic-name}
+```
 
 ### For instance:
 
 ```
-- Main branch: develop
-- Epic branch: develop-a-long-and-risky-change
+- Epic branch: epic/a-long-change
 ```
 
-the leftmost dash is the actual separator and the part of the right is called by
-these pipelines **epic name** or **epic qualifier**
+the leftmost backslash is the actual separator and the part on the right is called by
+these pipelines **epic name** or **epic branch qualifier**
+
 
 ## 2) Base branch
 
@@ -42,20 +51,19 @@ to the epic branch
 
 ## 3) PR titles
 
-On top the the normal PR naming contraints the PRs of an epic branch 
-needs to also reference the epic name.
+On top of the already existing PR naming contraints the PRs of an epic branch 
+also need to reference the epic name.
 
 ### For instance:
 
 ```
-a-long-and-risky-change/ENG-999 Some change
+a-long-change/ENG-999 Some change
 ```
 
 ## 4) Epic PR
 
 The Epic Branch will be eventually merged back to the main branch by using a
 so-called "Epic PR" that follows the PR rules of the main branch.
-
 
 # IMPACT ON THE PIPELINES
 
@@ -66,7 +74,7 @@ The epic name will be added to the snapshot version tags with an "EP" segment.
 ### For instance:
 
 ```
-v7.0.0-ENG-999-PR-121-EP-a-long-and-risky-change
+v7.0.0-ENG-999-PR-121-EP-a-long-change
 ```
 
 ## Snapshot artifacts and images
@@ -75,5 +83,5 @@ As they are generated after the snapshot tags their naming will change according
 
 ## BOM
 
-In case of BOM these pipelines assumes the use of a corresponding 
-epic branch, with the same name, on the BOM repository.
+In case of BOM these pipelines assume the use of a corresponding 
+epic branch (with the same name) on the BOM repository.

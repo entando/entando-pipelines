@@ -4,7 +4,7 @@
 . "$PROJECT_DIR/test/_test-base.sh"
 
 # shellcheck disable=SC2034
-#TEST:lib
+#TEST:macro
 test_flow_pr_check() {
   print_current_function_name "RUNNING TEST> "  ".."
   # shellcheck disable=SC2034
@@ -12,7 +12,7 @@ test_flow_pr_check() {
   #~
   #~ CHECKOUT
   #~
-    TEST.mock.initial_checkout "local-clone"
+  TEST.mock.initial_checkout "local-clone"
 
   #~
   #~ LABELS MANIPULATION
@@ -31,11 +31,12 @@ test_flow_pr_check() {
   #~
   (
     ppl--check-pr-bom-state --lcd "local-clone"
-    ASSERT -v "BOM_CHECK_RESULfile:///home/wrt/work/prj/entando/main/tools/entando-pipelines/test/github/test_github_full_pipeline.shT" "$?" = 0
+    ASSERT -v "BOM_CHECK_RESULT" "$?" = 0
     __cd "$ENTANDO_OPT_REPO_BOM_URL"
     echo "something-new" > something-new
     __git_ACTP "something-new" "v9.9.9"
     __cd -
+    TEST__EXPECTED_ERROR="The BOM version requested"
     ppl--check-pr-bom-state --lcd "local-clone"
     ASSERT -v "BOM_CHECK_RESULT" "$?" = 77
     __cd -
@@ -56,12 +57,14 @@ test_flow_pr_check() {
   ) || FAILED
   
   (
+    TEST__EXPECTED_ERROR="In non-release branches the project version"
     ENTANDO_OPT_MAINLINE="99.99"
     ppl--pr-preflight-checks --lcd "local-clone"
   ) && FAILED
 
   (
     TEST__APPLY_OVERRIDES() { PPL_PR_TITLE="ENG-999-Hey There!"; }
+    TEST__EXPECTED_ERROR="The Pull Request title"
     ppl--pr-preflight-checks --lcd "local-clone"
   ) && FAILED "I was expecting an error, but I've got success"
 
@@ -88,10 +91,10 @@ test_flow_pr_check() {
       PPL_PR_SHA="5a98877358d1322130cbde49628bdb796a100e89"
     }
 
-    ppl--release tag-snapshot-version --lcd "local-clone" || _SOE
+    ppl--publication tag-git-version --lcd "local-clone" || _SOE
     
     cd local-clone
-    ASSERT -v SNAPSHOT-TAG "$(git tag | grep v10.9.8.0-ENG-2471-PR-154)" = "v10.9.8.0-ENG-2471-PR-154"
+    ASSERT -v SNAPSHOT-TAG "$(git tag | grep "ENG-")" = "v10.9.8.0-ENG-2471-PR-154+BB-develop"
   ) || _SOE
   
   #~
@@ -104,7 +107,7 @@ test_flow_pr_check() {
   #~ POST-MERGE CHECKOUT
   #~
   (
-    ppl--checkout-branch base --id "AFTER-MERGE-CHECKOUT" --lcd "local-clone"
+    ppl--checkout-branch --id "AFTER-MERGE-CHECKOUT" --lcd "local-clone"
 
     _ppl-load-context "$PPL_CONTEXT"
     __cd "local-clone"
@@ -118,7 +121,7 @@ test_flow_pr_check() {
   #     TEST__APPLY_OVERRIDES() {
   #       PPL_PR_SHA="5a98877358d1322130cbde49628bdb796a100e89"
   #     }
-  #     ppl--release tag-snapshot-version --lcd "local-clone" || _SOE
+  #     ppl--publication tag-git-version --lcd "local-clone" || _SOE
   #   ) || _SOE
   
   # ~
@@ -131,7 +134,7 @@ test_flow_pr_check() {
   #~
   (
     TEST__APPLY_OVERRIDES() {
-      PPL_REF="refs/tags/v6.4.0-ENG-2704-PR-126"
+      PPL_REF="refs/tags/v6.4.0-ENG-2704-PR-126+KB-epic+++ENG-999"
     }
     
     (
@@ -171,4 +174,17 @@ SIMULATE_PR_MERGE() {
 
 ASSUME_CONTEXT_OF_EVENT_ADD_RELEASE_TAG() {
   PPL_CONTEXT="$(cat "$PROJECT_DIR/test/resources/github-context-sample-05.json")"
+}
+
+#TEST:lib
+test_generate_build_cache_key() {
+  print_current_function_name "RUNNING TEST> "  ".."
+  
+  (
+    TEST.mock.initial_checkout "local-clone" > /dev/null
+    export ENTANDO_OPT_LOG_LEVEL=TRACE
+    # shellcheck disable=SC2034
+    RES="$(ppl--generic GENERATE-BUILD-CACHE-KEY "BUILD_CACHE_KEY" --lcd "local-clone")"
+    ASSERT RES =~ "^BUILD_CACHE_KEY=[a-z0-9]{64}"
+  ) || _SOE
 }

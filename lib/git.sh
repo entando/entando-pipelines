@@ -68,7 +68,7 @@ _git_full_clone() {
       [ -n "$TOKEN" ] && TC=" (with token)"
       _FATAL "Unable to clone repo \"$REPO_URL\"${TC}"
     fi
-  ) || exit "$?"
+  ) || _SOE
   
   $WORK_AREA && {
     __cd "$HOME/work-area-1b00ddf8/$DST_DIR"
@@ -340,4 +340,15 @@ __git_get_parent_pr() {
 #
 _git_commit_exists() {
   git branch --contains "$1" &> /dev/null
+}
+
+# Fails if the worktre has uncommitted or untracked files
+#
+_git_is_dirty() {
+  ! test -n "$(git status --porcelain)"
+}
+
+
+_git_log_topo_summary() {
+  log --stat --since='1 Day Ago' --graph --pretty=oneline --abbrev-commit --date=relative
 }

@@ -14,6 +14,8 @@
 #  - MTX-MVN-SCAN-*   see equivalent on ppl--npm
 #  - MTX-NPM-SCAN-*   see equivalent on ppl--npm
 #  - MTX-SCAN-SNYK    runs a snyk scan (see ppl--scan)
+#  - GENERATE-BUILD-CACHE-KEY generate the key to store the build cache
+#  - GENERATE-BUILD-TARGET-DIR generates statement to set the target dir
 #
 ppl--generic() {
   local action project_type
@@ -24,20 +26,22 @@ ppl--generic() {
       _get_arg action 1; shift
       __ppl_enter_local_clone_dir
       __ppl_determine_current_project_type project_type
-    } 1>/dev/null    
+    } 1>/dev/null
     echo -e "$action,$project_type"
   )
-
+  
   case "$action" in
     "FULL-BUILD")
       case "$project_type" in
         "MVN") ppl--mvn FULL-BUILD "$@";;
         "NPM") ppl--npm FULL-BUILD "$@";;
+        "ENP") ppl--enp FULL-BUILD "$@";;
       esac;;
     "PUBLISH")
       case "$project_type" in
         "MVN") ppl--mvn PUBLISH "$@";;
         "NPM") ppl--npm PUBLISH "$@";;
+        "ENP") ppl--enp PUBLISH "$@";;
       esac;;
     MTX-NPM-SCAN-*)
       ppl--npm "$action" "$@";;
@@ -45,6 +49,25 @@ ppl--generic() {
       ppl--mvn "$action" "$@";;
     MTX-SCAN-SNYK)
       ppl--scan "snyk" "$@";;
+    "GENERATE-BUILD-CACHE-KEY")
+      START_SIMPLE_MACRO "$action" "$@"
+      _get_arg -m VARIABLE_NAME 2
+      
+      __ppl_enter_local_clone_dir > /dev/null
+      case "$project_type" in
+        "MVN") ppl--mvn.generate-build-cache-key "$VARIABLE_NAME";;
+        "NPM") _FATAL "Not implemented";;
+      esac;;
+    "GENERATE-BUILD-TARGET-DIR")
+      START_SIMPLE_MACRO "$action" "$@"
+      _get_arg -m VARIABLE_NAME 2
+      
+      __ppl_enter_local_clone_dir > /dev/null
+      case "$project_type" in
+        "MVN") echo "$VARIABLE_NAME=target";;
+        "NPM") _FATAL "Not implemented";;
+        "ENP") echo "$VARIABLE_NAME=build";;
+      esac;;
     *)
       _FATAL "Invalid macro action \"$action\""
       ;;

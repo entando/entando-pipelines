@@ -38,8 +38,20 @@ _extract_pr_title_prefix() {
 # $2 the PR title
 #
 _ppl_extract_artifact_qualifier_from_pr_title() {
-  local _tmp_="$2" _tmp2_
+  if [ "$1" = "--epic-name" ]; then
+    local _tmp_epic_name_="$2" _tmp_="$4" _tmp2_
+    shift 2
+  else
+    local _tmp_="$2" _tmp2_
+  fi
+  
   [ "${_tmp_:0:8}" = "Revert \"" ] && _tmp_="${_tmp_:8}"
+  
+  if [ -n "$_tmp_epic_name_" ]; then
+    local _tmp2_="${#_tmp_epic_name_}"; ((_tmp2_++))
+    [ "${_tmp_:0:$_tmp2_}" = "$_tmp_epic_name_/" ] && _tmp_="${_tmp_:$_tmp2_}"
+  fi
+  
   IFS=' ' read -r _tmp_ _tmp2_ <<<"$_tmp_"
   _tmp_="${_tmp_/:/}"
   IFS='/' read -r _tmp_ _tmp2_ <<<"$_tmp_"
@@ -169,7 +181,7 @@ _itmlst_empty() {
 # Supports the following separators:
 # - ","
 # - "|"
-# - "\n"
+# - <LINEFEED>
 #
 _itmlst_from_string() {
   local _tmp_="$2"
@@ -202,6 +214,7 @@ PARSE_ARGS() {
   local eoo=false
 
   ARGS_POS=("")
+  ARGS_POS_SHIFT=0
   unset ARGS_OPT
   declare -A -g ARGS_OPT
 
@@ -220,18 +233,35 @@ PARSE_ARGS() {
           continue
           ;;
         --*|-*)
+          shift
+          #~ FLAGS..
           if [[ " ${ARGS_FLAGS[*]} " == *" ${K} "* ]]; then
+            #.. NORMAL FLAG
             ARGS_OPT["$K"]=true
-            shift
-          else
-            if [[ "${2:0:1}" = "-" && "${2:0:2}" != "-" ]]; then
-              ! $QUIET && _log_w "Detected undeclared flag \"$1\""
-              shift
-            else
-              ARGS_OPT["$K"]="$2"
-              shift;shift
-            fi
+            continue
+          fi          
+          if [[ " --no-${ARGS_FLAGS[*]} " == *" --no-${K} "* ]]; then
+            #.. FLAGS NEGATION
+            ARGS_OPT["$K"]=false
+            continue
           fi
+
+          #~ ASSIGNMENTS..
+          #~ .. --OPT=A-VAL
+          IFS='=' read -r KK VV <<< "$K"
+          if [[ -n "$VV" ]]; then
+            ARGS_OPT["$KK"]="$VV"
+            continue
+          fi
+          #~ .. --OPT --NOT-A-VAL
+          if [[ "${1:0:1}" = "-" && "${1:0:2}" != "-" ]]; then
+            ! $QUIET && _log_w "Detected undeclared flag \"$1\""
+            shift
+            continue
+          fi
+          #~ .. --OPT A-VAL
+          ARGS_OPT["$K"]="$1"
+          shift
           continue
           ;;
       esac
@@ -250,7 +280,9 @@ PARSE_ARGS() {
 # $3 the fallback value
 #
 # Options:
-# [-m] is specified the function fails if no value can be extracted from argument or fallback
+# [-m] if specified the function fails if no value can be extracted from argument or fallback
+# [-p] if specified the receiver var is not affected if no value can be extracted from argument or fallback
+# [-e] if specified the receiver var is also exported
 #
 # Examples:
 # _get_arg arg1 1         # sets the var "arg1" with the first positional argument
@@ -258,6 +290,8 @@ PARSE_ARGS() {
 #
 _get_arg() {
   local MANDATORY=false;[ "$1" = "-m" ] && { MANDATORY=true; shift; }
+  local PRESERVE=false;[ "$1" = "-p" ] && { PRESERVE=true; shift; }
+  local EXPORT=false;[ "$1" = "-e" ] && { EXPORT=true; shift; }
   local _tmp_
   case "$2" in
     ''|*[!0-9]*) _tmp_="${ARGS_OPT[$2]}";;
@@ -265,8 +299,11 @@ _get_arg() {
   esac
   _tmp_="${_tmp_:-$3}"
   [ -n "${_tmp_}" ] || { "$MANDATORY" && _FATAL "No value or fallback available for mandatory param \"$2\" ($1)" ; }
+  $PRESERVE && [ -z "${_tmp_:-$3}" ] && return 1
   _set_var "$1" "$_tmp_"
   [ -z "${_tmp_:-$3}" ] && return 1
+  # shellcheck disable=SC2163
+  $EXPORT && export "$1"
   return 0
 }
 
@@ -297,6 +334,7 @@ _str_quote() {
   local tmp="$1"
   tmp="${tmp//\\/\\\\}"
   tmp="${tmp//\"/\\\"}"
+  tmp="${tmp//$'\n'/"\$'\\n'"}"
   if $_sq_simple_; then
     echo "$tmp"
   else
@@ -310,31 +348,94 @@ _str_escape_char() {
   echo "${1//$2/\\$2}"
 }
 
-# Decodes an ENTANDO_OPT variable encoded with a triple-hash prefix to evade the censoring
-#
-# Params:
-# $@ a list of vars to decode
+# Decodes an environment variable encoded with a triple-hash prefix to evade the censoring
 #
 _decode_entando_opt() {
-  for _deo_var_name in "$@"; do
-    local _deo_var_value="${!_deo_var_name}"
-    if [ "${_deo_var_value:0:4}" = '###'$'\n' ]; then
-      _deo_var_value="${_deo_var_value:4}"
-    elif [ "${_deo_var_value:0:3}" = '###' ]; then
-      _deo_var_value="${_deo_var_value:3}"
-    else
-      continue
-    fi
-    _set_var "$_deo_var_name" "$_deo_var_value"
-  done
+  local _deo_var_value="${!1}"
+  if [ "${_deo_var_value:0:4}" = '###'$'\n' ]; then
+    _deo_var_value="${_deo_var_value:4}"
+  elif [ "${_deo_var_value:0:3}" = '###' ]; then
+    _deo_var_value="${_deo_var_value:3}"
+  else
+    return 0
+  fi
+  _set_var "$1" "$_deo_var_value"
 }
 
-# Scans the environment for ENTANDO_OPT_XXX variables and decodes them
-# See also _decode_entando_opt
+
+# Resolve an environment variable by interpreting the standard bash dereferencing syntax
+# it intentionally only supports full-lenght-instruction variable dereferencing like:
+#
+# - VAR="$REFVAR" 
+# - VAR="${REFVAR}"
+#
+# Therefore it DOESN'T SUPPORT syntax line this:
+#
+# - VAR="${REFVAR}_test"
+#
+# Also note that the dereference can be escaped with the backslash
+#
+_resolve_entando_opt() {
+  local FIN=false;[ "$1" == "--finalize" ] && { FIN=true; shift; }
+  
+  local _reo_var_name="${!1}"
+  
+  if [[ "${_reo_var_name:0:2}" = '\$' ]]; then
+    # NOT A REF
+    if $FIN; then
+      _set_var "$1" "${_reo_var_name:1}"
+    else
+      _set_var "$1" "${_reo_var_name}"
+    fi
+    return 0
+  fi
+
+  # shellcheck disable=SC2016
+  if [[ "${_reo_var_name:0:2}" = '${' && "${_reo_var_name:((${#_reo_var_name}-1)):1}" = '}' ]]; then
+    # A REF
+    _reo_var_name="${_reo_var_name:2:-1}"
+  elif [ "${_reo_var_name:0:1}" = '$' ]; then
+    # A REF
+    _reo_var_name="${_reo_var_name:1}"
+  else
+    # NOT A REF
+    _set_var "$1" "$_reo_var_name"
+    return 0
+  fi
+    
+  _is_valid_var_name "$_reo_var_name" || _FATAL "Invalid reference \"$_reo_var_name\""
+  _set_var "$1" "${!_reo_var_name}"
+}
+
+# Scans the environment for ENTANDO_OPT_XXX variables and decodes/derefence them
+# See also _decode_entando_opt and _resolve_entando_opt
+#
+# NOTE 
+# 1) The reference resolution process is limited to 3 passes, so a sequence of 
+# nested references that goes beyond that limit will not be properly satisfied.
 #
 _auto_decode_entando_opts() {
   for varname in ${!ENTANDO_OPT*}; do
     _decode_entando_opt "$varname"
+  done
+  for i in {1..3}; do
+    for varname in ${!ENTANDO_OPT*}; do
+      _resolve_entando_opt "$varname"
+    done
+  done
+  for varname in ${!ENTANDO_OPT*}; do
+    _resolve_entando_opt --finalize "$varname"
+  done
+}
+
+# Scans args for --ENTANDO_OPT_XXX arguments and uses them to set the related environment vars
+#
+_read_entando_options_from_args() {
+  local tmp
+  for i in "${!ARGS_OPT[@]}"; do
+    if [ "${i:0:14}" == "--ENTANDO_OPT_" ]; then
+      _get_arg "$@" "${i:2}" "$i"
+    fi
   done
 }
 
@@ -346,7 +447,7 @@ __cd() {
   local L="$1"
   [ "${L:0:7}" = "file://" ] && L="${L:7}"
   [ -z "$L" ] && _FATAL "Null directory provided"
-  cd "$L" 1>/dev/null || _FATAL -S 1 "Unable to enter directory \"$1\""
+  cd "$L" 1>/dev/null || _FATAL -S 2 "Unable to enter directory \"$1\""
   _log_t "Entered directory \"$L\""
 }
 
@@ -363,6 +464,7 @@ __exist() {
     "-d") [ ! -d "$2" ] && _FATAL "Unable to find the dir \"$2\" $where";;
     *) _FATAL "Invalid mode \"$1\"";;
   esac
+  return 0
 }
 
 # Executes a jq command
@@ -378,69 +480,98 @@ __jq() {
 # $1    the title of the summary
 #
 # Options:
-# --lf      uses LF instead of CR when terminating the summmary
-# --no-tlf  the latest summary update will not be terminated by line-feedd
-# --li      number of lines before updating the summary (default: 73)
-# --ti      number of seconds before updating the summary (default: 5)
-# --pe      immediately prints errors to stdout
-# -f file   adds the command output to the given file
+# --ppl-pg page-size  activates pagination and specifies the page size
 #
 _summarize_stream() {
-  local EOL=$'\r'; [ "$1" = "--lf" ] && { EOL=$'\n'; shift; }
-  local TLF=$'\n'; [ "$1" = "--no-tlf" ] && { TLF=''; shift; }
-  local LI=73; [ "$1" = "--li" ] && { LI="$2"; shift 2; }
-  local TI=5; [ "$1" = "--ti" ] && { TI="$2"; shift 2; }
-  local PE=false; [ "$1" = "--pe" ] && { PE=true; shift; }
-  local OUTFILE; [ "$1" = "-f" ] && { OUTFILE="$2"; shift 2; }
-  local _stat_nt=0 _stat_ne=0 _stat_nw=0 _stat_nd=0 _last_nt=-1000
+  local PAGE=""; [ "$1" = "--ppl-pg" ] && { PAGE="$2"; shift 2; }
+  local _stat_nt=0 _stat_ne=0 _stat_nw=0 _stat_nd=0
+  local _stat_pg_ne=0 _stat_pg_nw=0
   local started_at="$SECONDS" 
-  local latest="$((started_at-100))" now elapsed
+  local now elapsed
   local sln TITLE="${1:-SUMMARY}"
-  local showNext=0
+  local page_title=""
   
+  local break_page_now min_page_size=2 _page_nt _prev_page_nt=0 _page_buf="" _error_tail_size=0 error_tail_max_size=20
+
   while IFS= read -r ln; do
-    [ -n "$OUTFILE" ] && echo "$ln" >> "$OUTFILE"
+    if [ -z "$PAGE" ]; then
+      echo "$ln"
+      continue
+    fi
     
-    sln="${ln:0:20}"
+    _page_buf+="$ln"$'\n'
+
+    sln="${ln:0:30}"
     
     ((_stat_nt++))
+    _page_nt="$((_stat_nt - _prev_page_nt))"
+    
+    if [ "$_page_nt" -lt "$min_page_size" ]; then
+      break_page_now=false
+    else
+      break_page_now=false
+    fi
     
     case "${sln,,}" in
-      *error*) 
-        ((_stat_ne++))
-        "$PE" && {
-          echo "$ln"
-          showNext=2
-        }
-      ;;
-      *warning*) ((_stat_nw++));;
-      *warn*) ((_stat_nw++));;
+      *error*) _error_tail_size=1; ((_stat_ne++));((_stat_pg_ne++));;
+      *warning*) ((_stat_nw++));((_stat_pg_nw++));;
+      *warn*) ((_stat_nw++));((_stat_pg_nw++));;
       *downloaded*) ((_stat_nd++));;
-      *)
-        if [ "$showNext" -gt 0 ]; then
-          echo "$ln" | grep -E '^\s+at\s'
-        fi
+      *) break_page_now=false;;
     esac
+    
+    if [[ "$_error_tail_size" -gt 0 ]]; then
+      [[ "$_error_tail_size" -lt "$error_tail_max_size" ]] &&
+      [[ "$_page_nt" -lt "$((PAGE*2))" ]] && {
+        ((_error_tail_size++))
+        continue   # <= CONTINUE
+      }
+      _error_tail_size=0
+    fi
 
-    [ "$showNext" -gt 0 ] && ((showNext--))
-
-    if [ $((_stat_nt - _last_nt)) -ge "$LI" ]; then
+    if [[ "$_page_nt" -ge "$PAGE" || "$break_page_now" == "true" ]]; then
       now="$SECONDS"
-      if [ "$((now-latest))" -ge "$TI" ]; then
-        latest="$now"
-        _last_nt="$_stat_nt"
-        elapsed="$((now-started_at))"
-        printf "~ $TITLE > | SEC: %4d | TOT: %6d  | ERR: %6d | WRN: %6d | DNL: %6d |       %s" \
-          "$elapsed" "$_stat_nt" "$_stat_ne" "$_stat_nw" "$_stat_nd" "$EOL"
-      fi
+      elapsed="$((now - started_at))"
+      printf -v page_title "~ $TITLE > | START: %6d || SEC: %4d | ERR: %5s %-6s | WRN: %5s %-6s | DNL: %6d |" \
+        "$((_prev_page_nt+1))" "$elapsed"  \
+        "$_stat_ne" "(+$_stat_pg_ne)" \
+        "$_stat_nw" "(+$_stat_pg_nw)" \
+        "$_stat_nd"
+
+      _ppl-stdout-group start "$page_title"
+      echo -n "$_page_buf"
+      _ppl-stdout-group stop
+      _page_buf=""
+      _error_tail_size=0
+      _prev_page_nt="$_stat_nt"
+      _stat_pg_ne=0;_stat_pg_nw=0
     fi
   done < "/dev/stdin"
   
-  now="$SECONDS"
-  elapsed="$((now-started_at))"
-  printf "~ $TITLE > | SEC: %4d | TOT: %6d  | ERR: %6d | WRN: %6d | DNL: %6d |       %s" \
-    "$elapsed" "$_stat_nt" "$_stat_ne" "$_stat_nw" "$_stat_nd" "$TLF"
+  if [ -n "$_page_buf" ]; then
+      now="$SECONDS"
+      elapsed="$((now - started_at))"
+      printf -v page_title "~ $TITLE > | START: %6d || SEC: %4d | ERR: %5s %-6s | WRN: %5s %-6s | DNL: %6d |" \
+        "$((_prev_page_nt+1))" "$elapsed"  \
+        "$_stat_ne" "(+$_stat_pg_ne)" \
+        "$_stat_nw" "(+$_stat_pg_nw)" \
+        "$_stat_nd"
+    _ppl-stdout-group start "$page_title"
+    echo -n "$_page_buf"
+    _ppl-stdout-group stop
+  fi
 }
+
+# Puts a stream in a group given the group name
+#
+_group_stream() {
+  _ppl-stdout-group start "$1"
+  while IFS= read -r ln; do
+    echo "$ln"
+  done
+  _ppl-stdout-group stop
+}
+
 
 # Executes a command and handle the output
 # 
@@ -451,7 +582,6 @@ _summarize_stream() {
 # --ppl-simple    no summarization is executed
 # --ppl-timestamp a timestamp is added to the output lines
 # --hide regex    suppress the given regex from the output, can be repeated up to 4 times
-# --pe            see _summarize_stream
 #
 _exec_cmd() {
   local SIMPLE=false; [ "$1" = "--ppl-simple" ] && { SIMPLE=true; shift; }
@@ -460,7 +590,6 @@ _exec_cmd() {
   local F2=""; [ "$1" = "--hide" ] && { F2="$(_str_quote "$2")"; shift 2; }
   local F3=""; [ "$1" = "--hide" ] && { F3="$(_str_quote "$2")"; shift 2; }
   local F4=""; [ "$1" = "--hide" ] && { F4="$(_str_quote "$2")"; shift 2; }
-  local PE=''; [ "$1" = "--pe" ] && { PE="--pe"; shift; }
   local PO=''; [ "$1" = "--po" ] && { PO="$2"; shift 2; }
   # shellcheck disable=SC2016
   {
@@ -502,7 +631,7 @@ _exec_cmd() {
         trap "rm \"$TMPFILE\" \"$RVFILE\"" exit
       fi
       
-      _summarize_stream --lf ${PE:+"$PE"} -f "$TMPFILE" "$1" < <(
+      _summarize_stream ${PE:+"$PE"} --ppl-pg 50 "$1" < <(
         (
           # shellcheck disable=SC2068
           $@ 2>&1
@@ -513,32 +642,11 @@ _exec_cmd() {
 
     local RV="$(cat "$RVFILE")"
     if [ "$RV" = "0" ]; then
-      # SUCCESS
-      
-      if $SIMPLE; then
-        _log_d "$1 execution was successful"
-      else
-        _log_t "$1 execution was successful; log tail:"
-        # shellcheck disable=SC2088
-        echo '~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~'
-        _ppl-print-file-paginated "$TMPFILE" 200 "LOG"
-        sleep 0.3
-      fi
+      _log_d "$1 execution was successful"
     else
-      # FAILURE
-      
-      if $SIMPLE; then
-        _log_e "Command \"$1\" completed with error code \"$RV\""
-      else
-        _log_e "Command \"$1\" completed with error code \"$RV\"; full log:"
-        # shellcheck disable=SC2088
-        echo '~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~~~~~~~/~'
-        _ppl-print-file-paginated "$TMPFILE" 200 "LOG"
-        sleep 0.3
-      fi
-      
-      return "$RV"
+      _log_e "Command \"$1\" completed with error code \"$RV\""
     fi
+    exit "$RV"
   )
 }
 
@@ -679,20 +787,29 @@ _ppl_is_feature_action() {
 
 
 
-# Extracts a part of the snapshot version name
+# Extracts a part of the snapshot version number
 #
 # Params:
-# $1  output var
-# $1  snapshot version name
-# $2  part: "base-version" or "qualifier" or "pr-num"
 #
-_ppl_extract_snapshot_version_name_part() {
+# $1  output var
+# $2  snapshot version number
+# $3  part: 
+#     - base-version        the initial 3digit version with or without prefix (eg: v7.0.0 or 7.0.0)
+#     - qualifier           usually a ticket number (eg: ENT-999)
+#     - pr-num              pull request number
+#     - meta:kb             current branch of event that generated the tag
+#     - meta:bb             bash branch branch of event that generated the tag
+#     - effective-number      the effective part of the version (all the version but with no metadata)
+#
+_ppl_extract_version_part() {
   local _tmp1_ _tmp2_ _tmp2a_ _tmp3_ _tmp4_ _tmp5_ _tmp_res_
+  local _tmpV_ _tmpM_
+  _ppl_split_version_tag _tmpV_ _tmpM_ "$2"
   if [[ "$2" == *"-fix."* ]]; then
     # shellcheck disable=SC2034
-    IFS='-' read -r _tmp1_ _tmp2a_ _tmp2_ _tmp3_ _tmp4_ _tmp5_ <<<"$2"
+    IFS='-' read -r _tmp1_ _tmp2a_ _tmp2_ _tmp3_ _tmp4_ _tmp5_ <<< "$_tmpV_"
   else
-    IFS='-' read -r _tmp1_ _tmp2_ _tmp3_ _tmp4_ _tmp5_ <<<"$2"
+    IFS='-' read -r _tmp1_ _tmp2_ _tmp3_ _tmp4_ _tmp5_<<< "$_tmpV_"
   fi
   case "$3" in
     "base-version") 
@@ -701,9 +818,22 @@ _ppl_extract_snapshot_version_name_part() {
       ;;
     "qualifier") _tmp_res_="$_tmp2_-$_tmp3_";;
     "pr-num") _tmp_res_="$_tmp5_";;
+    "meta:kb"|"meta:bb")
+      if [[ "${_tmpM_:0:3}" =~ ^..- ]]; then
+        _tmp_res_="${_tmpM_:3}"
+        _tmp_res_="${_tmp_res_//++/+}"
+        _tmp_res_="${_tmp_res_//+2F+/\/}"
+      else
+        _tmp_res_=""
+      fi
+      ;;
+    "effective-number")
+      _tmp_res_="$_tmpV_"
+      [[ "${_tmp_res_:0:1}" = "v" ]] && _tmp_res_="${_tmp_res_:1}"
+      ;;
     *) _FATAL "Invalid part name \"$3\" provided";;
   esac
-  [[ -z "$_tmp_res_" || "$_tmp4_" != "PR" ]] && _FATAL "Provided snapshot version name \"$2\" is not valid"
+  [[ -z "$_tmp_res_" || "$_tmp4_" != "PR" ]] && _FATAL "Provided snapshot version \"$2\" is not valid"
   _set_var "$1" "$_tmp_res_"
 }
 
@@ -723,31 +853,6 @@ _ppl_validate_command_version() {
   REQ_VER="${REQ_VER//x/}"
   
   [[ "${maj}.${min}." =~ $REQ_VER. ]] || _FATAL "Command \"$DESC\" has invalid version ($VER)"
-}
-
-# Determines the type of project in the current dir
-#
-# Params:
-# $1: dest var
-#
-__ppl_determine_current_project_type() {
-  local _tmp_
-
-  if [ -f "pom.xml" ]; then
-    _tmp_="MVN"
-  elif [ -f "package.json" ]; then
-    _tmp_="NPM"
-  else
-    _FATAL "Unable to determine the project type"
-  fi
-    
-  if [ "$1" == "--print" ]; then
-    echo "$_tmp_"
-  elif [ "$1" == "--check" ]; then
-    true
-  else
-    _set_var "$1" "$_tmp_"
-  fi
 }
 
 # Creates a temporary directory that self destructs
@@ -874,17 +979,102 @@ _ppl_extract_branch_name_from_ref() {
   return 0
 }
 
-# Determine the current branch qualified (the part after the first "-")
+# Determine the current branch short name (the part after the first "/")
 # It's usuful as discriminant for identifiers related to a long running branch.
+# 
+# Params:
+# $1  the result receiver var
+# $2  the branch name
 # 
 # Examples:
 # - "develop" => ""
-# - "develop-mylongrunningbranch" => "mylongrunningbranch"
-# - "develop-my-long-running-branch" => "my-long-running-branch"
+# - "epic/mylongrunningbranch" => "mylongrunningbranch"
+# - "epic/my-long-running-branch" => "my-long-running-branch"
 #
-_ppl-determine-branch-qualifier() {
+_ppl_extract_branch_short_name() {
   local _tmp1_ _tmp2_
-  IFS='-' read -r _tmp1_ _tmp2_ <<<"$2"
+  IFS='/' read -r _tmp1_ _tmp2_ <<<"$2"
   _set_var "$1" "$_tmp2_"
 }
 
+# Tells if a version number is a release
+#
+_ppl_is_release_version_number() {
+  _semver_parse _maj_ _min_ _ptc_ _tag_ "$1"
+  # shellcheck disable=SC2154
+  [[ -z "$_tag_" ]] || [[ "${_tag_:0:4}" == "fix." && ! "$_tag_" = *"-"* ]]
+}
+
+# Extracts from the version tag the version and the original reference branch
+#
+# Params:
+# $1  the version receiver
+# $2  the metadata receiver
+# $3  the full-version
+#
+_ppl_split_version_tag() {
+  local _tmp1_ strip_pre=false; [ "$1" = "--strip-prefix" ] && { strip_pre=true; shift; }
+  IFS='+' read -r _tmp1_ _tmp2_ <<< "$3"
+  [ -n "$1" ] && {
+    if $strip_pre; then
+      _set_var "$1" "${_tmp1_:1}"
+    else
+      _set_var "$1" "$_tmp1_"
+    fi
+  }
+  [ -n "$2" ] && {
+    _set_var "$2" "$_tmp2_"
+  }
+}
+
+# Encodes a branch name for tagging
+# 
+# > adds the segment-tag "KB-" 
+# > encodes any forward slash to "+2F+"
+# > encodes the escape char "+" to "++"
+#
+_ppl_encode-branch-for-tagging() {
+  local tmp="${2//+/++}"
+  echo "$1-${tmp//\//+2F+}"
+}
+
+# Concatenates two or more path parts
+#
+# Note that the function tries to preserve local paths, so:
+# - path-concat "" "b"
+# generates:
+# - "b"
+#
+# For further info check `test_path_functions`
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# $1: destination var name 
+# $2: the source value #1 
+# $3: the source value #2
+#
+path-concat() {
+  local ACC="$1"; shift
+  while true; do
+    local terminated=false
+    [[ "$ACC" = "-t" ]] && terminated=true && shift
+    local NEXT="$1"
+    shift
+    
+    if [[ -n "$ACC" ]]; then
+      [[ "$ACC" =~ ^.*/$ ]] && {
+        ACC_len="${#ACC}"
+        ACC="${ACC::$ACC_len-1}"
+      }
+      [[ -n "$NEXT" ]] && [[ "$NEXT" =~ ^/.*$ ]] && NEXT="${NEXT:1}"
+      ACC="${ACC}/${NEXT}"
+    else
+      ACC="${NEXT}"
+    fi
+    
+    if $terminated; then
+      [[ ! "$ACC" =~ ^.*/$ ]] && ACC+="/"
+    fi
+    [ "$#" = 0 ] && break
+  done
+  echo "$ACC"
+}

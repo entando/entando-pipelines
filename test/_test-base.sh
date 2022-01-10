@@ -116,7 +116,7 @@ TEST.mock.initial_checkout() {
   (
     local local_dir="$1"
     rm -rf "$local_dir"
-    ppl--checkout-branch pr --id "PR-CHECKOUT" --lcd "$local_dir" || _SOE
+    ppl--checkout-branch --id "PR-CHECKOUT" --lcd "$local_dir" || _SOE
 
     __cd "$local_dir"
     __exist -f "pom.xml"
@@ -139,4 +139,26 @@ TEST.mock.context() {
   # shellcheck disable=2034
   PPL_PARSED_CONTEXT=""
   _ppl-load-context --disable-overrides "$PPL_CONTEXT"
+}
+
+TEST.mock.kube.oc() {
+  export TEST_MOCK_NAMESPACE_EXISTS=false
+  kube.oc() {
+    [[ "$1" == "-n" || "$1" == "--namespace" ]] && { shift;shift; }
+    sleep 0.3
+    case "$@" in
+      create\ namespace*|create\ ns*) TEST_MOCK_NAMESPACE_EXISTS=true;;
+      delete\ namespace*|delete\ ns*) TEST_MOCK_NAMESPACE_EXISTS=false;;
+      get\ namespace*|get\ ns*)
+        $TEST_MOCK_NAMESPACE_EXISTS && return 0
+        return 1
+        ;;
+      apply\ *|create\ *)
+        echo "[kube.oc] kube.oc $*" >> "$TEST__TECHNICAL_LOG_FILE"
+        ;;
+      *) 
+        _FATAL "Case not supported by this mock: kube.oc $*" > /dev/null
+        return 0;;
+    esac
+  }
 }

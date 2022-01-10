@@ -46,7 +46,7 @@ test.docker.publish.LOGIN() {
   ASSERT TMP =~ "\[DOK\] docker login -u the-user --password-stdin" 
 }
 
-#TEST:macro
+#TEST:lib
 test.docker.publish.BUILD_AND_PUSH() {
   print_current_function_name "RUNNING TEST> " ".."
 
@@ -55,14 +55,27 @@ test.docker.publish.BUILD_AND_PUSH() {
     ENTANDO_OPT_DOCKER_ORG="${ENTANDO_OPT_DOCKER_ORG:-entando}"
   }
 
-  ppl--docker.publish.BUILD_AND_PUSH_ALL "Dockerfile" "entando-de-app" "6.3.2"
+  local dockerFile imageAddress
   
-  TEST.GET_TLOG_COMMAND TMP -3
-  ASSERT TMP = "[DOK] docker build . -t entando/entando-de-app:6.3.2 -f Dockerfile"
-  TEST.GET_TLOG_COMMAND TMP -2
-  ASSERT TMP = "[DOK] docker image inspect entando/entando-de-app:6.3.2"
-  TEST.GET_TLOG_COMMAND TMP -1
-  ASSERT TMP = "[DOK] docker push entando/entando-de-app:6.3.2"
+  (
+    __docker() {
+      _log_d "Running docker $1.."
+      echo "[DOK] docker $*" >> "$TEST__TECHNICAL_LOG_FILE"
+      [ "$1 $2" != "manifest inspect" ]
+    }
+
+    ppl--docker.publish.DETERMINE_BUILD_INFO dockerFile imageAddress "Dockerfile=>[simple]" "entando-de-app" "6.3.2"
+    ppl--docker.publish.BUILD_AND_PUSH "$dockerFile" "$imageAddress"
+    
+    TEST.GET_TLOG_COMMAND TMP -4
+    ASSERT TMP = "[DOK] docker manifest inspect entando/entando-de-app:6.3.2"
+    TEST.GET_TLOG_COMMAND TMP -3
+    ASSERT TMP = "[DOK] docker build . -t entando/entando-de-app:6.3.2 -f Dockerfile"
+    TEST.GET_TLOG_COMMAND TMP -2
+    ASSERT TMP = "[DOK] docker image inspect entando/entando-de-app:6.3.2"
+    TEST.GET_TLOG_COMMAND TMP -1
+    ASSERT TMP = "[DOK] docker push entando/entando-de-app:6.3.2"
+  ) || _SEO
 }
 
 #TEST:macro
@@ -79,23 +92,30 @@ test.docker.ppl--docker-skipped-due-to-no-dockerfile() {
   ASSERT TMP =~ "\[REM\] STARTED AT .*"
 }
 
-#TEST:macro
+#TEST:x
 test.docker.ppl--docker() {
  print_current_function_name "RUNNING TEST> " ".."
 
   # shellcheck disable=SC2034
-  {
+  TEST__APPLY_OVERRIDES() {
     ENTANDO_OPT_DOCKER_ORG="${ENTANDO_OPT_DOCKER_ORG:-entando}"
     ENTANDO_OPT_DOCKER_USERNAME="the-user"
     ENTANDO_OPT_DOCKER_PASSWORD="the-pass"    
+    ENTANDO_OPT_DOCKER_BUILDS="Dockerfile.mode1,Dockerfile.mode2"
   }
   
   rm -rf local-checkout
-  ppl--checkout-branch pr --id "PR-CHECKOUT" --lcd "local-checkout" || _SOE
+  ppl--checkout-branch --id "PR-CHECKOUT" --lcd "local-checkout" || _SOE
+
+  (
+    __cd "local-checkout"
+    echo "FROM SCRATCH" > Dockerfile.mode1
+    echo "FROM SCRATCH" > Dockerfile.mode2
+  )
  
   #~ CASE #1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Simulate docker build commands for two dockerfiles
-  ppl--docker publish "Dockerfile.mode1,Dockerfile.mode2" \
+  ppl--docker publish \
     --id "TEST" --lcd "local-checkout" || _SOE
   
   #~ expectations
@@ -126,6 +146,24 @@ test.docker.ppl--docker() {
       
   TEST.GET_TLOG_COMMAND TMP -1
   ASSERT TMP =~ "\[DOK\] docker push entando/entando-test-repo-base:$EXPECTED_VERSION_TAG-mode2"
+}
+
+#TEST:lib
+TEST.ppl--docker.is_release_version_number() {
+  print_current_function_name "RUNNING TEST> "  ".."
+
+  ppl--docker.is_release_version_number "myimage:1.2.3"
+  ASSERT -v RES $? = 0
+  ppl--docker.is_release_version_number "myimage:1.2.3-SNAPSHOT"
+  ASSERT -v RES $? != 0
+
+  ppl--docker.is_release_version_number "my-registry.io/myimage:1.2.3"
+  ASSERT -v RES $? = 0
+  ppl--docker.is_release_version_number "my-registry.io/myimage:1.2.3-SNAPSHOT"
+  ASSERT -v RES $? != 0
+  
+  # Tag patterns are more thoroughly tested by _ppl_is_release_version_number's tests,
+  # on which this function depends
 }
 
 true

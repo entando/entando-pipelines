@@ -18,28 +18,44 @@ _ppl_query_latest_bom_version() {
   [ -n "$TMP" ] && _set_var "$1" "$TMP"
 }
 
-# Setup a custom evironment given a semicolon-delimited list of assignments
+# Sets one ore more evironment variables given a semicolon-delimited list of assignments
 #
 # WARNING: the parser interprets the backslash
-# WARNING: the parser doesn't support quotes, however you can still escape the colon with the backslash ("\;")
+# WARNING: the parser doesn't support quotes like a CSV, however you can still escape the colon with the backslash ("\;")
+#
+# Options:
+# --var-sep value    the var separator to assume
+# --stdin            reads the environment the stdin
+#
+# Paramers:
+# $1                unless "--stdin" is provider it's the environment to be loaded
 #
 # eg:
-# - LEGAL:   _ppp_setup_custom_environment 'A=1;B=hey there;C=true'
-# - ILLEGAL: _ppp_setup_custom_environment 'A=1;B="hey;there";C=true'
-# - LEGAL:   _ppp_setup_custom_environment 'A=1;B=hey\;there;C=true'
+# - LEGAL:   _ppl_load_settings 'A=1;B=hey there;C=true'
+# - ILLEGAL: _ppl_load_settings 'A=1;B="hey;there";C=true'
+# - LEGAL:   _ppl_load_settings 'A=1;B=hey\;there;C=true'
 #
-_ppl_setup_custom_environment() {
-  local arr
-  # shellcheck disable=SC2162
-  IFS=';' read -a arr <<< "$1"
-  for assign in "${arr[@]}"; do
-    if [ -n "$assign" ]; then
-      IFS='=' read -r name value <<< "$assign"
-      _set_var "$name" "$value"
-      # shellcheck disable=SC2163
-      export "$name"
+_ppl_load_settings() {
+  local LNSEP=';';[ "$1" = "--var-sep" ] && { LNSEP="$2"; shift 2; }
+  {
+    if [ "$1" != "--stdin" ]; then
+      exec <<< "$1"
     fi
-  done
+    
+    local last=false
+    
+    while true; do
+      # shellcheck disable=SC2162
+      read -d "$LNSEP" assign || last=true
+      if [ -n "$assign" ]; then
+        IFS='=' read -r name value <<< "$assign"
+        _set_var "$name" "$value"
+        # shellcheck disable=SC2163
+        export "$name"
+      fi
+      $last && break
+    done
+  }
 }
 
 # Runs a the preview environment provisioning script
@@ -62,26 +78,18 @@ _ppl_run_post-deployment-test_setup_script() {
 # Creates a preview environment by using helm charts present in the dir
 #
 # Params:
-# $1: receiver of the effective test namespace
-# $2: proposed test namespace (defaults to ENTANDO_OPT_TEST_NAMESPACE)
+# $1: project name
+# $2: project version
+# $3: test namespace
+# $4: hostname suffix
 #
 _ppl_provision_helm_preview_environment() {
+  local projectName="$1" projectVersion="$2" ns="$3" hostname_suffix="${4:-"null"}"
+  
   [ ! -f "./charts/preview/Chart.yaml" ] && return 99
-  _log_i "Started the provisiong the helm preview environment"
+  _log_i "Started the provisiong of the helm preview environment"
   _pkg_get --tar-install "$ENTANDO_OPT_HELM_CLI_URL" "helm" -c "helm"
-  
-  local projectName projectVersion ns
-  _ppl_get_current_project_artifact_id projectName
-  _ppl_get_current_project_version projectVersion
-  
-  ns="${2:-"$ENTANDO_OPT_TEST_NAMESPACE"}"
-  #[[ "$ns" == "[auto]" || -z "$ns" ]] && ns="test-pr${PPL_PR_NUM}-${projectName}";
-  [[ "$ns" == "[auto]" || -z "$ns" ]] && ns="test-${projectName}";
-  [[ "${ns:0:5}" != "test-" ]] && _FATAL "The test namespace name must start with the prefix \"test-\""
-  _set_var "$1" "$ns"
-  
-  hostname_suffix="${ENTANDO_OPT_TEST_HOSTNAME_SUFFIX:-"null"}"
-  
+
   # ~ PARAMETERS RESOLUTION
   _log_i "Provisioning - PHASE1"
   __cd "charts"
@@ -91,17 +99,6 @@ _ppl_provision_helm_preview_environment() {
   # EXECUTION
   _log_i "Provisioning - PHASE2"
   __cd "preview"
-
-  kube.oc get namespace "$ns" &> /dev/null && {
-    _log_d "Deleting the old test namespace"
-    kube.oc delete namespace "$ns" &> /dev/null
-    _log_d "Waiting for namespace deletion.."
-    kube.oc.wait_for_resource 30 until-not-present namespace "$ns"
-  }
-  _log_d "Creating the new test namespace"
-  kube.oc create namespace "$ns"
-  _log_d "Waiting for namespace creation.."
-  kube.oc.wait_for_resource 30 until-present namespace "$ns"
   
   _log_d "Deploying.."
   _helm_apply "$projectName" "$ns"
@@ -131,8 +128,8 @@ _helm_apply() {
     local TMPFILE="$(mktemp --suffix=".yaml")"
     # shellcheck disable=SC2064
     trap "rm \"${TMPFILE}\"" exit
-    helm dep update || _FATAL "Heml update failed"
-    helm template "$name" . > "${TMPFILE}" || _FATAL "Heml template failed"
+    [ -f "./requirements.yaml" ] && { helm dep update || _FATAL "Heml update failed"; }
+    helm template -n "$ns" "$name" . > "${TMPFILE}" || _FATAL "Heml template failed"
     kube.oc apply -n "$ns" -f "${TMPFILE}" || _FATAL "OC apply failed"
   ) || _SOE
 }
@@ -152,8 +149,9 @@ _ppl_set_provisioning_placeholders_in_files() {
   local ns="$(_str_escape_char "$4" "/")"
   local hostname_suffix="$(_str_escape_char "$5" "/")"
   local reg_cred="$(_str_escape_char "$ENTANDO_OPT_IMAGE_REGISTRY_CREDENTIALS" "/")"
-  local reg_ov="$(_str_escape_char "$ENTANDO_OPT_IMAGE_REGISTRY_OVERRIDE" "/")"
-  local image_repo="$(_str_escape_char "$reg_ov/$ENTANDO_OPT_DOCKER_ORG/$prj_name" "/")"
+  local _reg_ov="${ENTANDO_OPT_IMAGE_REGISTRY_OVERRIDE:-$ENTANDO_OPT_IMAGE_REGISTRY}"
+  local reg_ov="$(_str_escape_char "$_reg_ov" "/")"
+  local image_repo="$(_str_escape_char "$(path-concat "$_reg_ov" "$ENTANDO_OPT_DOCKER_ORG" "$prj_name")" "/")"
   local tls_crt="$(_str_escape_char "$ENTANDO_OPT_TEST_TLS_CRT" "/")"
   local tls_key="$(_str_escape_char "$ENTANDO_OPT_TEST_TLS_KEY" "/")"
 
@@ -164,8 +162,9 @@ _ppl_set_provisioning_placeholders_in_files() {
              -e "s/{{ENTANDO_IMAGE_ORG}}/$ENTANDO_OPT_DOCKER_ORG/g" \
              -e "s/{{ENTANDO_IMAGE_REPO}}/$image_repo/g" \
              -e "s/{{ENTANDO_IMAGE_TAG}}/$prj_ver/g" \
-             -e "s/{{ENTANDO_OPT_TEST_NAMESPACE}}/$ns/g" \
+             -e "s/{{ENTANDO_TEST_NAMESPACE}}/$ns/g" \
              -e "s/{{ENTANDO_OPT_TEST_HOSTNAME_SUFFIX}}/$hostname_suffix/g" \
+             -e "s/{{ENTANDO_OPT_TEST_NAMESPACE}}/$ENTANDO_OPT_TEST_NAMESPACE/g" \
              -e "s/{{ENTANDO_OPT_TEST_TLS_CRT}}/$tls_crt/g" \
              -e "s/{{ENTANDO_OPT_TEST_TLS_KEY}}/$tls_key/g" \
              -e "s/{{ENTANDO_OPT_IMAGE_REGISTRY_CREDENTIALS}}/$reg_cred/g" \
@@ -179,7 +178,45 @@ _ppl_set_provisioning_placeholders_in_files() {
 #
 _ppl_autoset_snapshot_version() {
   _pkg_get "xmlstarlet"
-  local snapshotVersionName
-  ppl--release._determine_snapshot_version_name snapshotVersionName
-  _pom_set_project_version "$snapshotVersionName" "./pom.xml"
+  local snapshotversionNumber
+  ppl--publication._determine_snapshot_version_number snapshotversionNumber
+  _pom_set_project_version "$snapshotversionNumber" "./pom.xml"
 }
+
+# Reads the current branch from a give dir, or the current one if none is given
+#
+_ppl_print_current_branch_of_dir() {
+  local old_dir="$PWD"
+  [ -n "$1" ] && __cd "$1"
+  git rev-parse --abbrev-ref HEAD 2>/dev/null
+  [ -n "$1" ] && __cd "$old_dir"
+}
+
+
+# Determines the type of project in the current dir
+#
+# Params:
+# $1: dest var
+#
+__ppl_determine_current_project_type() {
+  local _tmp_
+  
+  if [[ -f ".ent/ent-prj" || -f "entando-project" ]]; then
+    _tmp_="ENP"
+  elif [ -f "pom.xml" ]; then
+    _tmp_="MVN"
+  elif [ -f "package.json" ]; then
+    _tmp_="NPM"
+  else
+    _FATAL "Unable to determine the project type"
+  fi
+
+  if [ "$1" == "--print" ]; then
+    echo "$_tmp_"
+  elif [ "$1" == "--check" ]; then
+    true
+  else
+    _set_var "$1" "$_tmp_"
+  fi
+}
+

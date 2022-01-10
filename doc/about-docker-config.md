@@ -5,7 +5,16 @@
 | ENTANDO_OPT_DOCKER_BUILDS | Build directives (see below) |
 | ENTANDO_OPT_DOCKER_ORG | The docker organization to use for the publication |
 | ENTANDO_OPT_DOCKER_USERNAME | The docker user name to use for the publication |
-| ENTANDO_OPT_DOCKER_PASSWORD| The docker password or token to use for the publication |
+| ENTANDO_OPT_DOCKER_PASSWORD | The docker password or token to use for the publication |
+| ENTANDO_OPT_DOCKER_ALT_LOGIN_URL | URL of a second registry to simultaneously connect |
+| ENTANDO_OPT_DOCKER_ALT_USERNAME | Username to login on the second registry |
+| ENTANDO_OPT_DOCKER_ALT_PASSWORD | Password to login on the second registry  |
+
+# ENVIRONMENT VARIABLES USED FOR THE TESTS:
+
+| name | description |
+| - | - |
+| ENTANDO_OPT_TEST_COMPOSE_FILE | The docker-compose file to start before the execution of the standard tests |
 
 
 ## About `ENTANDO_OPT_DOCKER_BUILDS`

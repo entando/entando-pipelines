@@ -13,14 +13,14 @@ __mvn_exec() {
   local MVN="mvn"
   [ -f "./mvnw" ] && MVN="./mvnw"
   
-  _log_d "Running mvn $1${2:+ $2}${3:+ $3}[..]"
+  _log_d "Running mvn $1${2:+ $2}${3:+ $3}..."
   
   _exec_cmd \
     ${SIMPLE:+"$SIMPLE"} \
     ${TS:+"$TS"} \
     --hide "Progress.* kB" \
     --hide "Error message = null" \
-    --pe \
+    --hide "Downloading from" \
     ${PPL_OUTPUT_FILE:+--po "$PPL_OUTPUT_FILE"} \
     "$MVN" "$@" || {
       _FATAL "mvn command failed with status \"$?\""
@@ -36,7 +36,7 @@ __mvn_exec() {
 __mvn_deploy() {
   local GPG="true"; [ "$1" = "--ppl-with-gpg" ] && { GPG="false"; shift; }
   
-  __mvn_exec --batch-mode javadoc:jar source:jar source:test-jar deploy \
+  __mvn_exec -B javadoc:jar source:jar source:test-jar deploy \
     -DskipTests=true \
     -DaltDeploymentRepository="$1::default::$2" \
     -P prepare-for-nexus \

@@ -18,6 +18,7 @@ _log_on_level() {
 }
 
 _log() {
+  [ "${ENTANDO_OPT_SILENT}" = "true" ] && return 0
   SY=$1; shift
 
   _to_nll RNLL "$ENTANDO_OPT_LOG_LEVEL"
@@ -72,7 +73,7 @@ _to_col() {
 #
 _print_callstack() {
   if [[ "$1" == "-d" && -n "$ENTANDO_DEBUG_TTY" ]]; then
-    shuft
+    shift
     _print_callstack "$@" >"$ENTANDO_DEBUG_TTY"
   fi
   local NOFRAME=false
@@ -140,6 +141,8 @@ print_current_function_name() {
 # $@  a list of variable names to pretty print (so without dereference operator "$")
 #
 _pp() {
+  [ "${ENTANDO_OPT_SILENT}" = "true" ] && return 0
+  
   if [[ "$1" == "-d" && -n "$ENTANDO_DEBUG_TTY" ]]; then
     shift
     _pp "$@" >"$ENTANDO_DEBUG_TTY"
@@ -277,6 +280,8 @@ __VERIFY() {
 # Drops a shell that inherits the caller environment
 #
 DBGSHELL() {
+  QUIET=false;[ "$1" = "--quiet" ] && { QUIET=true; shift; }
+  CUSTOM=false;[ "$1" = "--customize" ] && { CUSTOM=true; shift; }
   SKIP=0;[ "$1" = "-S" ] && { SKIP="$2"; shift 2; }
   (
     $IN_TTY && {
@@ -284,14 +289,17 @@ DBGSHELL() {
      exit 0
     }
 
-    _log_i 'DROPPING THE DEBUG SHELL FROM:' 1>&2
-    _print_callstack "$SKIP" 5 "" "" "$@" 1>&2
+    ! $QUIET && {
+      _log_i 'DROPPING THE DEBUG SHELL FROM:' 1>&2
+      _print_callstack "$SKIP" 5 "" "" "$@" 1>&2
     
-    (
-      read -r ln fn fl < <(caller "$SKIP")
-      sed -n "$((ln-4))"',$p' "$fl" | head -5
-    )
-    echo -e "\n▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+      (
+        read -r ln fn fl < <(caller "$SKIP")
+        sed -n "$((ln-4))"',$p' "$fl" | head -5
+      )
+      
+      echo -e "\n▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    }
     
     # Export the current vars and functions
     {
@@ -309,22 +317,29 @@ DBGSHELL() {
     } &> /dev/null
 
     # Create copy of the bashrc
+    TEST__WORK_RCFILE="$TEST__WORK_DIR/.bashrc"
     if [ -f "$HOME/.profile" ]; then
-      cp "$HOME/.profile" "$TEST__WORK_DIR/.bashrc"
+      cp "$HOME/.profile" "$TEST__WORK_RCFILE"
     else
-      [ -f "$HOME/.bashrc" ] && cp "$HOME/.bashrc" "$TEST__WORK_DIR/.bashrc"
+      [ -f "$HOME/.bashrc" ] && cp "$HOME/.bashrc" "$TEST__WORK_RCFILE"
     fi
 
     {
-      echo -e "\n#\n#\n#\n"
-      COMMENT="";[ -n "$1" ] && COMMENT=" with comment: \"$1\""
-      # shellcheck disable=SC2028
-      echo "echo -e '\033[43m\033[1;30m> DEBUG SHELL STARTED$COMMENT\033[0;39m\n' 1>&2"
+      ! $QUIET && {
+        echo -e "\n#\n#\n#\n"
+        COMMENT="";[ -n "$1" ] && COMMENT=" with comment: \"$1\""
+        # shellcheck disable=SC2028
+        echo "echo -e '\033[43m\033[1;30m> DEBUG SHELL STARTED$COMMENT\033[0;39m\n' 1>&2"
+      }
       echo -e "true"
-    } >> "$TEST__WORK_DIR/.bashrc"
+    } >> "$TEST__WORK_RCFILE"
+    
+    echo "export ENTANDO_OPT_STOP_ON_EXIT=true" >> "$TEST__WORK_RCFILE"
+    
+    $CUSTOM && DBGSHELL_CUSTOMIZE "$TEST__WORK_DIR" "$TEST__WORK_RCFILE"
 
     # Run the shell
-    bash --rcfile "$TEST__WORK_DIR/.bashrc" < /dev/tty > /dev/tty
+    bash --rcfile "$TEST__WORK_RCFILE" < /dev/tty > /dev/tty
 
   ) || {
     [ "$?" = "77" ] && _FATAL "Execution Interrupted: Debug Shell terminated with fatal error" >/dev/tty

@@ -312,8 +312,8 @@
 
 ```
  Params:
- $1 macro name
- $2 pipeline context to parse
+ $1   macro name
+ $..  macro-specific parameters
 
  shellcheck disable=SC2034
 ```
@@ -342,32 +342,18 @@
 
 ---
 
-### `_FATAL()`
+### `_SOE()`
 
-**Stops the execution with a fatal error**
+**STOP ON ERROR**
 
 <details>
 
 ```
- and prints the callstack
-
- Options
- [-s]  simple: omits the stacktrace
- [-S n] skips n levels of the call stack
- [-99] uses 99 as exit code, which indicates test assertion
-
- Params:
- $1  error message
+ Options:
+ --pipe  checks the result of the left part of a pipe expression (eg: cat file | grep "something")
 ```
 
 </details>
-
-
----
-
-### `_SOE()`
-
-**STOP ON ERROR**
 
 
 ---
@@ -379,7 +365,7 @@
 <details>
 
 ```
- IMPORTANT:
+ WARNING:
  This function can be used to set a variable of the caller's scope and this tecnique
  is commonly used to return values to the caller.
  But note that if there is a variable with same name in the local scope, the local one
@@ -432,6 +418,29 @@
    ENTANDO_OPT_OKD_CLI_URL         the URL from which the download tool should be downloaded
                                    Note that this is a semicolon-delimited list, where the first element
                                    is the url and the others are the optional curl options
+```
+
+</details>
+
+
+---
+
+### `kube.oc.namespace.reset()`
+
+**Deletes and recreates a namespace**
+
+
+---
+
+### `kube.manifest.filter-document-by-kind()`
+
+**Filters out from the standard-input the triple-dash (---) separed documents that matches the given kind**
+
+<details>
+
+```
+ Params:
+ $1 document kind
 ```
 
 </details>
@@ -809,6 +818,29 @@
 
 ---
 
+### `_git_is_dirty()`
+
+**Fails if the worktre has uncommitted or untracked files**
+
+
+---
+
+### `__docker_exec()`
+
+**Runs a docker operation and summarise the output**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the docker command and params of _summarize_stream
+```
+
+</details>
+
+
+---
+
 ### `__docker()`
 
 **Runs a docker operation**
@@ -818,6 +850,24 @@
 ```
  Params:
  $@: all params are forwarded to the docker command
+```
+
+</details>
+
+
+---
+
+### `_docker_is_image_on_registry()`
+
+**Tells if a image is present on the registry**
+
+<details>
+
+```
+ registry is taken from the given address or falls back as for docker standard policies
+
+ Params:
+ $1: the image address
 ```
 
 </details>
@@ -1279,8 +1329,8 @@
 
 ```
  Params:
- $1 macro name
- $2 pipeline context to parse
+ $1   macro name
+ $..  macro-specific parameters
 
  shellcheck disable=SC2034
 ```
@@ -1309,32 +1359,18 @@
 
 ---
 
-### `_FATAL()`
+### `_SOE()`
 
-**Stops the execution with a fatal error**
+**STOP ON ERROR**
 
 <details>
 
 ```
- and prints the callstack
-
- Options
- [-s]  simple: omits the stacktrace
- [-S n] skips n levels of the call stack
- [-99] uses 99 as exit code, which indicates test assertion
-
- Params:
- $1  error message
+ Options:
+ --pipe  checks the result of the left part of a pipe expression (eg: cat file | grep "something")
 ```
 
 </details>
-
-
----
-
-### `_SOE()`
-
-**STOP ON ERROR**
 
 
 ---
@@ -1346,7 +1382,7 @@
 <details>
 
 ```
- IMPORTANT:
+ WARNING:
  This function can be used to set a variable of the caller's scope and this tecnique
  is commonly used to return values to the caller.
  But note that if there is a variable with same name in the local scope, the local one
@@ -1399,6 +1435,29 @@
    ENTANDO_OPT_OKD_CLI_URL         the URL from which the download tool should be downloaded
                                    Note that this is a semicolon-delimited list, where the first element
                                    is the url and the others are the optional curl options
+```
+
+</details>
+
+
+---
+
+### `kube.oc.namespace.reset()`
+
+**Deletes and recreates a namespace**
+
+
+---
+
+### `kube.manifest.filter-document-by-kind()`
+
+**Filters out from the standard-input the triple-dash (---) separed documents that matches the given kind**
+
+<details>
+
+```
+ Params:
+ $1 document kind
 ```
 
 </details>
@@ -1776,6 +1835,29 @@
 
 ---
 
+### `_git_is_dirty()`
+
+**Fails if the worktre has uncommitted or untracked files**
+
+
+---
+
+### `__docker_exec()`
+
+**Runs a docker operation and summarise the output**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the docker command and params of _summarize_stream
+```
+
+</details>
+
+
+---
+
 ### `__docker()`
 
 **Runs a docker operation**
@@ -1785,6 +1867,24 @@
 ```
  Params:
  $@: all params are forwarded to the docker command
+```
+
+</details>
+
+
+---
+
+### `_docker_is_image_on_registry()`
+
+**Tells if a image is present on the registry**
+
+<details>
+
+```
+ registry is taken from the given address or falls back as for docker standard policies
+
+ Params:
+ $1: the image address
 ```
 
 </details>
@@ -2048,4 +2148,11 @@
 ### `_git_commit_exists()`
 
 **Tells if a given commit reference exists on the repo**
+
+
+---
+
+### `_git_is_dirty()`
+
+**Fails if the worktre has uncommitted or untracked files**
 

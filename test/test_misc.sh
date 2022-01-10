@@ -11,12 +11,9 @@
 test_misc() {
   test_url_utils
   test_tpl_utils
-  test_pr_utils
   test_itmlst_utils
   test_semver_cmp
   test_args
-  test_str
-  test_versioning
   
   true
 }
@@ -42,6 +39,7 @@ test_tpl_utils() {
     || FAILED
 }
 
+#TEST:lib
 test_pr_utils() {
   local RES
 
@@ -58,6 +56,23 @@ test_pr_utils() {
   ASSERT RES = "ENG-101"
   _ppl_extract_artifact_qualifier_from_pr_title RES "Revert \"ENG-101/ENG-102: A title\""
   ASSERT RES = "ENG-101"
+  
+  PPL_EPIC_NAME="an-epic"
+  _ppl_extract_artifact_qualifier_from_pr_title --epic-name "an-epic" RES "an-epic/ENG-101 A title"
+  ASSERT RES = "ENG-101"
+  _ppl_extract_artifact_qualifier_from_pr_title --epic-name "an-epic" RES "an-epic/ENG-101/ENG-102: A title"
+  ASSERT RES = "ENG-101"
+  _ppl_extract_artifact_qualifier_from_pr_title --epic-name "an-epic" RES "Revert \"an-epic/ENG-101/ENG-102: A title\""
+  ASSERT RES = "ENG-101"
+  
+  # shellcheck disable=SC2034
+  PPL_EPIC_NAME="an-epic"
+  _ppl_extract_artifact_qualifier_from_pr_title --epic-name "an-epic" RES "not-an-epic/ENG-101 A title"
+  ASSERT RES = "not-an-epic"
+  _ppl_extract_artifact_qualifier_from_pr_title --epic-name "an-epic" RES "not-an-epic/ENG-101/ENG-102: A title"
+  ASSERT RES = "not-an-epic"
+  _ppl_extract_artifact_qualifier_from_pr_title --epic-name "an-epic" RES "Revert \"not-an-epic/ENG-101/ENG-102: A title\""
+  ASSERT RES = "not-an-epic"
 }
 
 test_itmlst_utils() {
@@ -118,13 +133,14 @@ test_semver_cmp() {
   ASSERT RES = 0
 }
 
+#TEST:lib
 test_args() {
   print_current_function_name "RUNNING TEST> "  ".."
   # shellcheck disable=SC2034
   ARGS_FLAGS=(--temp --splat)
-  PARSE_ARGS --temp 1 55 --set 2 --with calm 101 -a "103" -- -b 999 --raise --splat
-  ASSERT -v NUM_ARGS_POS "${#ARGS_POS[@]}" = 8
-  ASSERT -v NUM_ARGS_OPT "${#ARGS_OPT[@]}" = 5
+  PARSE_ARGS --temp 1 --mark X 55 --set 2 --with calm 101 -a "103" -- -b 999 --raise --splat --blot 1
+  ASSERT -v NUM_ARGS_POS "${#ARGS_POS[@]}" = 10
+  ASSERT -v NUM_ARGS_OPT "${#ARGS_OPT[@]}" = 6
   ASSERT "ARGS_POS[0]" = ""
   ASSERT "ARGS_POS[1]" = 1
   ASSERT "ARGS_POS[2]" = 55
@@ -133,10 +149,13 @@ test_args() {
   ASSERT "ARGS_POS[5]" = 999
   ASSERT "ARGS_POS[6]" = "--raise"
   ASSERT "ARGS_POS[7]" = "--splat"
+  ASSERT "ARGS_POS[8]" = "--blot"
+  ASSERT "ARGS_POS[9]" = "1"
   ASSERT "ARGS_OPT[--set]" = "2"
   ASSERT "ARGS_OPT[--with]" = "calm"
   ASSERT "ARGS_OPT[-a]" = "103"
   ASSERT "ARGS_OPT[--temp]" = true
+  ASSERT "ARGS_OPT[--mark]" = X
   ASSERT "ARGS_OPT[--splat]" = false
   
   local RES
@@ -146,8 +165,11 @@ test_args() {
   ASSERT RES = 101
   _get_arg RES unexistent a-fallback
   ASSERT RES = a-fallback
+  _get_arg RES unexistent a-fallback
+  ASSERT RES = a-fallback
 }
 
+#TEST:lib
 test_str() {
   print_current_function_name "RUNNING TEST> "  ".."
   
@@ -156,7 +178,8 @@ test_str() {
   ASSERT RES = 4
   _str_last_pos RES ",10,11,12,*,13" "*"
   ASSERT RES = 4
-  
+
+  #~
   local RES='hey'
   _decode_entando_opt RES
   ASSERT RES = 'hey'
@@ -167,11 +190,52 @@ test_str() {
   _decode_entando_opt RES
   ASSERT RES = 'hey'
 
+
+  #~
   # shellcheck disable=SC2034
   ENTANDO_OPT_A_TEST="###a-test"
-  _auto_decode_entando_opts
-  ASSERT ENTANDO_OPT_A_TEST = 'a-test'
+  
+  # shellcheck disable=SC2034 disable=SC2016
+  (
+    ENTANDO_OPT_ANOTHER_TEST1='$ENTANDO_OPT_A_TEST'
+    ENTANDO_OPT_ANOTHER_TEST2='${ENTANDO_OPT_A_TEST}'
+    ENTANDO_OPT_ANOTHER_TEST3='###${ENTANDO_OPT_A_TEST}'
+    ENTANDO_OPT_ANOTHER_TEST4='\${ENTANDO_OPT_A_TEST}'
 
+    _auto_decode_entando_opts
+    
+    ASSERT ENTANDO_OPT_A_TEST = 'a-test'
+    ASSERT ENTANDO_OPT_ANOTHER_TEST1 = 'a-test'
+    ASSERT ENTANDO_OPT_ANOTHER_TEST2 = 'a-test'
+    ASSERT ENTANDO_OPT_ANOTHER_TEST3 = 'a-test'
+    ASSERT ENTANDO_OPT_ANOTHER_TEST4 = '${ENTANDO_OPT_A_TEST}'
+  )
+  exit
+
+  # shellcheck disable=SC2034 disable=SC2016
+  (
+    TEST__EXPECTED_ERROR='Invalid reference'
+    ENTANDO_OPT_ANOTHER_TEST='$ENTANDO_OPT_A_TEST '
+    _auto_decode_entando_opts
+  ) && _SOE
+
+  # shellcheck disable=SC2034 disable=SC2016
+  (
+    TEST__EXPECTED_ERROR='Invalid reference'
+    ENTANDO_OPT_ANOTHER_TEST='$ENTANDO_OPT_A_TEST '
+    _auto_decode_entando_opts
+  ) && _SOE
+
+  
+  # shellcheck disable=SC2034 disable=SC2016
+  (
+    TEST__EXPECTED_ERROR='Invalid reference'
+    ANOTHER_VAR='a-test'
+    ENTANDO_OPT_A_FAILED_TEST='${ANOTHER_VAR}'
+    _auto_decode_entando_opts
+  ) && _SOE
+  
+  #~
   RES="$(_str_quote "Started publication as 101")"
   ASSERT RES = '"Started publication as 101"'
   RES="$(_str_quote -s "Started publication as 101")"
@@ -179,34 +243,61 @@ test_str() {
   
   RES="$(_str_escape_char "sdasda/Dsdaas" "/")"
   ASSERT RES = 'sdasda\/Dsdaas'
+  
+  #~
+  (
+    PARSE_ARGS --ENTANDO_OPT_A_TEST="another-test" --ENTANDO_TEST 1
+    _read_entando_options_from_args -e
+    ASSERT ENTANDO_OPT_A_TEST = 'another-test'
+    ASSERT ENTANDO_TEST = ''
+    ASSERT -v EXPORTED_ENTANDO_OPT_A_TEST "$(bash -c 'echo $ENTANDO_OPT_A_TEST')" = 'another-test'
+  )
 }
 
 #TEST:lib
 test_stream_utils() {
   print_current_function_name "RUNNING TEST> "  ".."
 
-  
+  local LOREM_IPSUM="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod"
+  LOREM_IPSUM+=" tempor incididunt ut labore et dolore magna aliqua."
+    
   local RES="$(
-    _summarize_stream --lf --li 3 --ti 0 TEST < <(
-      for ((i=0;i<10;i++)); do
-        echo "dsaas   ERROR  das"
-        echo "saad WARN asdsa"
+    _summarize_stream --ppl-pg 3 TEST < <(
+      for i in {1..9}; do
+          echo "LINE$i: $LOREM_IPSUM"
+          [ "$i" = "5" ] && echo -e "LINE${i}.b: ERROR: RANDOM ERROR\nat this #1\nat this #2\nat this #3"
       done
-    ) | sed 's/SEC:\s*[0-9]*/../';
+    ) | sed 's/SEC:\s*[0-9]*/SEC: ../';
     echo "X"
   )"
   
   RES="${RES:0:-1}"
-  
-  local EXP
-  EXP+="~ TEST > | .. | TOT:      1  | ERR:      1 | WRN:      0 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:      4  | ERR:      2 | WRN:      2 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:      7  | ERR:      4 | WRN:      3 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:     10  | ERR:      5 | WRN:      5 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:     13  | ERR:      7 | WRN:      6 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:     16  | ERR:      8 | WRN:      8 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:     19  | ERR:     10 | WRN:      9 | DNL:      0 |       "$'\n'
-  EXP+="~ TEST > | .. | TOT:     20  | ERR:     10 | WRN:     10 | DNL:      0 |       "$'\n'
+
+  EXP+="::group::~ TEST > | START:      1 || SEC: .. | ERR:     0 (+0)   | WRN:     0 (+0)   | DNL:      0 |"$'\n'
+  EXP+="LINE1: $LOREM_IPSUM"$'\n'
+  EXP+="LINE2: $LOREM_IPSUM"$'\n'
+  EXP+="LINE3: $LOREM_IPSUM"$'\n'
+  EXP+="::endgroup::"$'\n'
+  EXP+="::group::~ TEST > | START:      4 || SEC: .. | ERR:     1 (+1)   | WRN:     0 (+0)   | DNL:      0 |"$'\n'
+  EXP+="LINE4: $LOREM_IPSUM"$'\n'
+  EXP+="LINE5: $LOREM_IPSUM"$'\n'
+  EXP+="LINE5.b: ERROR: RANDOM ERROR"$'\n'
+  EXP+="at this #1"$'\n'
+  EXP+="at this #2"$'\n'
+  EXP+="at this #3"$'\n'
+  EXP+="::endgroup::"$'\n'
+  EXP+="::group::~ TEST > | START:     10 || SEC: .. | ERR:     1 (+0)   | WRN:     0 (+0)   | DNL:      0 |"$'\n'
+  EXP+="LINE6: $LOREM_IPSUM"$'\n'
+  EXP+="LINE7: $LOREM_IPSUM"$'\n'
+  EXP+="LINE8: $LOREM_IPSUM"$'\n'
+  EXP+="::endgroup::"$'\n'
+  EXP+="::group::~ TEST > | START:     13 || SEC: .. | ERR:     1 (+0)   | WRN:     0 (+0)   | DNL:      0 |"$'\n'
+  EXP+="LINE9: $LOREM_IPSUM"$'\n'
+  EXP+="::endgroup::"$'\n'
+
+ # echo "$RES" > /tmp/a
+  #echo "$EXP" > /tmp/b
+  #meld /tmp/a /tmp/b
   
   ASSERT RES = "$EXP"
 }
@@ -240,8 +331,6 @@ test_exec_cmd() {
     RES="$(_exec_cmd \
       --hide "Progress.* kB" \
       --hide "Error message = null" \
-      --pe \
-      --po "$TMPFILE" \
       "_TEXT__EXEC_CMD_SAMPLE"
 
       ASSERT -v RESCODE "$?" = 55
@@ -256,36 +345,33 @@ test_exec_cmd() {
     # Both summarised and full log are printed
     
     ASSERT -v RES "$N1" = 100       # Standard lines are only printed in the full log 
-    ASSERT -v RES "$N2" = 200       # Error lines if not explicitly filtered appears on both
+    ASSERT -v RES "$N2" = 100       # Error lines if not explicitly
     ASSERT -v RES "$N3" = 100       # "  at" strings following an error shares the same visibility
     ASSERT -v RES "$N4" = 0         # Even error lines when explicitly filtered are hidden
     ASSERT -v RES "$N5" = 100       # Filtered lines only on the full log
-    
-    N1="$(grep -c "Line" "$TMPFILE")"
-    N2="$(grep -c "Important Error" "$TMPFILE")"
-    N3="$(grep -c "Error message" "$TMPFILE")"
-    N4="$(grep -c "Progress" "$TMPFILE")"
-    
-    ASSERT -v RES "$N1" = 100       # In nor filtered, normal lines are printed in the file log
-    ASSERT -v RES "$N2" = 100       # In nor filtered, error lines are printed in the file log
-    ASSERT -v RES "$N3" = 0         # when filtered, error lines are not printed in the file log
-    ASSERT -v RES "$N4" = 100       # when filtered, normal lines are not printed in the file log
-
   ) || _SOE
 }
 
-test_versioning() {
+#TEST:lib
+test_versioning_utils() {
   print_current_function_name "RUNNING TEST> "  ".."
 
+  local ENCODED_REF="$(_ppl_encode-branch-for-tagging "KB" "epic/an-epic-branch")"
+  ASSERT ENCODED_REF = "KB-epic+2F+an-epic-branch"
+  
   local RES
-  _ppl_extract_snapshot_version_name_part RES "6.4.0-ENG-2268-PR-143" "base-version"
+  _ppl_extract_version_part RES "6.4.0-ENG-2268-PR-143+$ENCODED_REF" "base-version"
   ASSERT RES = "6.4.0"
-  _ppl_extract_snapshot_version_name_part RES "6.4.0-ENG-2268-PR-143" "qualifier"
+  _ppl_extract_version_part RES "6.4.0-ENG-2268-PR-143+$ENCODED_REF" "qualifier"
   ASSERT RES = "ENG-2268"
-  _ppl_extract_snapshot_version_name_part RES "6.4.0-ENG-2268-PR-143" "pr-num"
+  _ppl_extract_version_part RES "6.4.0-ENG-2268-PR-143+$ENCODED_REF" "pr-num"
   ASSERT RES = "143"
-  _ppl_extract_snapshot_version_name_part RES "v6.4.0-ENG-2268-PR-143" "base-version"
+  _ppl_extract_version_part RES "v6.4.0-ENG-2268-PR-143+$ENCODED_REF" "base-version"
   ASSERT RES = "6.4.0"
+  _ppl_extract_version_part RES "v6.4.0-ENG-2268-PR-143+$ENCODED_REF" "base-version"
+  ASSERT RES = "6.4.0"
+  _ppl_extract_version_part RES "v6.4.0-ENG-2268-PR-143+$ENCODED_REF" "meta:kb"
+  ASSERT RES = "epic/an-epic-branch"
 }
 
 #TEST:lib
@@ -311,15 +397,21 @@ test__features() {
 }
 
 #TEST:lib
-test__ppl_setup_custom_environment() {
+test__ppl_load_settings() {
   print_current_function_name "RUNNING TEST> "  ".."
   
   # shellcheck disable=SC2034
   local Z="_Z" K="_K"
-  _ppl_setup_custom_environment "X=XX;Y=YY;Z=ZZ;W=W\;W"
+  _ppl_load_settings "X=XX;Y=YY;Z=ZZ;W=W\;W"
   RES="$(bash -c 'echo "$X/$Y/$Z/$K/$W"')"
-  echo "$RES"
   ASSERT RES = "XX/YY/ZZ//W;W"
+  
+    # shellcheck disable=SC2034
+  local TESTENV="X=1"$'\n'$'\n'"Y=2"
+  _ppl_load_settings --var-sep $'\n' --stdin <<< "$TESTENV"
+
+  RES="$(bash -c 'echo "$X/$Y"')"
+  ASSERT RES = "1/2"
 }
 
 #TEST:lib
@@ -335,21 +427,61 @@ test__ppl_extract_branch_name_from_ref() {
   ASSERT RES = "v7.0.0-ENG-3002-PR-166"
   _ppl_extract_branch_name_from_ref RES "refs/heads/release/1.2.3"
   ASSERT RES = "release/1.2.3"
+  _ppl_extract_branch_name_from_ref RES "refs/heads/epic/an-epic-branch"
+  ASSERT RES = "epic/an-epic-branch"
   _ppl_extract_branch_name_from_ref RES "refs/tags/TEST/v7.0.0-ENG-3002-PR-166"
   ASSERT RES = "TEST/v7.0.0-ENG-3002-PR-166"
 }
 
 #TEST:lib
-test__ppl-determine-branch-qualifier() {
+test__ppl_extract_branch_short_name() {
   print_current_function_name "RUNNING TEST> "  ".."
   local RES
   #~ PRs
-  _ppl-determine-branch-qualifier RES "develop"
+  _ppl_extract_branch_short_name RES "develop"
   ASSERT RES = ""
-  _ppl-determine-branch-qualifier RES "develop-mylongrunningbranch"
+  _ppl_extract_branch_short_name RES "epic/mylongrunningbranch"
   ASSERT RES = "mylongrunningbranch"
-  _ppl-determine-branch-qualifier RES "develop-my-long-running-branch"
+  _ppl_extract_branch_short_name RES "epic/my-long-running-branch"
   ASSERT RES = "my-long-running-branch"
+  _ppl_extract_branch_short_name RES "release/1.2.3"
+  ASSERT RES = "1.2.3"
 }
 
-true
+#TEST:lib
+test__ppl_is_release_version_number() {
+  print_current_function_name "RUNNING TEST> "  ".."
+  _ppl_is_release_version_number "v1.2.3"
+  ASSERT -v RES $? = 0
+  _ppl_is_release_version_number "1.2.3"
+  ASSERT -v RES $? = 0
+  _ppl_is_release_version_number "1.2.3-fix.1"
+  ASSERT -v RES $? = 0
+  _ppl_is_release_version_number "v1.2.3-SNAPSHOT"
+  ASSERT -v RES $? != 0
+  _ppl_is_release_version_number "1.2.3-SNAPSHOT"
+  ASSERT -v RES $? != 0
+  _ppl_is_release_version_number "1.2.3-fix.1-SNAPSHOT"
+  ASSERT -v RES $? != 0
+}
+
+#TEST:lib
+test_path_functions() {
+  print_current_function_name "> " ".."
+  # shellcheck disable=SC2034
+  local CONCAT_RES
+  
+  ASSERT -v CONCAT_RES "$(path-concat)" = ""
+  ASSERT -v CONCAT_RES "$(path-concat "")" = ""
+  ASSERT -v CONCAT_RES "$(path-concat "" "")" = ""
+  ASSERT -v CONCAT_RES "$(path-concat "a" "b")" = "a/b"
+  ASSERT -v CONCAT_RES "$(path-concat "a/" "b")" = "a/b"
+  ASSERT -v CONCAT_RES "$(path-concat "a" "/b")" = "a/b"
+  ASSERT -v CONCAT_RES "$(path-concat "a/" "/b")" = "a/b"
+  ASSERT -v CONCAT_RES "$(path-concat "a" "")" = "a/"
+  ASSERT -v CONCAT_RES "$(path-concat "a/" "")" = "a/"
+  ASSERT -v CONCAT_RES "$(path-concat "" "b")" = "b"
+  ASSERT -v CONCAT_RES "$(path-concat "" "/b")" = "/b"
+  ASSERT -v CONCAT_RES "$(path-concat "a" "b" "c")" = "a/b/c"
+  ASSERT -v CONCAT_RES "$(path-concat "a" "b" "c" "")" = "a/b/c/"
+}

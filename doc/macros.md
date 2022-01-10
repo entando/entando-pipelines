@@ -22,6 +22,25 @@
 
 ---
 
+### `ppl--gate-check()`
+
+**EXECUTES PRELIMINAR CHECKS ABOUT THE CURRENT PR**
+
+<details>
+
+```
+ Business Rules:
+ - The PR title must match the given format rules
+
+ Params:
+ $1: the label to check
+```
+
+</details>
+
+
+---
+
 ### `ppl--check-pr-bom-state()`
 
 **EXECUTES THE BOM ALIGNMENT CHECK ABOUT THE CURRENT PR**
@@ -77,7 +96,7 @@
                           -public-url                    the path on which app-builder is exposed (default: /app-builder)
                           --domain                        the path of the main application (default: /entando-de-app)
                           --admin-console-integration     flag for the admin console integration enabling (default: false)
- - PUBLISH              Prepares the repo for publication by setting on it the proper version name
+ - PUBLISH              Prepares the repo for publication by setting on it the proper version number
  - MTX-NPM-SCAN-{type}  Runs a type of npm scan (LINT, SASS-LINT, COVERAGE)
 ```
 
@@ -122,6 +141,11 @@
 
  Actions:
  - snyk:   runs a snyk based scan of the current project
+
+ Env vars:
+ - ENTANDO_OPT_SNYK_ORG                the project organization under the snyk cloud service
+ - ENTANDO_OPT_SNYK_PRJ                the project name under the snyk cloud service
+ - ENTANDO_OPT_SNYK_SCAN_BASE_IMAGES   if true activates the scan of the base images in container scans
 ```
 
 </details>
@@ -129,9 +153,30 @@
 
 ---
 
-### `ppl--release()`
+### `ppl--repl()`
 
-**STARTS THE CREATION OF A VERSION**
+**Development shell to test the pipeline code in interactive mode**
+
+<details>
+
+```
+ > It generates a temporary area where the current project is git-cloned
+ > It can access almost all the internal function and global variables
+
+ Please note these two helpers:
+
+ - @r    command prefix (@r ppl-...) to prevent the called function to unexpectedly close the repl session
+ - @rr   command to reload the scripts if you made some change to the code
+```
+
+</details>
+
+
+---
+
+### `ppl--publication()`
+
+**HELPER for triggering publications**
 
 <details>
 
@@ -140,9 +185,8 @@
  $1: the release action to apply
 
  Actions:
- - tag-snapshot-version:         applies the snapshot tag to the current commit
- - tag-pseudo-snapshot-version:  applies a tag similar to the snapshot tag but that doesn't triggers workflows
- - tag-release-version           applies the final release tag to the current commit
+ - tag-git-version:         applies the snapshot tag to the current commit
+ - tag-git-pseudo-version:  applies a tag similar to the snapshot tag but that doesn't triggers workflows
 ```
 
 </details>
@@ -150,9 +194,9 @@
 
 ---
 
-### `ppl--release._determine_snapshot_version_name()`
+### `ppl--publication._determine_snapshot_version_tag()`
 
-**Determine the current snapshot version names**
+**Determine the current snapshot version numbers**
 
 <details>
 
@@ -160,6 +204,25 @@
  Supported Conditions:
  - On a PR creation/update commit
  - On a PR merge commit
+```
+
+</details>
+
+
+---
+
+### `ppl--check-pr-format()`
+
+**EXECUTES PRELIMINAR CHECKS ABOUT THE CURRENT PR**
+
+<details>
+
+```
+ Business Rules:
+ - The PR title must match the given format rules
+
+ Params:
+ $1: the format rules to respect or nothing for the default
 ```
 
 </details>
@@ -175,7 +238,7 @@
 
 ```
  > Checks the format of the PR title:
- > Checks the format of the project version name on PR
+ > Checks the format of the project version number on PR
  > Checks that the development PR is compatible with the current mainline version (optional via ENTANDO_OPT_MAINLINE)
  > Runs optional custom check (user provided script "custom-pr-check.sh")
 ```
@@ -198,12 +261,39 @@
  Actions:
  - FULL-BUILD        executes a full and clean npm build+test
  - PUBLISH           publishes the maven artifact for development
-                     in the process, sets on it the proper version name and rebuilds the artifact
+                     in the process, sets on it the proper version number and rebuilds the artifact
  - GA-PUBLICATION    publishes the maven artifact for general availability
                      doesn't alter the sources like PUBLISH
  - MTX-MVN-SCAN-SONAR          Executes a full sonar scan, including the coverage report
  - MTX-MVN-SCAN-OWASP          Executes a full owasp scan
  - MTX-MVN-POST-DEPLOYMENT-TESTS  Executes the tests designed to run on a preview environment
+```
+
+</details>
+
+
+---
+
+### `ppl--mvn.generate-build-cache-key()`
+
+**Generates the key to store the build cache**
+
+
+---
+
+### `ppl--enp()`
+
+**MACRO OPERATIONS RELATED TO ENTANDO PROJECT FILES**
+
+<details>
+
+```
+ Params:
+ $1: action to apply
+
+ Actions:
+ - FULL-BUILD        executes a full and clean npm build+test
+ - PUBLISH           executes a publication
 ```
 
 </details>
@@ -223,8 +313,6 @@
 
  Actions
  - publish:  Builds one or more artifacts, image and pushes it to the image regitry.
-             Params:
-              - $2: the list of builds directives
              Mandatory Vars:
               - ENTANDO_OPT_DOCKER_ORG
               - ENTANDO_OPT_DOCKER_USERNAME
@@ -232,6 +320,13 @@
 ```
 
 </details>
+
+
+---
+
+### `ppl--docker.is_release_version_number()`
+
+**Tells if a docker image tag is a release tag**
 
 
 ---
@@ -296,6 +391,8 @@
   - MTX-MVN-SCAN-*   see equivalent on ppl--npm
   - MTX-NPM-SCAN-*   see equivalent on ppl--npm
   - MTX-SCAN-SNYK    runs a snyk scan (see ppl--scan)
+  - GENERATE-BUILD-CACHE-KEY generate the key to store the build cache
+  - GENERATE-BUILD-TARGET-DIR generates statement to set the target dir
 ```
 
 </details>

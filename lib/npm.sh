@@ -7,7 +7,6 @@ __npm_exec() {
   
   _exec_cmd \
     ${SIMPLE:+"$SIMPLE"} \
-    --pe \
     ${PPL_OUTPUT_FILE:+--po "$PPL_OUTPUT_FILE"} \
     "npm" "$@"
 }

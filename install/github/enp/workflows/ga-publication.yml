@@ -6,7 +6,7 @@ on:
       - created
 
 env:
-  ENTANDO_OPT_USE_PPL_TAG: "v1.2.0"
+  ENTANDO_OPT_USE_PPL_TAG: "v1.2.1"
   ENTANDO_OPT_FEATURES: "${{ secrets.ENTANDO_OPT_FEATURES }}"
   ENTANDO_OPT_GLOBAL_FEATURES: "${{ secrets.ENTANDO_OPT_GLOBAL_FEATURES }}"
   ENTANDO_OPT_LOG_LEVEL: "${{ secrets.ENTANDO_OPT_LOG_LEVEL }}"
@@ -17,10 +17,12 @@ env:
   GIT_USER_EMAIL: "${{ secrets.GIT_USER_EMAIL }}"
   LOCAL_CLONE_DIR: "local-checkout"
 
+
 jobs:
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # GA PUBLICATION
+
   ga-publish:
     env:
       ENTANDO_OPT_MAVEN_REPO_GA: ${{ secrets.ENTANDO_OPT_MAVEN_REPO_GA }}

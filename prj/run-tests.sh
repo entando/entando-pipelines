@@ -10,6 +10,7 @@ cd "$SCRIPT_DIR/.." || { echo "Unable to enter the script dir"; exit 99; }
   exit "$?"
 }
 
+. "./lib/debug.sh"
 . "./lib/base.sh"
 . "./lib/misc.sh"     # only for the itmlst functions
 
@@ -48,6 +49,7 @@ TEST.RESET_TLOG() {
   ENTANDO_OPT_SHELL_ON_TEST_ASSERT=${ENTANDO_OPT_SHELL_ON_TEST_ASSERT:-false}
   GITHUB_ACTIONS=true
   PPL_CONTEXT="{{test-run}}"
+  PPL_PARSED_CONTEXT=true
 
   TEST__TECHNICAL_LOG_FILE="$TEST__WORK_DIR/ttlog"
   TEST.RESET_TLOG
@@ -95,7 +97,7 @@ trap test-cleanup exit
            [[ "${fn:0:6}" = "#TEST:" || "${fn:0:2}" = "--" ]] && continue
            echo '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
            echo 'TEST> TEST FUNCTION "'"$fn"'"'
-           ($fn) || exit "$?"
+           ($fn) || _exit "$?"
          done < <(grep  -A 1 "#TEST:$label" "$file" | sed 's/().*//')
       ) || _failend
     done  < <(grep -lr "#TEST:$label" "$PROJECT_DIR/test")
