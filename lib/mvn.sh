@@ -28,12 +28,12 @@ __mvn_exec() {
     --hide "Error message = null" \
     --hide "Downloading from" \
     ${PPL_OUTPUT_FILE:+--po "$PPL_OUTPUT_FILE"} \
-    
     "$MVN" "$@" 
 
     RV="$?"    
     [ -n "$TORESTORE" ] && chmod -x "$TORESTORE"
     [ "$RV" != 0 ] && _FATAL "mvn command failed with status \"$RV\""
+    return "$RV"
 }
   
 # Runs a maven deploy over the received environment params
