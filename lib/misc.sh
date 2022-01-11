@@ -833,7 +833,7 @@ _ppl_extract_version_part() {
       ;;
     *) _FATAL "Invalid part name \"$3\" provided";;
   esac
-  [[ -z "$_tmp_res_" || "$_tmp4_" != "PR" ]] && _FATAL "Provided snapshot version \"$2\" is not valid"
+  #[[ -z "$_tmp_res_" || "$_tmp4_" != "PR" ]] && _FATAL "Provided snapshot version \"$2\" is not valid"
   _set_var "$1" "$_tmp_res_"
 }
 

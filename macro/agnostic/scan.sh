@@ -62,7 +62,7 @@ ppl--scan.SCAN() {
   local O3=""; [ -z "$O1" ] && O3="$PPL_REPO_GIT_URL"
   local O4=""; [ "$ENTANDO_OPT_SNYK_SCAN_BASE_IMAGES" != "true" ] && O4="--exclude-base-image-vulns"
   local org prj
-  _get_arg -m org "--org" "$ENTANDO_OPT_SNYK_ORG"
+  _get_arg -m -p org "--org" "${ENTANDO_OPT_SNYK_ORG:-$SNYK_ORG}"
   _get_arg prj "--prj" "$ENTANDO_OPT_SNYK_PRJ"
   
   local RV=0
