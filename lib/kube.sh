@@ -88,7 +88,7 @@ kube.oc.namespace.delete() {
   local ns="$1" tmo="$2"
   _NONNULL ns tmo
   kube.oc get namespace "$ns" &> /dev/null && {
-    _log_d "Deleting the old test namespace"
+    _log_d "Deleting the test namespace: \"$ns\""
     kube.oc delete namespace "$ns" &> /dev/null
     _log_d "Waiting for namespace deletion.."
     kube.oc.wait_for_resource "$tmo" until-not-present namespace "$ns"
@@ -98,7 +98,7 @@ kube.oc.namespace.delete() {
 kube.oc.namespace.suspend() {
   local ns="$1" tmo="$2"
   _NONNULL ns tmo
-  _log_d "Suspending the test namespace: $ns"
+  _log_d "Suspending the test namespace: \"$ns\""
   timeout "$tmo" kubectl scale statefulset,deployment -n "$ns" --all --replicas=0
 }
 

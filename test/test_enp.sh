@@ -12,6 +12,7 @@ test_npm() {
 
   echo "ENTANDO_PRJ_VERSION=7.0.0-SNAPSHOT" > "entando-project"
   _ppl_get_current_project_version projectVersion
+  exit
   ASSERT projectVersion = "7.0.0-SNAPSHOT"
   _ppl_set_current_project_version "7.0.0-ENG-999-PR-111"
   _ppl_get_current_project_version projectVersion

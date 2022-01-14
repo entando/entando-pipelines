@@ -511,7 +511,12 @@
 
  Options:
  --var-sep value    the var separator to assume
+ --section          select a specific section of the settings
  --stdin            reads the environment the stdin
+
+ Line level options:
+
+ [p]VAR=VALUE   <= VAR is set only if currently empty
 
  Paramers:
  $1                unless "--stdin" is provider it's the environment to be loaded
@@ -520,6 +525,12 @@
  - LEGAL:   _ppl_load_settings 'A=1;B=hey there;C=true'
  - ILLEGAL: _ppl_load_settings 'A=1;B="hey;there";C=true'
  - LEGAL:   _ppl_load_settings 'A=1;B=hey\;there;C=true'
+
+ Multisection example:
+ [SECT01]
+ A=1
+ [SECT02]
+ A=2
 ```
 
 </details>

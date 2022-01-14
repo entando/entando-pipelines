@@ -25,7 +25,12 @@ _ppl_query_latest_bom_version() {
 #
 # Options:
 # --var-sep value    the var separator to assume
+# --section          select a specific section of the settings
 # --stdin            reads the environment the stdin
+#
+# Line level options:
+#
+# [p]VAR=VALUE   <= VAR is set only if currently empty
 #
 # Paramers:
 # $1                unless "--stdin" is provider it's the environment to be loaded
@@ -35,23 +40,60 @@ _ppl_query_latest_bom_version() {
 # - ILLEGAL: _ppl_load_settings 'A=1;B="hey;there";C=true'
 # - LEGAL:   _ppl_load_settings 'A=1;B=hey\;there;C=true'
 #
+# Multisection example:
+# [SECT01]
+# A=1
+# [SECT02]
+# A=2
+#
 _ppl_load_settings() {
   local LNSEP=';';[ "$1" = "--var-sep" ] && { LNSEP="$2"; shift 2; }
+  local SECT="";[ "$1" = "--section" ] && { SECT="$2"; shift 2; }
   {
     if [ "$1" != "--stdin" ]; then
-      exec <<< "$1"
+      local tmp="${1//$LNSEP/$'\n'}"
+      tmp="${tmp//\\$'\n'/\\$LNSEP}"
+      _ppl_load_settings --stdin <<< "$tmp"
+      return "$?"
     fi
     
     local last=false
+    local in_sect=false
+    local preserve
     
     while true; do
       # shellcheck disable=SC2162
-      read -d "$LNSEP" assign || last=true
-      if [ -n "$assign" ]; then
-        IFS='=' read -r name value <<< "$assign"
+      read line || last=true
+      
+      preserve=false
+      
+      if [ -n "$line" ]; then
+        [[ "${line:0:3}" == "###" ]] && line="${line:3}"
+        [[ "${line:0:1}" == "#" ]] && continue;
+        [[ "${line:0:3}" == "[p]" ]] && line="${line:3}"
+        
+        if [ -n "$SECT" ]; then
+          if ! $in_sect; then
+            [ "$line" == "[$SECT]" ] && in_sect=true
+          else 
+            [[ "${line:0:1}" == "[" ]] && break
+            continue
+          fi
+        fi
+        
+        [[ "${line:0:1}" == "[" ]] && continue
+        
+        # shellcheck disable=SC2162
+        IFS='=' read -r name value <<< "$line"
+        _is_valid_var_name "$name" || {
+          _log_d "Invalid var name: \"$name\""
+          _FATAL "Invalid var name"
+        }
+        [[ "$PRES" == "true" && ${!name} != "" ]] && continue
         _set_var "$name" "$value"
         # shellcheck disable=SC2163
         export "$name"
+        
       fi
       $last && break
     done

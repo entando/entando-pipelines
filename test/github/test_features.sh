@@ -26,17 +26,35 @@ test_setup-features-flags() {
       ppl--setup-feature-flags "FEA-A" "FEA-B" "FEA-C" "FEA-D" "FEA-X" "FEA-X2" "FEA-Z" "FEA-S" "FEA-S2" "FEA-G"
     )"
     
-    ASSERT RES =~ "::set-output name=FEA-A::true"
-    ASSERT RES =~ "::set-output name=FEA-B::false"
-    ASSERT RES =~ "::set-output name=FEA-C::true"
-    ASSERT RES =~ "::set-output name=FEA-D::false"
-    ASSERT RES =~ "::set-output name=FEA-X::true"
-    ASSERT RES =~ "::set-output name=FEA-X2::false"
-    ASSERT RES =~ "::set-output name=FEA-Z::false"
-    ASSERT RES =~ "::set-output name=FEA-S::false"
-    ASSERT RES =~ "::set-output name=FEA-G::true"
+    ASSERT RES =~ "::set-output name=FEA_A::true"
+    ASSERT RES =~ "::set-output name=FEA_B::false"
+    ASSERT RES =~ "::set-output name=FEA_C::true"
+    ASSERT RES =~ "::set-output name=FEA_D::false"
+    ASSERT RES =~ "::set-output name=FEA_X::true"
+    ASSERT RES =~ "::set-output name=FEA_X2::false"
+    ASSERT RES =~ "::set-output name=FEA_Z::false"
+    ASSERT RES =~ "::set-output name=FEA_S::false"
+    ASSERT RES =~ "::set-output name=FEA_G::true"
     ASSERT RES =~ "SKIP-FEA-S2.*not allowed in"
     ASSERT -v QUERY_HISTORY "$(cat "$TEST__TECHNICAL_LOG_FILE")" =~ "DELETE.*SKIP-FEA-S"
+
+    #~
+    TEST__APPLY_OVERRIDES() {
+      # shellcheck disable=SC2034
+      ENTANDO_OPT_FEATURES="FEA_A,FEA-AA,FEA_B,FEA-BB,FEA_C,FEA_C,-FEA-C,FEA_CC,-FEA-CC"
+    }
+    
+    # shellcheck disable=SC2034
+    local RES="$(
+      ppl--setup-feature-flags "FEA_A" "FEA_AA" "FEA-B" "FEA-BB" "FEA-C" "FEA_CC"
+    )"
+    
+    ASSERT RES =~ "::set-output name=FEA_A::true"
+    ASSERT RES =~ "::set-output name=FEA_AA::true"
+    ASSERT RES =~ "::set-output name=FEA_B::true"
+    ASSERT RES =~ "::set-output name=FEA_BB::true"
+    ASSERT RES =~ "::set-output name=FEA_C::false"
+    ASSERT RES =~ "::set-output name=FEA_CC::false"
 
     true
   )

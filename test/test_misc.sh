@@ -209,8 +209,20 @@ test_str() {
     ASSERT ENTANDO_OPT_ANOTHER_TEST2 = 'a-test'
     ASSERT ENTANDO_OPT_ANOTHER_TEST3 = 'a-test'
     ASSERT ENTANDO_OPT_ANOTHER_TEST4 = '${ENTANDO_OPT_A_TEST}'
-  )
-  exit
+  ) || _SOE
+  
+  # shellcheck disable=SC2034 disable=SC2016
+  (
+    ENTANDO_OPT_ANOTHER_TEST1='$ENTANDO_OPT_A_TEST and the rest'
+    ENTANDO_OPT_ANOTHER_TEST2='${ENTANDO_OPT_A_TEST} and the rest'
+    ENTANDO_OPT_ANOTHER_TEST3='${ENTANDO_OPT_ANOTHER_TEST1} and the rest'
+
+    _auto_decode_entando_opts
+    
+    ASSERT ENTANDO_OPT_ANOTHER_TEST1 = 'a-test and the rest'
+    ASSERT ENTANDO_OPT_ANOTHER_TEST2 = 'a-test and the rest'
+    ASSERT ENTANDO_OPT_ANOTHER_TEST3 = 'a-test and the rest and the rest'
+  ) || _SOE
 
   # shellcheck disable=SC2034 disable=SC2016
   (
@@ -406,12 +418,23 @@ test__ppl_load_settings() {
   RES="$(bash -c 'echo "$X/$Y/$Z/$K/$W"')"
   ASSERT RES = "XX/YY/ZZ//W;W"
   
-    # shellcheck disable=SC2034
+  # shellcheck disable=SC2034
   local TESTENV="X=1"$'\n'$'\n'"Y=2"
   _ppl_load_settings --var-sep $'\n' --stdin <<< "$TESTENV"
 
   RES="$(bash -c 'echo "$X/$Y"')"
   ASSERT RES = "1/2"
+  
+  # shellcheck disable=SC2034
+  { X=0;Y=0; }
+  local TESTENV="[SECT 1.0]"$'\n'"X=1"$'\n'"Y=2"$'\n'"[SECT 1.1]"$'\n'"X=11"$'\n'"Y=22";
+  
+  _ppl_load_settings --section "SECT 1.1" --stdin <<< "$TESTENV"
+  ASSERT X = "11"
+  ASSERT Y = "22"
+  _ppl_load_settings --section "SECT 1.0" --stdin <<< "$TESTENV"
+  ASSERT X = "1"
+  ASSERT Y = "2"
 }
 
 #TEST:lib

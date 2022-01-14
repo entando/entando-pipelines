@@ -350,7 +350,7 @@
 
 ```
  Options:
- --pipe  checks the result of the left part of a pipe expression (eg: cat file | grep "something")
+ --pipe N  checks the result of the part #N of a pipe expression, can be specified up to 3 times
 ```
 
 </details>
@@ -1367,7 +1367,7 @@
 
 ```
  Options:
- --pipe  checks the result of the left part of a pipe expression (eg: cat file | grep "something")
+ --pipe N  checks the result of the part #N of a pipe expression, can be specified up to 3 times
 ```
 
 </details>

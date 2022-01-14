@@ -12,35 +12,22 @@ The pipelines are capable of creating K8S environments over which "post-deployme
 
 - `ENTANDO_OPT_TEST_POSTDEP_PLAN`
 
-### comma delimited list of these possible commands:
-
-```
-RESET-TEST-NAMESPACE                   => deletes and recreates the test namespaces
-DEPLOY-PROJECT-HELM                    => deploys the project charts present in the project
-DEPLOY-OPERATOR-CLUSTER-REQUIREMENTS   => deploys the cluster requirements of the given operator
-DEPLOY-OPERATOR-NAMESPACE-REQUIREMENTS => deploys the namespace requirements of the given operator (except for the deployments)
-DEPLOY-OPERATOR                        => deploys the operator in the test namespace (implies DEPLOY-OPERATOR-NAMESPACE-REQUIREMENTS)
-RUN-POSTDEP-TESTS                      => runs the actual post-deployment tests
-SUSPEND-TEST-NAMESPACE                 => scales to 0 all the deployments of the test namespace
-DELETE-TEST-NAMESPACE                  => deletes the test namespace
-```
-
-## More..
-
-Look for the ENTANDO_OPT_XXX vars in the below the placeholders table.
-
-
 ## Test Namespace
 
 - `ENTANDO_OPT_TEST_NAMESPACE`
+
+#  Plan Commands
+
+See [about-execution-plans.md](./about-execution-plans.md)
+
 
 Namespace name to use to run the tests.
 If set to `[auto]` or not provided tells the pipelies to derive it from the project name.
 
 
-### Example for testing K8S controllers:
+## Example for testing K8S controllers:
 
-`RESET-TEST-NAMESPACE,DEPLOY-PROJECT-HELM,DEPLOY-OPERATOR-CLUSTER-REQUIREMENTS,DEPLOY-OPERATOR-NAMESPACE-REQUIREMENTS,RUN-TESTS,SUSPEND-TEST-NAMESPACE`
+`OKD-LOGIN,RESET-TEST-NAMESPACE,DEPLOY-PROJECT-HELM,DEPLOY-OPERATOR-CLUSTER-REQUIREMENTS,DEPLOY-OPERATOR-NAMESPACE-REQUIREMENTS,RUN-TESTS,SUSPEND-TEST-NAMESPACE`
 
 # About "DEPLOY-PROJECT-HELM"
 

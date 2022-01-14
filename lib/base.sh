@@ -33,9 +33,6 @@ START_MACRO() {
     _EXIT "Macro of id \"$PPL_CURRENT_MACRO\" is not enabled"
   }
   
-  # CUSTOM ENVIRONMENT
-  _ppl_load_settings "$ENTANDO_OPT_CUSTOM_ENV"
-  
   # ..
   if _log_on_level DEBUG; then
     echo -e "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -52,9 +49,7 @@ START_SIMPLE_MACRO() {
   _auto_decode_entando_opts
   
   ${ENTANDO_OPT_STEP_DEBUG:-false} && {
-    #export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
-    export PS4='\033[0;33m+[${SECONDS}][${BASH_SOURCE}:${LINENO}]:\033[0m ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
-    set -x
+    sys_trace_ctl enable
   }
 
   # shellcheck disable=SC2034
@@ -126,6 +121,7 @@ _EXIT() {
 #
 _FATAL() {
   local rv=77
+  sys_trace_ctl disable
 
   {
     # shellcheck disable=SC2076
@@ -163,11 +159,12 @@ _LOW_LEVEL_FATAL() {
 # STOP ON ERROR
 #
 # Options:
-# --pipe  checks the result of the left part of a pipe expression (eg: cat file | grep "something")
+# --pipe N  checks the result of the part #N of a pipe expression, can be specified up to 3 times
 #
 _SOE() {
   local R="$?"
-  [ "$1" == "--pipe" ] && { R="${PIPESTATUS[0]}"; shift; }
+  [[ "$R" = "0" && "$1" == "--pipe" ]] && { R="${PIPESTATUS["$2"]:-0}"; shift 2; }
+  [[ "$R" = "0" && "$1" == "--pipe" ]] && { R="${PIPESTATUS["$2"]:-0}"; shift 2; }
   [ -n "$1" ] && _log_e "$1 didn't complete properly"
   [ "$R" != 0 ] && _exit "$R"
   return "$R"
