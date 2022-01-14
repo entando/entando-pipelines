@@ -100,8 +100,8 @@ ppl--mvn.run-plan() {
       "PUBLISH-PROJECT-IMAGE")
         ppl--mvn.post-deloyment.publish-image "$projectName" "$projectVersion" "$prNumber" || _SOE
         ;;
-      "DEPLOY-PROJECT-HELM")
-        ppl--mvn.post-deloyment.deploy-project-helm "$projectName" "$projectVersion" || _SOE
+      "DEPLOY-PROJECT-HELM-CHARTS"|"DEPLOY-PROJECT-HELM")
+        ppl--mvn.post-deloyment.DEPLOY-PROJECT-HELM-CHARTS "$projectName" "$projectVersion" || _SOE
         ;;
       "DEPLOY-OPERATOR-CLUSTER-REQUIREMENTS")
         ppl--mvn.post-deloyment.operator install-cluster-requirements || _SOE
@@ -111,6 +111,9 @@ ppl--mvn.run-plan() {
         ;;
       "DEPLOY-OPERATOR")
         ppl--mvn.post-deloyment.operator install || _SOE
+        _log_d "Waiting for the operator to be ready"
+        local operator_pod="$(kube.oc.find-resource-by-name --wait 30 pod "$ENTANDO_OPERATOR_POD_NAME_PATTERN")"
+        kube.oc.wait_for_resource "$ENTANDO_OPERATOR_STARTUP_TIMEOUT" until-ready pod "$operator_pod"
         ;;
       "SUSPEND-TEST-NAMESPACE")
         kube.oc.namespace.suspend "$ENTANDO_TEST_NAMESPACE" 30
@@ -278,7 +281,7 @@ ppl--mvn.post-deloyment.publish-image() {
   fi
 }
 
-ppl--mvn.post-deloyment.deploy-project-helm() {
+ppl--mvn.post-deloyment.DEPLOY-PROJECT-HELM-CHARTS() {
   local projectName="$1" projectVersion="$2"
   
   _log_d "Applying the project helm charts"
