@@ -60,14 +60,17 @@ ppl--docker() {
 }
 
 ppl--docker.publish.FOR_ALL_BUILDS() {
-  local builds="$1" projectName="$4" projectVersion="$5"
+  local builds="$1" FN="$2" projectName="$4" projectVersion="$5"
   local dockerFile imageAddress
+  export ENTANDO_OPT_LOG_LEVEL=TRACE
+  export -f "$FN"
+
   while IFS= read -r build; do
     ppl--docker.publish.DETERMINE_BUILD_INFO dockerFile imageAddress "$build" "$projectName" "$projectVersion"
     _log_i "$3 \"$build\" (\"$dockerFile\", \"$imageAddress\")"
-    _pp dockerFile imageAddress projectName projectVersion build
+    #_pp FN dockerFile imageAddress projectName projectVersion build
     __exist -f "$dockerFile"
-    "$2" "$dockerFile" "$imageAddress"
+    "$FN" "$dockerFile" "$imageAddress"
   done <<< "${builds//,/$'\n'}"
 }
 
@@ -81,6 +84,7 @@ ppl--docker.publish.INIT() {
     __mvn_exec package -B -Pjvm
   }
 }
+
 ppl--docker.publish.LOGIN() {
   if [ -n "$ENTANDO_OPT_DOCKER_ALT_LOGIN_URL" ]; then
     _NONNULL ENTANDO_OPT_DOCKER_ALT_USERNAME ENTANDO_OPT_DOCKER_ALT_PASSWORD
@@ -141,15 +145,16 @@ ppl--docker.publish.DETERMINE_BUILD_INFO() {
 }
 
 ppl--docker.publish.BUILD_AND_PUSH() {
-  ppl--docker.is_release_version_number "$2" && {
-    _docker_is_image_on_registry "$2" && {
+  local dockerfile="$1" image="$2"
+  ppl--docker.is_release_version_number "$image" && {
+    _docker_is_image_on_registry "$image" && {
       _FATAL "Overwriting a release image is not allowed"
     }
   }
 
-  __docker_exec --ppl-pg 5000 build . -t "$2" -f "$1"
-  __docker_exec --ppl-pg 5000 image inspect "$2"
-  __docker_exec --ppl-pg 5000 push "$2"
+  __docker_exec --ppl-pg 5000 build . -t "$image" -f "$dockerfile"
+  __docker_exec --ppl-pg 5000 image inspect "$image"
+  __docker_exec --ppl-pg 5000 push "$image"
 }
 
 ppl--docker.publish.SCAN() {
