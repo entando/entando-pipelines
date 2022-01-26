@@ -6,30 +6,26 @@ The pipelines are capable of creating K8S environments over which "post-deployme
 
 ## Feature Flag
 
-- `MTX-MVN-POST-DEPLOYMENT-TESTS`
-
-## Execution Plan
-
-- `ENTANDO_OPT_TEST_POSTDEP_PLAN`
+- `POST-DEP_TESTS`
 
 ## Test Namespace
 
 - `ENTANDO_OPT_TEST_NAMESPACE`
 
-#  Plan Commands
-
-See [about-execution-plans.md](./about-execution-plans.md)
-
-
 Namespace name to use to run the tests.
 If set to `[auto]` or not provided tells the pipelies to derive it from the project name.
 
+## Execution Plan
+
+- `ENTANDO_OPT_TEST_POSTDEP_PLAN`
+
+_(see [about-execution-plans.md](./about-execution-plans.md))_
 
 ## Example for testing K8S controllers:
 
-`OKD-LOGIN,RESET-TEST-NAMESPACE,DEPLOY-PROJECT-HELM,DEPLOY-OPERATOR-CLUSTER-REQUIREMENTS,DEPLOY-OPERATOR-NAMESPACE-REQUIREMENTS,RUN-TESTS,SUSPEND-TEST-NAMESPACE`
+`OKD-LOGIN,RESET-TEST-NAMESPACE,DEPLOY-PROJECT-HELM-CHA RTS,DEPLOY-OPERATOR-NAMESPACE-REQUIREMENTS,RUN-TESTS,SUSPEND-TEST-NAMESPACE`
 
-# About "DEPLOY-PROJECT-HELM"
+# About "DEPLOY-PROJECT-HELM-CHARTS"
 
 this command contributes setting up the preview environment by running the chart contained in the project. It assume to find the charts starting file under this path:
 

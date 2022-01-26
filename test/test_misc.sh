@@ -202,7 +202,7 @@ test_str() {
     ENTANDO_OPT_ANOTHER_TEST3='###${ENTANDO_OPT_A_TEST}'
     ENTANDO_OPT_ANOTHER_TEST4='\${ENTANDO_OPT_A_TEST}'
 
-    _auto_decode_entando_opts
+    _load_entando_opts
     
     ASSERT ENTANDO_OPT_A_TEST = 'a-test'
     ASSERT ENTANDO_OPT_ANOTHER_TEST1 = 'a-test'
@@ -217,7 +217,7 @@ test_str() {
     ENTANDO_OPT_ANOTHER_TEST2='${ENTANDO_OPT_A_TEST} and the rest'
     ENTANDO_OPT_ANOTHER_TEST3='${ENTANDO_OPT_ANOTHER_TEST1} and the rest'
 
-    _auto_decode_entando_opts
+    _load_entando_opts
     
     ASSERT ENTANDO_OPT_ANOTHER_TEST1 = 'a-test and the rest'
     ASSERT ENTANDO_OPT_ANOTHER_TEST2 = 'a-test and the rest'
@@ -228,14 +228,14 @@ test_str() {
   (
     TEST__EXPECTED_ERROR='Invalid reference'
     ENTANDO_OPT_ANOTHER_TEST='$ENTANDO_OPT_A_TEST '
-    _auto_decode_entando_opts
+    _load_entando_opts
   ) && _SOE
 
   # shellcheck disable=SC2034 disable=SC2016
   (
     TEST__EXPECTED_ERROR='Invalid reference'
     ENTANDO_OPT_ANOTHER_TEST='$ENTANDO_OPT_A_TEST '
-    _auto_decode_entando_opts
+    _load_entando_opts
   ) && _SOE
 
   
@@ -244,7 +244,7 @@ test_str() {
     TEST__EXPECTED_ERROR='Invalid reference'
     ANOTHER_VAR='a-test'
     ENTANDO_OPT_A_FAILED_TEST='${ANOTHER_VAR}'
-    _auto_decode_entando_opts
+    _load_entando_opts
   ) && _SOE
   
   #~
@@ -426,14 +426,27 @@ test__ppl_load_settings() {
   ASSERT RES = "1/2"
   
   # shellcheck disable=SC2034
-  { X=0;Y=0; }
-  local TESTENV="[SECT 1.0]"$'\n'"X=1"$'\n'"Y=2"$'\n'"[SECT 1.1]"$'\n'"X=11"$'\n'"Y=22";
-  
+  { X=0;Y=0;LF=$'\n'; }
+  local TESTENV="[SECT 1.0]${LF}X=1${LF}Y=2"${LF}
+  TESTENV+="[SECT 1.1]${LF}X=11${LF}Y=22"${LF}
   _ppl_load_settings --section "SECT 1.1" --stdin <<< "$TESTENV"
   ASSERT X = "11"
   ASSERT Y = "22"
   _ppl_load_settings --section "SECT 1.0" --stdin <<< "$TESTENV"
   ASSERT X = "1"
+  ASSERT Y = "2"
+  TESTENV+="[SECT X]${LF}X=111"${LF}
+  _ppl_load_settings --section "SECT 1.0" --stdin <<< "$TESTENV"
+  _ppl_load_settings --section "SECT X" --stdin <<< "$TESTENV"
+  ASSERT X = "111"
+  ASSERT Y = "2"
+  TESTENV+="[SECT Y]${LF}[a]X=1"${LF}
+  _ppl_load_settings --section "SECT Y" --stdin <<< "$TESTENV"
+  ASSERT X = "1111"
+  ASSERT Y = "2"
+  TESTENV+="[SECT Z]${LF}[p]X=0"${LF}
+  _ppl_load_settings --section "SECT Z" --stdin <<< "$TESTENV"
+  ASSERT X = "1111"
   ASSERT Y = "2"
 }
 

@@ -43,9 +43,11 @@ ppl--mvn() {
         __mvn_exec -B verify -Powasp-dependency-check
         ;;
       "MTX-MVN-POST-DEPLOYMENT-TESTS"|"MVN-POST-DEPLOYMENT-TESTS"|"POST-DEP-TESTS")
-        _log_i "Starting the post-deployment task with plan: \"$ENTANDO_OPT_TEST_POSTDEP_PLAN\""
-        _NONNULL ENTANDO_OPT_TEST_POSTDEP_PLAN
-        ppl--mvn.run-plan "$ENTANDO_OPT_TEST_POSTDEP_PLAN"
+        _ppl_is_feature_enabled "POST-DEP-TESTS" true && {
+          _log_i "Starting the post-deployment task with plan: \"$ENTANDO_OPT_TEST_POSTDEP_PLAN\""
+          _NONNULL ENTANDO_OPT_TEST_POSTDEP_PLAN
+          ppl--mvn.run-plan "$ENTANDO_OPT_TEST_POSTDEP_PLAN"
+        }
         ;;
       "PUBLISH")
         ppl--mvn.publish

@@ -107,7 +107,7 @@ kube.oc.namespace.suspend() {
 }
 
 kube.oc.find-pod-containers-state() {
-  oc get pods "$1" -o custom-columns='READY:.status.containerStatuses[*].ready' -n $ENTANDO_OPT_TEST_NAMESPACE --no-headers
+  oc get pods "$1" -o custom-columns='READY:.status.containerStatuses[*].ready' -n "$ENTANDO_OPT_TEST_NAMESPACE" --no-headers
 }
 
 kube.oc.find-resource-by-name() {

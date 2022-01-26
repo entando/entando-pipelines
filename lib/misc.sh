@@ -418,16 +418,18 @@ _resolve_entando_opt() {
 # 1) The reference resolution process is limited to 3 passes, so a sequence of 
 # nested references that goes beyond that limit will not be properly satisfied.
 #
-_auto_decode_entando_opts() {
+_load_entando_opts() {
   if [[ -n "$ENTANDO_OPT_ENVIRONMENT_NAMES" || -n "$ENTANDO_OPT_ENVIRONMENTS" ]]; then
-    _resolve_entando_opt ENTANDO_OPT_ENVIRONMENTS
+    _decode_entando_opt ENTANDO_OPT_ENVIRONMENT_NAMES
     last=false
     while :; do
       IFS= read -r env_name || last=true
       _resolve_entando_opt env_name
-      _ppl_load_settings --section "$env_name" "$ENTANDO_OPT_ENVIRONMENTS"
+       if [ -n "$env_name" ]; then
+        _ppl_load_settings --section "$env_name" "$ENTANDO_OPT_ENVIRONMENTS"
+      fi
       $last && break
-    done <<< ${ENTANDO_OPT_ENVIRONMENT_NAMES//,/$'\n'}
+    done <<< "${ENTANDO_OPT_ENVIRONMENT_NAMES//,/$'\n'}"
   fi
   
   for varname in ${!ENTANDO_OPT*}; do
@@ -453,6 +455,7 @@ _auto_decode_entando_opts() {
 # --like pattern   matches all the vars with a name mathing the pattern.
 #                  can be specified up to 3 times
 #
+# shellcheck disable=SC2120
 _unset_all_entano_options() {
   local WITH1=""; [ "$1" == "--like" ] && { WITH1="$2"; shift 2; }
   local WITH2=""; [ "$1" == "--like" ] && { WITH2="$2"; shift 2; }

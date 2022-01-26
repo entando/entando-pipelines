@@ -47,18 +47,19 @@ _ppl_query_latest_bom_version() {
 # A=2
 #
 _ppl_load_settings() {
-  local LNSEP=';';[ "$1" = "--var-sep" ] && { LNSEP="$2"; shift 2; }
-  local SECT="";[ "$1" = "--section" ] && { SECT="$2"; shift 2; }
+  local LNSEP=';';[ "$1" == "--var-sep" ] && { LNSEP="$2"; shift 2; }
+  local SECT="";[ "$1" == "--section" ] && { SECT="$2"; shift 2; }
+
   {
     if [ "$1" != "--stdin" ]; then
       local tmp="${1//$LNSEP/$'\n'}"
       tmp="${tmp//\\$'\n'/\\$LNSEP}"
-      _ppl_load_settings --stdin <<< "$tmp"
+      _ppl_load_settings ${SECT:+--section "$SECT"} --stdin <<< "$tmp"
       return "$?"
     fi
     
     local last=false
-    local in_sect=false
+    local in_sect=""
     local preserve
     
     while true; do
@@ -66,34 +67,31 @@ _ppl_load_settings() {
       read line || last=true
       
       preserve=false
+      append=false
       
       if [ -n "$line" ]; then
         [[ "${line:0:3}" == "###" ]] && line="${line:3}"
         [[ "${line:0:1}" == "#" ]] && continue;
-        [[ "${line:0:3}" == "[p]" ]] && line="${line:3}"
+        [[ "${line:0:3}" == "[p]" ]] && { line="${line:3}"; preserve=true; }
+        [[ "${line:0:3}" == "[a]" ]] && { line="${line:3}"; append=true; }
         
-        if [ -n "$SECT" ]; then
-          if ! $in_sect; then
-            [ "$line" == "[$SECT]" ] && in_sect=true
-          else 
-            [[ "${line:0:1}" == "[" ]] && break
-            continue
-          fi
-        fi
-        
-        [[ "${line:0:1}" == "[" ]] && continue
-        
+        [[ "${line:0:1}" == "[" ]] && { in_sect="${line:1:-1}"; continue; }
+        [[ "$in_sect" != "$SECT" ]] && continue;
+      
         # shellcheck disable=SC2162
         IFS='=' read -r name value <<< "$line"
+        
         _is_valid_var_name "$name" || {
           _log_d "Invalid var name: \"$name\""
           _FATAL "Invalid var name"
         }
-        [[ "$PRES" == "true" && ${!name} != "" ]] && continue
+        if [[ "${!name}" != "" ]]; then
+          "$preserve" && continue
+          "$append" && value="${!name},${value}"
+        fi
         _set_var "$name" "$value"
         # shellcheck disable=SC2163
         export "$name"
-        
       fi
       $last && break
     done
@@ -127,23 +125,23 @@ _ppl_run_post-deployment-test_setup_script() {
 #
 _ppl_provision_helm_preview_environment() {
   local projectName="$1" projectVersion="$2" ns="$3" hostname_suffix="${4:-"null"}"
-  
+
   [ ! -f "./charts/preview/Chart.yaml" ] && return 99
   _log_i "Started the provisiong of the helm preview environment"
   _pkg_get --tar-install "$ENTANDO_OPT_HELM_CLI_URL" "helm" -c "helm"
 
   # ~ PARAMETERS RESOLUTION
-  _log_i "Provisioning - PHASE1"
+  _log_d "Helm Chart  - PHASE1"
   __cd "charts"
   
   _helm_update_placeholder_parameters "$projectName" "$projectVersion" "$ns" "$hostname_suffix"
   
   # EXECUTION
-  _log_i "Provisioning - PHASE2"
+  _log_d "Helm Chart  - PHASE2"
   __cd "preview"
   
   _log_d "Deploying.."
-  _helm_apply "$projectName" "$ns"
+  _helm_apply "$projectName" "$ns" | _group_stream "HELM DEPLOYMENT"
 }
 
 _helm_update_placeholder_parameters() {

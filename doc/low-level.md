@@ -304,6 +304,13 @@
 
 ---
 
+### `BASE.init_default_vars()`
+
+**shellcheck disable=SC2034**
+
+
+---
+
 ### `START_MACRO()`
 
 **Setups the enviroment for a macro execution**
@@ -1317,6 +1324,13 @@
 ```
 
 </details>
+
+
+---
+
+### `BASE.init_default_vars()`
+
+**shellcheck disable=SC2034**
 
 
 ---

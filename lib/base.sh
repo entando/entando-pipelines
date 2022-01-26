@@ -1,7 +1,7 @@
 #!/bin/bash
 
+# shellcheck disable=SC2034
 BASE.init_default_vars() {
-  # shellcheck disable=SC2034
   ENTANDO_DEFAULT_DOCKER_ORG="entando"
   ENTANDO_OPERATOR_POD_NAME_PATTERN="^entando-operator-.*"
   ENTANDO_OPERATOR_STARTUP_TIMEOUT="60"
@@ -47,7 +47,7 @@ START_MACRO() {
 START_SIMPLE_MACRO() {
   set +e
   
-  _auto_decode_entando_opts
+  _load_entando_opts
   
   ${ENTANDO_OPT_STEP_DEBUG:-false} && {
     sys_trace_ctl enable
