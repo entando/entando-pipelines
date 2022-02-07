@@ -65,11 +65,10 @@ ppl--publication.tag-git-version() {
   __git_add_tag -f "$snapshotVersionTag" "$PPL_RUN_ID" "$PPL_COMMIT_ID"
   __git push origin "$snapshotVersionTag" -f
   
-  local versionNumber
-  _ppl_extract_version_part versionNumber "${snapshotVersionTag}" "effective-number"
-  
-  if [ "${versionNumber:0:1}" = "v" ]; then
-    _ppl-pr-submit-comment "$pr_num" "   \`${versionNumber:1}\`"
+  if [ "${snapshotVersionTag:0:1}" = "v" ]; then
+    local versionNumber
+    _ppl_extract_version_part versionNumber "${snapshotVersionTag}" "effective-number"
+    _ppl-pr-submit-comment "$pr_num" "Requested publication of version \`${versionNumber}\`"
   fi
 }
 
@@ -123,7 +122,7 @@ ppl--publication._determine_snapshot_version_tag.in_non_pr_event() {
   
   # ON THE BASE BRANCH
   __git_get_commit_tag --snapshot-tag _tmp_ver_tag_ "$PPL_COMMIT_ID"
-  
+
   if [[ -n "$_tmp_ver_tag_" ]]; then
     # development branch was already published
     if _ppl_is_release_version_number "$_tmp_ver_tag_"; then
@@ -142,7 +141,9 @@ ppl--publication._determine_snapshot_version_tag.in_non_pr_event() {
     [ -z "$_tmp_ver_tag_" ] && __git_get_commit_tag --pseudo-snapshot-tag _tmp_ver_tag_ "$pr_parent"
   fi
   
-  _set_var "$1" "${_tmp_ver_tag_:1}+$(_ppl_encode-branch-for-tagging "KB" "$PPL_NEAREST_WELL_KNOWN_BRANCH")"
+  _ppl_extract_version_part _tmp_ver_tag_ "${_tmp_ver_tag_}" "effective-number"
+  
+  _set_var "$1" "${_tmp_ver_tag_}+$(_ppl_encode-branch-for-tagging "KB" "$PPL_NEAREST_WELL_KNOWN_BRANCH")"
 }
 
 # Reaction to direct commits on a non-PR branch:

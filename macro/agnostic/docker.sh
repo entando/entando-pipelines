@@ -71,6 +71,7 @@ ppl--docker.publish.FOR_ALL_BUILDS() {
     #_pp FN dockerFile imageAddress projectName projectVersion build
     __exist -f "$dockerFile"
     "$FN" "$dockerFile" "$imageAddress"
+    _SOE
   done <<< "${builds//,/$'\n'}"
 }
 

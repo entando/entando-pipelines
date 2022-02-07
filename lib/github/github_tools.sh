@@ -460,7 +460,6 @@ _ppl_determine_branch_info.step1() {
     PPL_NEAREST_WELL_KNOWN_BRANCH="$PPL_CURRENT_REPO_BRANCH"
     _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_CURRENT_REPO_BRANCH" && return 0
   }
-  set +x
   
   _FATAL "Illegal tag format detected: No metadata and it's not a release tag"
 }
