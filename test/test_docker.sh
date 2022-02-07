@@ -75,7 +75,7 @@ test.docker.publish.BUILD_AND_PUSH() {
     ASSERT TMP = "[DOK] docker image inspect entando/entando-de-app:6.3.2"
     TEST.GET_TLOG_COMMAND TMP -1
     ASSERT TMP = "[DOK] docker push entando/entando-de-app:6.3.2"
-  ) || _SEO
+  ) || _SOE
 }
 
 #TEST:macro

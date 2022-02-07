@@ -799,7 +799,7 @@ _ppl_is_feature_action() {
 #     - pr-num              pull request number
 #     - meta:kb             current branch of event that generated the tag
 #     - meta:bb             bash branch branch of event that generated the tag
-#     - effective-number      the effective part of the version (all the version but with no metadata)
+#     - effective-number    the effective part of the version (all the version but with no metadata)
 #
 _ppl_extract_version_part() {
   local _tmp1_ _tmp2_ _tmp2a_ _tmp3_ _tmp4_ _tmp5_ _tmp_res_
@@ -833,7 +833,7 @@ _ppl_extract_version_part() {
       ;;
     *) _FATAL "Invalid part name \"$3\" provided";;
   esac
-  [[ -z "$_tmp_res_" || "$_tmp4_" != "PR" ]] && _FATAL "Provided snapshot version \"$2\" is not valid"
+  #[[ -z "$_tmp_res_" || "$_tmp4_" != "PR" ]] && _FATAL "Provided snapshot version \"$2\" is not valid"
   _set_var "$1" "$_tmp_res_"
 }
 

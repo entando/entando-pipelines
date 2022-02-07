@@ -401,7 +401,7 @@
      - pr-num              pull request number
      - meta:kb             current branch of event that generated the tag
      - meta:bb             bash branch branch of event that generated the tag
-     - effective-number      the effective part of the version (all the version but with no metadata)
+     - effective-number    the effective part of the version (all the version but with no metadata)
 ```
 
 </details>
