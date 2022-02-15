@@ -425,7 +425,7 @@ _load_entando_opts() {
     while :; do
       IFS= read -r env_name || last=true
       _resolve_entando_opt env_name
-       if [ -n "$env_name" ]; then
+      if [ -n "$env_name" ]; then
         _ppl_load_settings --section "$env_name" "$ENTANDO_OPT_ENVIRONMENTS"
       fi
       $last && break

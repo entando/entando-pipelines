@@ -264,3 +264,59 @@ __ppl_determine_current_project_type() {
   fi
 }
 
+
+# Parses a manifest file containin a entando-docker-image-info ConfigMap
+# and extract the images into variables of the form:
+#
+#  - ENTANDO_IMAGE_{image_key}
+#
+#  where "image_key" is the original image key with "-" replaced with "_"
+# 
+__ppl_extract_images_versions_from_entando_manifest() {
+  local in_scope=0
+  local data=""
+  local last=false
+  local image_key
+  local image_addr
+  ENTANDO_IMAGES_LIST=""
+
+  while true; do
+    # shellcheck disable=SC2162
+    IFS='' read line || last=true
+    
+    if [ -n "$line" ]; then
+      case "$in_scope" in
+        1)
+          [[ "${line}" == "data:" ]] && in_scope=2
+          ;;
+        2)
+          [[ "${line:0:2}" != "  " ]] && break;
+          data+="$line"$'\n'
+          if [[ "${line:0:4}" != "    " ]]; then
+            image_key="${line:2:-1}"
+            image_key=""${image_key%:*}""
+          else
+            local version registry organization ignored image_var
+            image_addr="$(jq '[ .version, ."executable-type", .registry, .organization ] | join(",")' -r <<< "$line")"
+            IFS=, read version ignored registry organization <<< "$image_addr"
+            image_var="ENTANDO_IMAGE_${image_key//-/_}"
+            _set_var "$image_var" "$registry/$organization/$image_key:$version"
+            ENTANDO_IMAGES_LIST+="$image_var,"
+          fi
+          ;;
+        *)
+          [[ "${line}" == "  name: entando-docker-image-info" ]] && in_scope=1
+          ;;
+      esac
+    fi
+    $last && break
+  done < "$1"
+}
+
+__ppl_download_operator_manifest() {
+  _NONNULL ENTANDO_OPT_TEST_OPERATOR_BUNDLE_URL ENTANDO_OPT_TEST_OPERATOR_BUNDLE_VERSION
+  local url
+  _tpl_set_var url "$ENTANDO_OPT_TEST_OPERATOR_BUNDLE_URL" version "$ENTANDO_OPT_TEST_OPERATOR_BUNDLE_VERSION"
+  url="$(path-concat "$url" "$2")"
+  _set_var "$1" "$(curl -sL "$url")"
+}

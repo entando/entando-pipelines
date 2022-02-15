@@ -128,12 +128,14 @@ ppl--mvn.run-plan() {
         ;;
       "COMPOSE-UP")
         if [ -n "$ENTANDO_OPT_TEST_COMPOSE_FILE" ]; then
+          ppl--mvn.update_docker_compose_file "$projectName" "$projectVersion"
           docker-compose -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" up -d 2>&1 | _summarize_stream --ppl-pg 500 "COMPOSE-UP"
           _SOE --pipe 0
         fi
         ;;
       "COMPOSE-DOWN")
         if [ -n "$ENTANDO_OPT_TEST_COMPOSE_FILE" ]; then
+          ppl--mvn.update_docker_compose_file "$projectName" "$projectVersion"
           docker-compose -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" up -d 2>&1 | _summarize_stream --ppl-pg 500 "COMPOSE-UP"
         fi
         ;;
@@ -148,6 +150,22 @@ ppl--mvn.run-plan() {
       esac
       true
   done
+}
+
+ppl--mvn.update_docker_compose_file() {
+  __ppl_extract_images_versions_from_entando_manifest
+  
+  if [[ -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" ]]; then
+    (
+      _log_d "Found docker-compose file \"$ENTANDO_OPT_TEST_COMPOSE_FILE\""
+      _ppl_set_provisioning_placeholders_in_files "$ENTANDO_OPT_TEST_COMPOSE_FILE" \
+          "$projectName" "$projectVersion" "$ns" "$hostname_suffix"
+
+
+      sed -i -e "s/{{ENTANDO_PROJECT_NAME}}/$prj_name/g" \
+
+    )
+  fi
 }
 
 ppl--mvn.full-build() {
@@ -338,18 +356,14 @@ ppl--mvn.post-deloyment._operator_installation() {
   
   _NONNULL ENTANDO_OPT_TEST_OPERATOR_BUNDLE_URL ENTANDO_OPT_TEST_OPERATOR_BUNDLE_VERSION
   
-  _tpl_set_var url "$ENTANDO_OPT_TEST_OPERATOR_BUNDLE_URL" version "$ENTANDO_OPT_TEST_OPERATOR_BUNDLE_VERSION"
-  url="$(path-concat "$url" "$2")"
+  __ppl_download_operator_manifest MANIFEST "$2"
   
   local MANIFEST
-  if [ -z "$skip_kind" ]; then
+  if [ -n "$skip_kind" ]; then
     # shellcheck disable=SC2031
-    MANIFEST="$(curl -sL "$url")"
-  else
-    # shellcheck disable=SC2031
-    MANIFEST="$(kube.manifest.filter-document-by-kind "$skip_kind" < <(curl -sL "$url"))"
+    MANIFEST="$(kube.manifest.filter-document-by-kind "$skip_kind" <<< "$MANIFEST")"
   fi
-
+  
   # shellcheck disable=SC2031
   {
     echo "$MANIFEST" | _group_stream MANIFEST

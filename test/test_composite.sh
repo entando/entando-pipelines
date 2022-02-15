@@ -38,3 +38,9 @@ test_ppl_provision_helm_preview_environment() {
   
   true
 }
+
+#TEST:lib
+test_ppl_extract_images_versions_from_entando_manifest() {
+  __ppl_extract_images_versions_from_entando_manifest "$PROJECT_DIR/test/resources/namespace-resources.yaml"
+  ASSERT ENTANDO_IMAGE_rhel8_mysql_80 = "registry.redhat.io/rhel8/rhel8-mysql-80:latest"
+}
