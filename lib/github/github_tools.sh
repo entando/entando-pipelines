@@ -206,7 +206,7 @@ _ppl-load-context() {
     return 0
   }
 
-  _pkg_get "jq" -c "jq"
+  _pkg_get "jq"
 
   local Q="["
   Q+=".repository,"
@@ -260,6 +260,7 @@ _ppl-load-context() {
     <<< "$RES"
 
     PPL_PR_TITLE="$(echo "$PPL_PR_TITLE" | base64 -d)"
+    [ "$PPL_PR_TITLE" = "null" ] && PPL_PR_TITLE=""
 
     # TEST__EXECUTION OVERRIDES
     _ppl-apply-overrides
@@ -366,12 +367,12 @@ _ppl-print-file-paginated() {
   local n=1 ln
   _ppl-stdout-group start "FULL $3 from line $n"
   while read -r ln; do
-    ((n++))
-    if [ "$((n % $2))" = 0 ]; then
+    if [[ "$n" -gt 1 && "$((n % $2))" = 1 ]]; then
       _ppl-stdout-group stop
       _ppl-stdout-group start "FULL $3 from line $n"
     fi
     echo "$ln"
+    ((n++))
   done <"$1"
   _ppl-stdout-group stop
 }

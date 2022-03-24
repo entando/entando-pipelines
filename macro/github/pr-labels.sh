@@ -26,7 +26,7 @@ ppl--pr-labels() {
     case "$action" in
       "add") _ppl-pr-add-label "$PPL_PR_NUM" "$labelName";;
       "remove") _ppl-pr-remove-label "$PPL_PR_NUM" "$labelName";;
-      *) _FATAL "Illegal action \"$action\"";;
+      *) _FATAL "Invalid action \"$action\"";;
     esac
   )
 }

@@ -12,7 +12,7 @@ ppl--check-pr-bom-state() {
   (
     START_MACRO "CHECK-PR-BOM" "$@"
 
-    _pkg_get "xmlstarlet" -c "xmlstarlet"
+    _pkg_get "xmlstarlet"
 
 
     __ppl_enter_local_clone_dir

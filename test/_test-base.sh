@@ -112,7 +112,7 @@ TEST.mock.load-pipeline-context() {
 }
 
 TEST.mock.initial_checkout() {  
-  _pkg_get "xmlstarlet" -c "xmlstarlet"
+  _pkg_get "xmlstarlet"
   (
     local local_dir="$1"
     rm -rf "$local_dir"
