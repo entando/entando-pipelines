@@ -70,7 +70,7 @@ ppl--pr-preflight-checks.CHECK_PROJECT_VERSION_FORMAT() {
     true
   else
     _ppl-job-update-status "$PPL_COMMIT_ID" "failure" "Failed" "Invalid project version"
-    _FATAL "The project version \"$projectVersion\" is not a snapshot"
+    #_FATAL "The project version \"$projectVersion\" is not a snapshot"
   fi
 }
 
