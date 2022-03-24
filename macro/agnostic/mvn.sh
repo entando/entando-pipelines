@@ -27,6 +27,8 @@ ppl--mvn() {
 
     __ppl_enter_local_clone_dir
     __exist -f "pom.xml"
+
+    __mvn_cleanup_old
     
     case "$action" in
       "FULL-BUILD")
