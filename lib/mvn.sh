@@ -54,3 +54,7 @@ __mvn_deploy() {
     -Ddependency-check.skip=true \
     -Dgpg.skip="$GPG"
 }
+__mvn_cleanup_old() {
+  rm -rf "$HOME/.m2/repository/org/entando"
+}
+

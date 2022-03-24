@@ -32,6 +32,8 @@ ppl--mvn() {
       kube.oc-login
     fi
 
+    __mvn_cleanup_old
+
     case "$action" in
       "FULL-BUILD")
         _log_i "Building and testing"
