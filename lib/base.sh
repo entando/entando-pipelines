@@ -166,7 +166,8 @@ _LOW_LEVEL_FATAL() {
 # --pipe  checks the result of the left part of a pipe expression (eg: cat file | grep "something")
 #
 _SOE() {
-  local R="$?"
+  local R="$?" PPS="${PIPESTATUS[0]}"
+  [ "$1" == "--pipe" ] && { R="$PPS"; shift; }
   [ "$1" == "--pipe" ] && { R="${PIPESTATUS[0]}"; shift; }
   [ -n "$1" ] && _log_e "$1 didn't complete properly"
   [ "$R" != 0 ] && _exit "$R"
