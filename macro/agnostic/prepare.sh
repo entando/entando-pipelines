@@ -73,7 +73,7 @@ ppl--pr-preflight-checks.CHECK_PROJECT_VERSION_FORMAT() {
       # shellcheck disable=SC2154
       #if [[ "$tag" != "" && "${tag:0:3}" != "fix" ]]; then
       #  _FATAL "A null version tag or a fix version tag is required in release #branching"
-      fi
+      #fi
   else
     # ON THE DEVELOPMENT MAIN BRANCH OR SUB-BRANCH
     
