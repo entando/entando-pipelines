@@ -45,7 +45,11 @@ ppl--repl() {
     local rcfile="$2"
     
     ENTANDO_PPL_SET_PROMPT() {
-      RED="\[\e[0;31m\]"
+      if [ "$ENTANDO_OPT_COLORS" = "github" ]; then
+        RED="\e[1;30;41m"
+      else
+        RED="\[\e[0;31m\]"
+      fi
       COL_="\[\e[0m\]"
       if [ -n "$ENTANDO_PROJECT_NAME" ]; then
         export PS1="$ENTANDO_PROJECT_NAME>${RED}PPLSH$COL_> "

@@ -21,6 +21,8 @@ __mvn_exec() {
   
   _log_d "Running mvn $1${2:+ $2}${3:+ $3}..."
   
+  mvn -B dependency:tree
+  
   _exec_cmd \
     ${SIMPLE:+"$SIMPLE"} \
     ${TS:+"$TS"} \
@@ -54,3 +56,8 @@ __mvn_deploy() {
     -Ddependency-check.skip=true \
     -Dgpg.skip="$GPG"
 }
+
+__mvn_cleanup_old() {
+  rm -rf "$HOME/.m2/repository/org/entando"
+}
+

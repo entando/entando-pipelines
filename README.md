@@ -4,7 +4,7 @@ A GitFlow-like workflow implementation for GitHub Actions, with some spice
 
 # Brief
 
-The primary aim of the entando piplelines it to provide a set of hight level functions called "macros", designed to be called from the provider workflow scripts. The pipeline developer should avoid creating logic on the provider scripts and instead always implement it in this repository.
+The primary aim of the entando pipelines is to provide a set of high level functions called "macros", designed to be called from the provider workflow scripts. The pipeline developer should avoid creating logic on the provider scripts and instead always implement it in this repository.
 
 ## Supported project types
 

@@ -15,18 +15,21 @@ ppl--setup-feature-flags() {
   (
     START_MACRO "SETUP-FEATURES-FLAGS" "$@"
     
-    local n=1 feature ACTION
+    local n=1 feature feature_as_var ACTION
 
     while [ $# -gt 0 ]; do
       ACTION=""
       _get_arg feature "$n"; ((n++)); shift
       
-      _ppl_get_feature_action ACTION "$feature" ""
+      feature_as_var="${feature//-/_}"
+      
+      _ppl_get_feature_action ACTION "${feature//_/-}" ""
+      [ -z "$ACTION" ] && _ppl_get_feature_action ACTION "${feature_as_var}" ""
       
       case "$ACTION" in
-        E*) _ppl-set-persistent-var "$feature" true;;
-        D*) _ppl-set-persistent-var "$feature" false;;
-        S*) _ppl-set-persistent-var "$feature" false;;
+        E*) _ppl-set-persistent-var "${feature_as_var}" true;;
+        D*) _ppl-set-persistent-var "${feature_as_var}" false;;
+        S*) _ppl-set-persistent-var "${feature_as_var}" false;;
         I*)
           _log_w "Skip directives (SKIP-$feature) are not allowed in " \
                  "\"ENTANDO_OPT_FEATURES\" or \"ENTANDO_OPT_GLOBAL_FEATURES\" => ignored"

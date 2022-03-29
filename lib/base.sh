@@ -1,9 +1,10 @@
 #!/bin/bash
 
-
+# shellcheck disable=SC2034
 BASE.init_default_vars() {
-  # shellcheck disable=SC2034
   ENTANDO_DEFAULT_DOCKER_ORG="entando"
+  ENTANDO_OPERATOR_POD_NAME_PATTERN="^entando-operator-.*"
+  ENTANDO_OPERATOR_STARTUP_TIMEOUT="60"
 }
 
 # Setups the enviroment for a macro execution
@@ -33,9 +34,6 @@ START_MACRO() {
     _EXIT "Macro of id \"$PPL_CURRENT_MACRO\" is not enabled"
   }
   
-  # CUSTOM ENVIRONMENT
-  _ppl_load_settings "$ENTANDO_OPT_CUSTOM_ENV"
-  
   # ..
   if _log_on_level DEBUG; then
     echo -e "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -49,12 +47,10 @@ START_MACRO() {
 START_SIMPLE_MACRO() {
   set +e
   
-  _auto_decode_entando_opts
+  _load_entando_opts
   
   ${ENTANDO_OPT_STEP_DEBUG:-false} && {
-    #export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
-    export PS4='\033[0;33m+[${SECONDS}][${BASH_SOURCE}:${LINENO}]:\033[0m ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
-    set -x
+    sys_trace_ctl enable
   }
 
   # shellcheck disable=SC2034
@@ -126,6 +122,7 @@ _EXIT() {
 #
 _FATAL() {
   local rv=77
+  sys_trace_ctl disable
 
   {
     # shellcheck disable=SC2076
@@ -163,10 +160,11 @@ _LOW_LEVEL_FATAL() {
 # STOP ON ERROR
 #
 # Options:
-# --pipe  checks the result of the left part of a pipe expression (eg: cat file | grep "something")
+# --pipe N  checks the result of the part #N of a pipe expression, can be specified up to 3 times
 #
 _SOE() {
-  local R="$?"
+  local R="$?" PPS="${PIPESTATUS[0]}"
+  [ "$1" == "--pipe" ] && { R="$PPS"; shift; }
   [ "$1" == "--pipe" ] && { R="${PIPESTATUS[0]}"; shift; }
   [ -n "$1" ] && _log_e "$1 didn't complete properly"
   [ "$R" != 0 ] && _exit "$R"

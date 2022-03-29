@@ -43,6 +43,12 @@ ppl--generic() {
         "NPM") ppl--npm PUBLISH "$@";;
         "ENP") ppl--enp PUBLISH "$@";;
       esac;;
+    "POST-DEP-TESTS")
+      case "$project_type" in
+        "MVN") ppl--mvn POST-DEP-TESTS "$@";;
+        "NPM") ppl--npm POST-DEP-TESTS "$@";;
+        "ENP") ppl--enp POST-DEP-TESTS "$@";;
+      esac;;
     MTX-NPM-SCAN-*)
       ppl--npm "$action" "$@";;
     MTX-MVN-SCAN-SONAR|MTX-MVN-SCAN-OWASP|MTX-MVN-POST-DEPLOYMENT-TESTS)

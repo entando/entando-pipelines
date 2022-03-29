@@ -364,21 +364,23 @@ _decode_entando_opt() {
 
 
 # Resolve an environment variable by interpreting the standard bash dereferencing syntax
-# it intentionally only supports full-lenght-instruction variable dereferencing like:
+# the capability is intentionally limited and supports these syntaxes:
 #
 # - VAR="$REFVAR" 
 # - VAR="${REFVAR}"
 #
-# Therefore it DOESN'T SUPPORT syntax line this:
+# And these forms:
 #
-# - VAR="${REFVAR}_test"
+# - VAR="$REFVAR something else"
+# - VAR="${REFVAR} something else"
 #
+# But other forms with more than dereferences or the dereference in other positions
 # Also note that the dereference can be escaped with the backslash
 #
 _resolve_entando_opt() {
   local FIN=false;[ "$1" == "--finalize" ] && { FIN=true; shift; }
   
-  local _reo_var_name="${!1}"
+  local _reo_var_name="${!1}" _reo_rest=""
   
   if [[ "${_reo_var_name:0:2}" = '\$' ]]; then
     # NOT A REF
@@ -389,22 +391,24 @@ _resolve_entando_opt() {
     fi
     return 0
   fi
-
+  
   # shellcheck disable=SC2016
-  if [[ "${_reo_var_name:0:2}" = '${' && "${_reo_var_name:((${#_reo_var_name}-1)):1}" = '}' ]]; then
+  if [[ "$_reo_var_name" =~ ^\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}(.*)$ ]]; then
     # A REF
-    _reo_var_name="${_reo_var_name:2:-1}"
-  elif [ "${_reo_var_name:0:1}" = '$' ]; then
+    _reo_var_name="${BASH_REMATCH[1]}"
+    _reo_rest="${BASH_REMATCH[2]}"
+  elif [[ "$_reo_var_name" =~ ^\$([a-zA-Z_][a-zA-Z0-9_]*)(.*)$ ]]; then
     # A REF
-    _reo_var_name="${_reo_var_name:1}"
+    _reo_var_name="${BASH_REMATCH[1]}"
+    _reo_rest="${BASH_REMATCH[2]}"
   else
     # NOT A REF
-    _set_var "$1" "$_reo_var_name"
+    _set_var "$1" "${_reo_var_name}"
     return 0
   fi
-    
+  
   _is_valid_var_name "$_reo_var_name" || _FATAL "Invalid reference \"$_reo_var_name\""
-  _set_var "$1" "${!_reo_var_name}"
+  _set_var "$1" "${!_reo_var_name}${_reo_rest}"
 }
 
 # Scans the environment for ENTANDO_OPT_XXX variables and decodes/derefence them
@@ -414,10 +418,24 @@ _resolve_entando_opt() {
 # 1) The reference resolution process is limited to 3 passes, so a sequence of 
 # nested references that goes beyond that limit will not be properly satisfied.
 #
-_auto_decode_entando_opts() {
+_load_entando_opts() {
+  if [[ -n "$ENTANDO_OPT_ENVIRONMENT_NAMES" || -n "$ENTANDO_OPT_ENVIRONMENTS" ]]; then
+    _decode_entando_opt ENTANDO_OPT_ENVIRONMENT_NAMES
+    last=false
+    while :; do
+      IFS= read -r env_name || last=true
+      _resolve_entando_opt env_name
+       if [ -n "$env_name" ]; then
+        _ppl_load_settings --section "$env_name" "$ENTANDO_OPT_ENVIRONMENTS"
+      fi
+      $last && break
+    done <<< "${ENTANDO_OPT_ENVIRONMENT_NAMES//,/$'\n'}"
+  fi
+  
   for varname in ${!ENTANDO_OPT*}; do
     _decode_entando_opt "$varname"
   done
+  
   for i in {1..3}; do
     for varname in ${!ENTANDO_OPT*}; do
       _resolve_entando_opt "$varname"
@@ -426,7 +444,29 @@ _auto_decode_entando_opts() {
   for varname in ${!ENTANDO_OPT*}; do
     _resolve_entando_opt --finalize "$varname"
   done
+  
+  _ppl_load_settings "$ENTANDO_OPT_CUSTOM_ENV"
 }
+
+# Unsets all the ENTANDO_OPT* vars matching the criteria.
+# All of the if no match criteria is provided
+#
+# Options:
+# --like pattern   matches all the vars with a name mathing the pattern.
+#                  can be specified up to 3 times
+#
+# shellcheck disable=SC2120
+_unset_all_entano_options() {
+  local WITH1=""; [ "$1" == "--like" ] && { WITH1="$2"; shift 2; }
+  local WITH2=""; [ "$1" == "--like" ] && { WITH2="$2"; shift 2; }
+  local WITH3=""; [ "$1" == "--like" ] && { WITH3="$2"; shift 2; }
+  for varname in ${!ENTANDO_OPT*}; do
+    if [[ "varname" =~ $WITH1 || "varname" =~ $WITH2 || "varname" =~ $WITH3 ]]; then
+      unset "$varname"
+    fi
+  done
+}
+
 
 # Scans args for --ENTANDO_OPT_XXX arguments and uses them to set the related environment vars
 #
@@ -513,7 +553,7 @@ _summarize_stream() {
     fi
     
     case "${sln,,}" in
-      *error*) _error_tail_size=1; ((_stat_ne++));((_stat_pg_ne++));;
+      *error*|*severe*) _error_tail_size=1; ((_stat_ne++));((_stat_pg_ne++));;
       *warning*) ((_stat_nw++));((_stat_pg_nw++));;
       *warn*) ((_stat_nw++));((_stat_pg_nw++));;
       *downloaded*) ((_stat_nd++));;
@@ -616,6 +656,7 @@ _exec_cmd() {
       # shellcheck disable=SC2064
       trap "rm \"$RVFILE\"" exit
       (
+        _unset_all_entano_options
         # shellcheck disable=SC2068
         $@ 2>&1
         echo "$?" > "$RVFILE"
@@ -633,6 +674,7 @@ _exec_cmd() {
       
       _summarize_stream ${PE:+"$PE"} --ppl-pg 50 "$1" < <(
         (
+          _unset_all_entano_options
           # shellcheck disable=SC2068
           $@ 2>&1
           echo "$?" > "$RVFILE"
@@ -646,7 +688,7 @@ _exec_cmd() {
     else
       _log_e "Command \"$1\" completed with error code \"$RV\""
     fi
-    exit "$RV"
+    _exit "$RV"
   )
 }
 
@@ -799,7 +841,7 @@ _ppl_is_feature_action() {
 #     - pr-num              pull request number
 #     - meta:kb             current branch of event that generated the tag
 #     - meta:bb             bash branch branch of event that generated the tag
-#     - effective-number      the effective part of the version (all the version but with no metadata)
+#     - effective-number    the effective part of the version (all the version but with no metadata)
 #
 _ppl_extract_version_part() {
   local _tmp1_ _tmp2_ _tmp2a_ _tmp3_ _tmp4_ _tmp5_ _tmp_res_
@@ -833,7 +875,7 @@ _ppl_extract_version_part() {
       ;;
     *) _FATAL "Invalid part name \"$3\" provided";;
   esac
-  [[ -z "$_tmp_res_" || "$_tmp4_" != "PR" ]] && _FATAL "Provided snapshot version \"$2\" is not valid"
+  #[[ -z "$_tmp_res_" || "$_tmp4_" != "PR" ]] && _FATAL "Provided snapshot version \"$2\" is not valid"
   _set_var "$1" "$_tmp_res_"
 }
 
@@ -1077,4 +1119,18 @@ path-concat() {
     [ "$#" = 0 ] && break
   done
   echo "$ACC"
+}
+
+sys_trace_ctl() {
+  case "$1" in
+    enable)
+      #export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+      export PS4='\033[0;33m+[${SECONDS}][${BASH_SOURCE}:${LINENO}]:\033[0m ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+      set -x
+      ;;
+    disable)
+      set +x
+      export PS4='+'
+      ;;
+  esac
 }

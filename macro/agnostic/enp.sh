@@ -44,11 +44,13 @@ ppl--enp.FULL-BUILD() {
   
   if [ -n "$ENTANDO_PRJ_BUILD_COMMAND" ]; then
     "$ENTANDO_PRJ_BUILD_COMMAND" | _summarize_stream --ppl-pg 50 "enp"
-    _SOE --pipe
+    _SOE --pipe 0
+
   fi
   if [ -n "$ENTANDO_PRJ_TEST_COMMAND" ]; then
     "$ENTANDO_PRJ_TEST_COMMAND" | _summarize_stream --ppl-pg 50 "enp"
-    _SOE --pipe
+    _SOE --pipe 0
+
   fi
   
   $notagging && return 0

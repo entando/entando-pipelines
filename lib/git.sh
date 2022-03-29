@@ -350,5 +350,5 @@ _git_is_dirty() {
 
 
 _git_log_topo_summary() {
-  log --stat --since='1 Day Ago' --graph --pretty=oneline --abbrev-commit --date=relative
+  git log --stat --since='1 Day Ago' --graph --pretty=oneline --abbrev-commit --date=relative
 }
