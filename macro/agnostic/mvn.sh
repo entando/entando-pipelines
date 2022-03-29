@@ -29,7 +29,8 @@ ppl--mvn() {
     __exist -f "pom.xml"
 
     __mvn_cleanup_old
-    
+    mvn -B dependency:tree | _group_stream DEPENDENCY-TREE
+
     case "$action" in
       "FULL-BUILD")
         _log_i "Running the full-build with plan: \"$ENTANDO_OPT_FULL_BUILD_PLAN\""
@@ -220,6 +221,7 @@ ppl--mvn.publish() {
       local projectVersion
       _ppl_extract_version_part projectVersion "$PPL_REF_NAME" "effective-number"
       _pom_set_project_version "$projectVersion" "./pom.xml"
+      mvn -B dependency:tree | _group_stream DEPENDENCY-TREE
       __mvn_deploy "internal-nexus" "$ENTANDO_OPT_MAVEN_REPO_PROD"
       ;;
     *)
