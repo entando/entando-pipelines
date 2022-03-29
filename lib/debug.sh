@@ -49,11 +49,19 @@ _to_col() {
   case "$3" in
     ERROR)
       #_set_var "$1" '\033[41m\033[1;37m'
-      _set_var "$1" '\033[41m\033[1;97m'
+      if [ "$ENTANDO_OPT_COLORS" = "github" ]; then
+        _set_var "$1" '\e[1;30;41m'
+      else
+        _set_var "$1" '\033[41m\033[1;97m'
+      fi
       _set_var "$2" '\033[0;39m'
     ;;
     WARN)
-      _set_var "$1" '\033[43m\033[1;37m'
+      if [ "$ENTANDO_OPT_COLORS" = "github" ]; then
+        _set_var "$1" '\e[1;30;43m'
+      else
+        _set_var "$1" '\033[43m\033[1;37m'
+      fi
       _set_var "$2" '\033[0;39m'
     ;;
   esac

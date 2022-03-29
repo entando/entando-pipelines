@@ -6,29 +6,7 @@ The pipelines are capable of creating K8S environments over which "post-deployme
 
 ## Feature Flag
 
-- `MTX-MVN-POST-DEPLOYMENT-TESTS`
-
-## Execution Plan
-
-- `ENTANDO_OPT_TEST_POSTDEP_PLAN`
-
-### comma delimited list of these possible commands:
-
-```
-RESET-TEST-NAMESPACE                   => deletes and recreates the test namespaces
-DEPLOY-PROJECT-HELM                    => deploys the project charts present in the project
-DEPLOY-OPERATOR-CLUSTER-REQUIREMENTS   => deploys the cluster requirements of the given operator
-DEPLOY-OPERATOR-NAMESPACE-REQUIREMENTS => deploys the namespace requirements of the given operator (except for the deployments)
-DEPLOY-OPERATOR                        => deploys the operator in the test namespace (implies DEPLOY-OPERATOR-NAMESPACE-REQUIREMENTS)
-RUN-POSTDEP-TESTS                      => runs the actual post-deployment tests
-SUSPEND-TEST-NAMESPACE                 => scales to 0 all the deployments of the test namespace
-DELETE-TEST-NAMESPACE                  => deletes the test namespace
-```
-
-## More..
-
-Look for the ENTANDO_OPT_XXX vars in the below the placeholders table.
-
+- `POST-DEP_TESTS`
 
 ## Test Namespace
 
@@ -37,12 +15,17 @@ Look for the ENTANDO_OPT_XXX vars in the below the placeholders table.
 Namespace name to use to run the tests.
 If set to `[auto]` or not provided tells the pipelies to derive it from the project name.
 
+## Execution Plan
 
-### Example for testing K8S controllers:
+- `ENTANDO_OPT_TEST_POSTDEP_PLAN`
 
-`RESET-TEST-NAMESPACE,DEPLOY-PROJECT-HELM,DEPLOY-OPERATOR-CLUSTER-REQUIREMENTS,DEPLOY-OPERATOR-NAMESPACE-REQUIREMENTS,RUN-TESTS,SUSPEND-TEST-NAMESPACE`
+_(see [about-execution-plans.md](./about-execution-plans.md))_
 
-# About "DEPLOY-PROJECT-HELM"
+## Example for testing K8S controllers:
+
+`OKD-LOGIN,RESET-TEST-NAMESPACE,DEPLOY-PROJECT-HELM-CHA RTS,DEPLOY-OPERATOR-NAMESPACE-REQUIREMENTS,RUN-TESTS,SUSPEND-TEST-NAMESPACE`
+
+# About "DEPLOY-PROJECT-HELM-CHARTS"
 
 this command contributes setting up the preview environment by running the chart contained in the project. It assume to find the charts starting file under this path:
 

@@ -1,3 +1,13 @@
+# `v1.3.0`
+
+## Relevant additions
+
+- Support for post-publication docker container scans
+- Support for post-publication tests as cleaned-up version of the in-pr post-deployment tests
+- Support ENTANDO_OPT_ENVIRONMENT as a way to unify multiple environments configurations
+- Support for basic variable dereferencing in ENTANDO_OPT_XXX variables
+- mvn FULL-BUILD reimplmeneted using the same execution-plan symtax of the post-deployment tests
+
 # `v1.2.1`
 
 ## Relevant additions

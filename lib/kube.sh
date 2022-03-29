@@ -18,15 +18,19 @@ kube.oc() {
 kube.oc.wait_for_resource() {
   if [ "$1" != "0" ]; then
     TMO="$1"; shift
-    export -f kube.oc
-    export -f kube.oc.wait_for_resource
+    export -f kube.oc kube.oc.wait_for_resource kube.oc.find-pod-containers-state
     timeout "$TMO" bash -c 'kube.oc.wait_for_resource 0 "$@"' "" "$@"
   else
     while true; do
       if [ "$2" == "until-not-present" ]; then
         ! kube.oc get "$3" "$4" &>/dev/null && return 0
-      else
+      elif  [ "$2" == "until-present" ]; then
         kube.oc get "$3" "$4" &>/dev/null && return 0
+      elif [ "$2" == "until-ready" ]; then
+        [ "$3" != "pod" ] && _FATAL "Resource type not supported by this condition"
+        [ "$(kube.oc.find-pod-containers-state "$4")" == "true" ] && return 0
+      else
+        _FATAL "Invalid condition \"$2\""
       fi
       sleep 0.5
     done
@@ -88,7 +92,7 @@ kube.oc.namespace.delete() {
   local ns="$1" tmo="$2"
   _NONNULL ns tmo
   kube.oc get namespace "$ns" &> /dev/null && {
-    _log_d "Deleting the old test namespace"
+    _log_d "Deleting the test namespace: \"$ns\""
     kube.oc delete namespace "$ns" &> /dev/null
     _log_d "Waiting for namespace deletion.."
     kube.oc.wait_for_resource "$tmo" until-not-present namespace "$ns"
@@ -98,8 +102,38 @@ kube.oc.namespace.delete() {
 kube.oc.namespace.suspend() {
   local ns="$1" tmo="$2"
   _NONNULL ns tmo
-  _log_d "Suspending the test namespace: $ns"
+  _log_d "Suspending the test namespace: \"$ns\""
   timeout "$tmo" kubectl scale statefulset,deployment -n "$ns" --all --replicas=0
+}
+
+kube.oc.find-pod-containers-state() {
+  oc get pods "$1" -o custom-columns='READY:.status.containerStatuses[*].ready' -n "$ENTANDO_OPT_TEST_NAMESPACE" --no-headers
+}
+
+kube.oc.find-resource-by-name() {
+  local TMO="";[ "$1" == "--wait" ] && { TMO="$2"; shift 2; }
+  local type="$1" pattern="$2"
+  (
+    KUBE.TMP() {
+      while :; do
+        RES="$(
+          oc get "$2" -o custom-columns="NAME:.metadata.name" --no-headers \
+            -n "$ENTANDO_OPT_TEST_NAMESPACE" 2>/dev/null \
+            | cut -d ' ' -f 1 | grep "$3"
+        )"
+        [ -n "$RES" ] && { echo "$RES"; break; }
+        [ "${1:-0}" == "0" ] && break
+        sleep "$1"
+      done
+    }
+    if [ -n "$TMO" ]; then
+        export -f KUBE.TMP
+        export ENTANDO_OPT_TEST_NAMESPACE
+        timeout "$TMO" bash -c "KUBE.TMP 1 $(_str_quote "$type") $(_str_quote "$pattern")"
+    else
+      KUBE.TMP 0 "$pattern" "$type" "$ENTANDO_OPT_TEST_NAMESPACE"
+    fi
+  )
 }
 
 # Filters out from the standard-input the triple-dash (---) separed documents that matches the given kind

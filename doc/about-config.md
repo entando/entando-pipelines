@@ -22,6 +22,34 @@ Notes:
 
 In order to avoid the redaction of simple configuration values like for instance "`TRACE`", prepend the value with the 3 chars prefix "`###`", like this: "`###TRACE`". In fact, if found at the start of a value this sequence is stripped on evaluation for all `ENTANDO_OPT_XXX` vars. Note that this is only valid for the entando-pipelines and that anyway the original value `###TRACE` would still be redacted.
 
+# SIMPLE DEREFERENCING
+
+Variables can contain references to other variables, like this:
+
+```
+ENTANDO_OPT_MAINLINE=$ENTANDO_OPT_MAINLINE_FOR_NEW_PROJECTS
+```
+
+Note that this is not bash dereferencing but instead it's reimplemented
+by the pipelines and it's intentionally limited.
+For more info check `_auto_decode_entando_opts`.
+
+# UNIFIED ENVIRONMENTS DEFINITION
+
+The variable `ENTANDO_OPT_ENVIRONMENTS` is capable of containing several environments definitions in the form:
+
+```
+[env1]
+var1=value1
+var2=value2
+[env2]
+var1=value1a
+var2=value2a
+```
+
+The pipelines will pick the correct environment according to the value of the var `ENTANDO_OPT_ENVIRONMENT_NAME`
+
+
 # CUSTOM ENVIRONMENT
 
 It's possible to define custom environment variables to export into the environment of the pipelines by defining the:

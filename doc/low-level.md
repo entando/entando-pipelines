@@ -304,6 +304,13 @@
 
 ---
 
+### `BASE.init_default_vars()`
+
+**shellcheck disable=SC2034**
+
+
+---
+
 ### `START_MACRO()`
 
 **Setups the enviroment for a macro execution**
@@ -350,7 +357,7 @@
 
 ```
  Options:
- --pipe  checks the result of the left part of a pipe expression (eg: cat file | grep "something")
+ --pipe N  checks the result of the part #N of a pipe expression, can be specified up to 3 times
 ```
 
 </details>
@@ -1321,6 +1328,13 @@
 
 ---
 
+### `BASE.init_default_vars()`
+
+**shellcheck disable=SC2034**
+
+
+---
+
 ### `START_MACRO()`
 
 **Setups the enviroment for a macro execution**
@@ -1367,7 +1381,7 @@
 
 ```
  Options:
- --pipe  checks the result of the left part of a pipe expression (eg: cat file | grep "something")
+ --pipe N  checks the result of the part #N of a pipe expression, can be specified up to 3 times
 ```
 
 </details>

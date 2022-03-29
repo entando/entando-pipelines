@@ -52,14 +52,29 @@ TEST.RESET_TLOG() {
   PPL_PARSED_CONTEXT=true
 
   TEST__TECHNICAL_LOG_FILE="$TEST__WORK_DIR/ttlog"
-  TEST.RESET_TLOG
 }
 
 [ -f "$PROJECT_DIR/test/_test-base.sh" ] && . "$PROJECT_DIR/test/_test-base.sh"
 type TEST__BEFORE_RUN &>/dev/null && TEST__BEFORE_RUN
 
-{
+test-cleanup() {
+  [ -f "$TEST__WORK_DIR/.effimeral-test-dir" ] && rm -rf "$TEST__WORK_DIR";
+}
+trap test-cleanup exit
+
+[ -t 0 ] && IN_TTY=false || IN_TTY=true
+
+
+TEST.RESET_STATE() {
+  TEST__EXPECTED_ERROR=""
+  TEST__APPLY_DEFAULT_OVERRIDES() {
+    PPL_CLONE_URL="file://$TEST__WORK_DIR/repo-mocks/entando-test-repo-base"
+  }
+  
+  TEST.RESET_TLOG
+  
   ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-DEBUG}"
+  
   [ -z "$ENTANDO_OPT_REPO_BOM_URL" ] && \
     ENTANDO_OPT_REPO_BOM_URL="file://$TEST__WORK_DIR/repo-mocks/entando-core-bom"
 
@@ -72,18 +87,6 @@ type TEST__BEFORE_RUN &>/dev/null && TEST__BEFORE_RUN
   fi
 }
 
-
-TEST__APPLY_DEFAULT_OVERRIDES() {
-  PPL_CLONE_URL="file://$TEST__WORK_DIR/repo-mocks/entando-test-repo-base"
-}
-
-test-cleanup() {
-  [ -f "$TEST__WORK_DIR/.effimeral-test-dir" ] && rm -rf "$TEST__WORK_DIR";
-}
-trap test-cleanup exit
-
-[ -t 0 ] && IN_TTY=false || IN_TTY=true
-
 #~
 #~ RUNS THE TESTS
 #~
@@ -93,12 +96,15 @@ trap test-cleanup exit
       (
         . "$file"
 
-         while read -r fn; do
-           [[ "${fn:0:6}" = "#TEST:" || "${fn:0:2}" = "--" ]] && continue
-           echo '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-           echo 'TEST> TEST FUNCTION "'"$fn"'"'
-           ($fn) || _exit "$?"
-         done < <(grep  -A 1 "#TEST:$label" "$file" | sed 's/().*//')
+        while read -r fn; do
+          [[ "${fn:0:6}" = "#TEST:" || "${fn:0:2}" = "--" ]] && continue
+          echo '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+          echo 'TEST> TEST FUNCTION "'"$fn"'"'
+
+          TEST.RESET_STATE
+
+          ($fn) || _exit "$?"
+        done < <(grep  -A 1 "#TEST:$label" "$file" | sed 's/().*//')
       ) || _failend
     done  < <(grep -lr "#TEST:$label" "$PROJECT_DIR/test")
   done

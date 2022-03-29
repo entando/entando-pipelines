@@ -112,7 +112,7 @@ ppl--publication._determine_snapshot_version_tag.in_pr_event() {
 
 ppl--publication._determine_snapshot_version_number() {
   local _tmp_dssvn_
-  ppl--publication._determine_snapshot_version_tag.in_pr_event _tmp_dssvn_
+  ppl--publication._determine_snapshot_version_tag _tmp_dssvn_
   _ppl_extract_version_part "$1" "${_tmp_dssvn_}" "effective-number"
 }
 
