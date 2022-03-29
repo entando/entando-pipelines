@@ -71,8 +71,8 @@ ppl--pr-preflight-checks.CHECK_PROJECT_VERSION_FORMAT() {
     
       _semver_ex_parse maj min ptc "" tag "$projectVersion"
       # shellcheck disable=SC2154
-      if [[ "$tag" != "" && "${tag:0:3}" != "fix" ]]; then
-        _FATAL "A null version tag or a fix version tag is required in release braanching"
+      #if [[ "$tag" != "" && "${tag:0:3}" != "fix" ]]; then
+      #  _FATAL "A null version tag or a fix version tag is required in release #branching"
       fi
   else
     # ON THE DEVELOPMENT MAIN BRANCH OR SUB-BRANCH
