@@ -165,8 +165,6 @@ _LOW_LEVEL_FATAL() {
 _SOE() {
   local R="$?" PPS="${PIPESTATUS[0]}"
   [ "$1" == "--pipe" ] && { R="$PPS"; shift; }
-  [ "$1" == "--pipe" ] && { R="${PIPESTATUS[0]}"; shift; }
-  [ -n "$1" ] && _log_e "$1 didn't complete properly"
   [ "$R" != 0 ] && _exit "$R"
   return "$R"
 }
