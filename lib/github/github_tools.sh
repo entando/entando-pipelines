@@ -411,6 +411,7 @@ _ppl_determine_branch_info.step1() {
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # > PR-SYNC EVENTS (PPL_REF_NAME=the feature branch, PPL_BASE_REF=the base well-known branch)
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  PPL_IN_PR_BRANCH=false
   # shellcheck disable=SC2034
   [[ -n "$PPL_BASE_REF" ]] && {
     PPL_IN_PR_BRANCH=true

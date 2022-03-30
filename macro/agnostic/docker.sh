@@ -63,6 +63,7 @@ ppl--docker.publish.FOR_ALL_BUILDS() {
   local builds="$1" FN="$2" projectName="$4" projectVersion="$5"
   local dockerFile imageAddress
   export ENTANDO_OPT_LOG_LEVEL=TRACE
+  # shellcheck disable=SC2163
   export -f "$FN"
 
   while IFS= read -r build; do
