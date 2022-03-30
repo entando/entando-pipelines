@@ -153,7 +153,7 @@ ppl--publication._determine_snapshot_version_tag.in_non_pr_event() {
 # Case 3: it's not a merge commit and TOLERATE-DIRECT-COMMITS is not enabled => ERROR
 #
 ppl-release._handle_direct_commits() {
-   if ! $PPL_IN_PR_SYNC_EVENT; then
+   if ! $PPL_IN_PR_BRANCH; then
     local pr_parent
     __git_get_parent_pr --tolerant pr_parent "$PPL_COMMIT_ID"
     if [ -z "$pr_parent" ]; then
