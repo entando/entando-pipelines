@@ -130,13 +130,13 @@ ppl--mvn.run-plan() {
         kube.oc.namespace.delete "$ENTANDO_TEST_NAMESPACE" 30
         ;;
       "COMPOSE-UP")
-        if [ -n "$ENTANDO_OPT_TEST_COMPOSE_FILE" ]; then
+        if [ -n "$ENTANDO_OPT_TEST_COMPOSE_FILE" ] && [ -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" ]; then
           docker-compose -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" up -d 2>&1 | _summarize_stream --ppl-pg 500 "COMPOSE-UP"
           _SOE --pipe 0
         fi
         ;;
       "COMPOSE-DOWN")
-        if [ -n "$ENTANDO_OPT_TEST_COMPOSE_FILE" ]; then
+        if [ -n "$ENTANDO_OPT_TEST_COMPOSE_FILE" ] && [ -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" ]; then
           docker-compose -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" up -d 2>&1 | _summarize_stream --ppl-pg 500 "COMPOSE-UP"
         fi
         ;;
