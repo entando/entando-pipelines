@@ -442,11 +442,11 @@ test__ppl_load_settings() {
   ASSERT Y = "2"
   TESTENV+="[SECT Y]${LF}[a]X=1"${LF}
   _ppl_load_settings --section "SECT Y" --stdin <<< "$TESTENV"
-  ASSERT X = "1111"
+  ASSERT X = "111,1"
   ASSERT Y = "2"
   TESTENV+="[SECT Z]${LF}[p]X=0"${LF}
   _ppl_load_settings --section "SECT Z" --stdin <<< "$TESTENV"
-  ASSERT X = "1111"
+  ASSERT X = "111,1"
   ASSERT Y = "2"
 }
 
