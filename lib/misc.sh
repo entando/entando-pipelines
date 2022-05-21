@@ -851,6 +851,7 @@ _ppl_extract_version_part() {
     # shellcheck disable=SC2034
     IFS='-' read -r _tmp1_ _tmp2a_ _tmp2_ _tmp3_ _tmp4_ _tmp5_ <<< "$_tmpV_"
   else
+    # shellcheck disable=SC2034
     IFS='-' read -r _tmp1_ _tmp2_ _tmp3_ _tmp4_ _tmp5_<<< "$_tmpV_"
   fi
   case "$3" in
