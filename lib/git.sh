@@ -96,12 +96,12 @@ _git_set_commit_config() {
 # according with the information on the environment
 #
 # Expected Vars:
-# GIT_USER_NAME: user name
-# GIT_USER_EMAIL: user email
+# ENTANDO_OPT_GIT_USER_NAME: user name
+# ENTANDO_OPT_GIT_USER_EMAIL: user email
 #
 _git_auto_setup_commit_config() {
-  _NONNULL GIT_USER_NAME GIT_USER_EMAIL
-  _git_set_commit_config "$GIT_USER_NAME" "$GIT_USER_EMAIL"
+  _NONNULL ENTANDO_OPT_GIT_USER_NAME ENTANDO_OPT_GIT_USER_EMAIL
+  _git_set_commit_config "$ENTANDO_OPT_GIT_USER_NAME" "$ENTANDO_OPT_GIT_USER_EMAIL"
 }
 
 # Extract the tag(s) on the given gitref string
@@ -340,6 +340,12 @@ __git_get_parent_pr() {
 #
 _git_commit_exists() {
   git branch --contains "$1" &> /dev/null
+}
+
+# Tells if a given tag exists on the repo
+#
+_git_tag_exists() {
+  git rev-parse "$1" &>&1
 }
 
 # Fails if the worktre has uncommitted or untracked files

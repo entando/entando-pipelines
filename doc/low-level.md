@@ -390,6 +390,13 @@
 
 ---
 
+### `_exec_with_empty_env()`
+
+**Executes a command in an expty enviroment**
+
+
+---
+
 ### `kube.oc.wait_for_resource()`
 
 **Waits for a condition on given resource**
@@ -644,8 +651,8 @@
  according with the information on the environment
 
  Expected Vars:
- GIT_USER_NAME: user name
- GIT_USER_EMAIL: user email
+ ENTANDO_OPT_GIT_USER_NAME: user name
+ ENTANDO_OPT_GIT_USER_EMAIL: user email
 ```
 
 </details>
@@ -821,6 +828,13 @@
 ### `_git_commit_exists()`
 
 **Tells if a given commit reference exists on the repo**
+
+
+---
+
+### `_git_tag_exists()`
+
+**Tells if a given tag exists on the repo**
 
 
 ---
@@ -1414,6 +1428,13 @@
 
 ---
 
+### `_exec_with_empty_env()`
+
+**Executes a command in an expty enviroment**
+
+
+---
+
 ### `kube.oc.wait_for_resource()`
 
 **Waits for a condition on given resource**
@@ -1668,8 +1689,8 @@
  according with the information on the environment
 
  Expected Vars:
- GIT_USER_NAME: user name
- GIT_USER_EMAIL: user email
+ ENTANDO_OPT_GIT_USER_NAME: user name
+ ENTANDO_OPT_GIT_USER_EMAIL: user email
 ```
 
 </details>
@@ -1845,6 +1866,13 @@
 ### `_git_commit_exists()`
 
 **Tells if a given commit reference exists on the repo**
+
+
+---
+
+### `_git_tag_exists()`
+
+**Tells if a given tag exists on the repo**
 
 
 ---
@@ -2098,8 +2126,8 @@
  according with the information on the environment
 
  Expected Vars:
- GIT_USER_NAME: user name
- GIT_USER_EMAIL: user email
+ ENTANDO_OPT_GIT_USER_NAME: user name
+ ENTANDO_OPT_GIT_USER_EMAIL: user email
 ```
 
 </details>
@@ -2162,6 +2190,13 @@
 ### `_git_commit_exists()`
 
 **Tells if a given commit reference exists on the repo**
+
+
+---
+
+### `_git_tag_exists()`
+
+**Tells if a given tag exists on the repo**
 
 
 ---

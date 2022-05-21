@@ -74,6 +74,8 @@ _ppl_load_settings() {
         [[ "${line:0:1}" == "#" ]] && continue;
         [[ "${line:0:3}" == "[p]" ]] && { line="${line:3}"; preserve=true; }
         [[ "${line:0:3}" == "[a]" ]] && { line="${line:3}"; append=true; }
+        [[ "${line:0:2}" == "p;" ]] && { line="${line:2}"; preserve=true; }
+        [[ "${line:0:2}" == "a;" ]] && { line="${line:2}"; append=true; }
         
         [[ "${line:0:1}" == "[" ]] && { in_sect="${line:1:-1}"; continue; }
         [[ "$in_sect" != "$SECT" ]] && continue;

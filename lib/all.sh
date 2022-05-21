@@ -9,6 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
   BASE.init_default_vars
   . "$SCRIPT_DIR/lib/debug.sh"
   . "$SCRIPT_DIR/lib/misc.sh"
+  . "$SCRIPT_DIR/lib/config.sh"
   . "$SCRIPT_DIR/lib/semver.sh"
   
   # Domain Specific Tools

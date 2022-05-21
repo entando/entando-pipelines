@@ -15,14 +15,17 @@ BASE.init_default_vars() {
 #
 # shellcheck disable=SC2034
 START_MACRO() {
-  # BASICS
-  START_SIMPLE_MACRO "$@"
-  
   # PIPELINES CONTEXT
   _ppl-load-context "$PPL_CONTEXT"
-  
+    
   # INFO ABOUT THE CURRENT BRANCHING
   _ppl_determine_branch_info
+  
+  # READS CONFIGURATIONS FROM THE DATA REPO
+  _ppl_clone_and_configure_data_repo
+
+  # BASICS
+  START_SIMPLE_MACRO "$@"
   
   # FEATURES
   _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_FEATURES}"
@@ -66,7 +69,7 @@ START_SIMPLE_MACRO() {
   _get_arg PPL_NO_REPO --no-repo
   
   _get_arg PPL_LOCAL_CLONE_DIR --lcd
-  _get_arg PPL_TOKEN_OVERRIDE --token
+  _get_arg PPL_TOKEN_OVERRIDE --tokenSTART_MACRO
   _get_arg PPL_OUTPUT_FILE --out
   
   if [ "${PPL_CURRENT_MACRO:0:1}" = "@" ]; then
@@ -84,8 +87,6 @@ START_SIMPLE_MACRO() {
   else
     ENTANDO_OPT_SUDO=""
   fi
-
-  ENTANDO_OPT_REPO_BOM_URL="${ENTANDO_OPT_REPO_BOM_URL}"
 
   # LOG LEVEL
   ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-INFO}"
@@ -206,4 +207,10 @@ _exit() {
   else
     exit "$@"
   fi
+}
+
+# Executes a command in an expty enviroment
+#
+_exec_with_empty_env() {
+  env -i "$@"
 }

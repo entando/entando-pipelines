@@ -196,6 +196,8 @@ ppl--mvn.full-build() {
   
   _SOE
   
+  sys_trace_ctl enable
+  
   if _ppl_is_feature_enabled "TAG-SNAPSHOT-AFTER-BUILD" true; then
     # Adds snapshot-tag to provide context data and trigger publication workflow
     ppl--publication tag-git-version

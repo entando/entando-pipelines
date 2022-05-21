@@ -1,3 +1,15 @@
+# `v1.4.0`
+
+## Relevant additions
+
+- Added support for a data repository, which a way to host and centralize pipeline configurations
+- Non-secret configurations stored on github secrets moved to the data repository
+- Changed the snyk suppression file approach, check the dedicated doc (about-security-scans.md)
+
+## Breaking changes
+
+- repository-local snyk suppression file is now ignored by default and instead the global one is used
+
 # `v1.3.0`
 
 ## Relevant additions

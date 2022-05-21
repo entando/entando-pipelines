@@ -482,6 +482,13 @@
 
 ---
 
+### `_ppl_clone_and_configure_data_repo()`
+
+**Load the pipeline configuration from the pipelines data repository**
+
+
+---
+
 ### `_ppl_query_latest_bom_version()`
 
 **Extracts the latest bom version given the bom repository URL**
