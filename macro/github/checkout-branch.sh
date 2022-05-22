@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090 disable=SC1091
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../../lib/all.sh"
 
 # EXECUTES THE CLONE AND CHECKOUT OF THE CURRENT DEFAULT REPO AND REF

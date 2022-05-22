@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090 disable=SC1091
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../../lib/all.sh"
 
 # MACRO OPERATIONS RELATED TO THE BOM
