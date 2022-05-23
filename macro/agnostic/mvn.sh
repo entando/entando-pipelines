@@ -185,6 +185,8 @@ ppl--mvn.full-build() {
   
   if [ -n "$ENTANDO_OPT_TEST_COMPOSE_FILE" ]; then
     docker-compose -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" down 2>&1 | _summarize_stream --ppl-pg 500 "COMPOSE-DOWN"
+  else
+    true
   fi
   
   if _ppl_is_feature_enabled "MVN-QUARKUS-NATIVE"; then
@@ -196,15 +198,13 @@ ppl--mvn.full-build() {
   
   _SOE
   
-  sys_trace_ctl enable
-  
   if _ppl_is_feature_enabled "TAG-SNAPSHOT-AFTER-BUILD" true; then
     # Adds snapshot-tag to provide context data and trigger publication workflow
-    ppl--publication tag-git-version
+    ppl--publication.tag-git-version "v"
     true
   else
     # Adds pseudo-snapshot-tag to provide the required context data, but it doesn't trigger the workflow
-    ppl--publication tag-git-pseudo-version
+    ppl--publication.tag-git-version "p"
     true
   fi
 

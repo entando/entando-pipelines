@@ -53,7 +53,7 @@ ppl--generic() {
       ppl--npm "$action" "$@";;
     MTX-MVN-SCAN-SONAR|MTX-MVN-SCAN-OWASP|MTX-MVN-POST-DEPLOYMENT-TESTS)
       ppl--mvn "$action" "$@";;
-    MTX-SCAN-SNYK)
+    "MTX-SCAN-SNYK")
       ppl--scan "snyk" "$@";;
     "GENERATE-BUILD-CACHE-KEY")
       START_SIMPLE_MACRO "$action" "$@"

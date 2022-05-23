@@ -26,13 +26,13 @@ ppl--scan() {
 
     local action
     _get_arg action 1
-    
-    export ENTANDO_OPT_LOG_LEVEL=DEBUG
 
     case "$action" in
       snyk)
         ppl--scan.PREREQUIREMENTS
+        ppl--scan.SETUP
         ppl--scan.SCAN
+        ppl--scan.CLEANUP
         ;;
       snyk-container)
         local imageAddress dockerFile
@@ -55,6 +55,53 @@ ppl--scan.PREREQUIREMENTS() {
     ${ENTANDO_OPT_SUDO:+"$ENTANDO_OPT_SUDO" -n} npm install -g snyk 1>/dev/null
   }
   _pkg_is_command_available -m snyk
+}
+
+ppl--scan.SETUP() {
+  local MD="mode = \"$ENTANDO_OPT_SNYK_SCAN_SUPPRESSION_MODE\""
+  local FD="suppression file"
+  
+  ENTANDO_OPT_LOG_LEVEL=DEBUG
+  
+  case "$ENTANDO_OPT_SNYK_SCAN_SUPPRESSION_MODE" in
+    "only-global") 
+      ppl--scan.SETUP.use-global "Using global $FD ($MD)"
+      ;;
+    "local-fallback-to-global")
+      if [ -f "$ENTANDO_SNYK_LOCAL_FILE" ]; then
+        _log_d "Using local $FD ($MD)"
+      else
+        ppl--scan.SETUP.use-global "Using global $FD because no local $FD was found ($MD)"
+      fi
+      ;;
+    "gobal-fallback-to-local")
+      if [ -f "$ENTANDO_OPT_SNYK_SUPPRESSION_FILE" ]; then
+        ppl--scan.SETUP.use-global "Using global $FD because no local $FD was found ($MD)"
+      else
+        _log_d "Using local $FD because no global $FD was found or specified ($MD)"
+      fi
+      ;;
+    "only-local")
+      _log_d "Using local $FD ($MD)"
+      ;;
+    *)
+      ppl--scan.SETUP.use-global "Using global $FD ($MD)"
+      ;;
+  esac
+}
+
+ppl--scan.CLEANUP() {
+  # Restores the original .snyk file
+  git checkout "$ENTANDO_SNYK_LOCAL_FILE" &> /dev/null
+}
+
+ppl--scan.SETUP.use-global() {
+  _log_d "$1"
+  (
+    _NONNULL ENTANDO_OPT_SNYK_SUPPRESSION_FILE
+    __exist -f "$ENTANDO_OPT_SNYK_SUPPRESSION_FILE"
+    cp "$ENTANDO_OPT_SNYK_SUPPRESSION_FILE" "$ENTANDO_SNYK_LOCAL_FILE"
+  ) || _FATAL "scan setup failed"
 }
 
 ppl--scan.SCAN() {

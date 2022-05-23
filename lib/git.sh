@@ -344,8 +344,8 @@ _git_commit_exists() {
 
 # Tells if a given tag exists on the repo
 #
-_git_tag_exists() {
-  git rev-parse "$1" &>&1
+_git_ref_exists() {
+  git rev-parse "$1" 1>/dev/null 2>&1
 }
 
 # Fails if the worktre has uncommitted or untracked files

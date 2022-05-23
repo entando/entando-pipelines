@@ -393,7 +393,7 @@ _ppl_create_pr() {
 # Determine PPL_CURRENT_REPO_BRANCH, PPL_BRANCHING_TYPE and PPL_IN_PR_BRANCH
 #
 _ppl_determine_branch_info() {
-  _ppl_determine_branch_info.step1
+  _ppl_determine_branch_info.step1 "$@"
   
   _ppl_is_feature_enabled "EPIC-BRANCHES" true && {
     if [ "$PPL_BRANCHING_TYPE" == "epic" ]; then

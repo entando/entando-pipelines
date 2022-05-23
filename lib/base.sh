@@ -5,6 +5,8 @@ BASE.init_default_vars() {
   ENTANDO_DEFAULT_DOCKER_ORG="entando"
   ENTANDO_OPERATOR_POD_NAME_PATTERN="^entando-operator-.*"
   ENTANDO_OPERATOR_STARTUP_TIMEOUT="60"
+  # SNYK
+  ENTANDO_SNYK_LOCAL_FILE="./.snyk"
 }
 
 # Setups the enviroment for a macro execution
@@ -18,14 +20,17 @@ START_MACRO() {
   # PIPELINES CONTEXT
   _ppl-load-context "$PPL_CONTEXT"
     
-  # INFO ABOUT THE CURRENT BRANCHING
-  _ppl_determine_branch_info
+  # PARTIAL INFO ABOUT THE CURRENT BRANCHING
+  PPL_NO_REPO=true _ppl_determine_branch_info
   
   # READS CONFIGURATIONS FROM THE DATA REPO
   _ppl_clone_and_configure_data_repo
 
   # BASICS
   START_SIMPLE_MACRO "$@"
+
+  # COMPLETE INFO ABOUT THE CURRENT BRANCHING
+  _ppl_determine_branch_info
   
   # FEATURES
   _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_FEATURES}"
@@ -51,7 +56,7 @@ START_SIMPLE_MACRO() {
   set +e
   
   _load_entando_opts
-  
+
   ${ENTANDO_OPT_STEP_DEBUG:-false} && {
     sys_trace_ctl enable
   }
@@ -69,7 +74,7 @@ START_SIMPLE_MACRO() {
   _get_arg PPL_NO_REPO --no-repo
   
   _get_arg PPL_LOCAL_CLONE_DIR --lcd
-  _get_arg PPL_TOKEN_OVERRIDE --tokenSTART_MACRO
+  _get_arg PPL_TOKEN_OVERRIDE --token
   _get_arg PPL_OUTPUT_FILE --out
   
   if [ "${PPL_CURRENT_MACRO:0:1}" = "@" ]; then

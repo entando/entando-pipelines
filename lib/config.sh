@@ -3,7 +3,7 @@
 # Load the pipeline configuration from the pipelines data repository
 #
 _ppl_clone_and_configure_data_repo() {
-  _NONNULL ENTANDO_OPT_DATA_REPO
+  [ -z "$ENTANDO_OPT_DATA_REPO" ] && return 0
   
   if [ "${ENTANDO_OPT_DATA_REPO:0:3}" = "###" ]; then
     ENTANDO_OPT_DATA_REPO="${ENTANDO_OPT_DATA_REPO:3}"
@@ -11,20 +11,39 @@ _ppl_clone_and_configure_data_repo() {
   
   local data_repo_dir="entando-data-repo"
   local first_step=false
+  local saved_pwd="$PWD"
   
   __cd "$HOME"
   if [ ! -d "$data_repo_dir" ]; then
-    _git_full_clone --shallow "$ENTANDO_OPT_DATA_REPO" "$data_repo_dir" "$PPL_NEAREST_WELL_KNOWN_BRANCH" "${ENTANDO_OPT_DATA_REPO_TOKEN}"
+    _git_full_clone --shallow "$ENTANDO_OPT_DATA_REPO" "$data_repo_dir" "" "${ENTANDO_OPT_DATA_REPO_TOKEN}"
     first_step=true
   fi
   
-  local branch_latest_indicator="$PPL_NEAREST_WELL_KNOWN_BRANCH-latest"
+  local branch_latest_indicator="${PPL_NEAREST_WELL_KNOWN_BRANCH}-latest"
   
   (
+    local pr_title_qualifier=""
     __cd "$data_repo_dir"
-    if _git_tag_exists "$branch_latest_indicator" >/dev/null 2>&1; then
-      __git chekout "$branch_latest_indicator"
+    
+    # Extract by STORY AFFINITY
+    _ppl_extract_artifact_qualifier_from_pr_title --epic-name "$PPL_EPIC_NAME" pr_title_qualifier "$PPL_PR_TITLE"
+    
+    if [ -n "$pr_title_qualifier" ]; then
+      pr_title_qualifier="${PPL_NEAREST_WELL_KNOWN_BRANCH}/$pr_title_qualifier"
+      if _git_ref_exists "$pr_title_qualifier" >/dev/null 2>&1; then
+        __git checkout "$branch_latest_indicator"
+        exit 0
+      fi
     fi
+    
+    # Extract by BRANCH AFFINITY - TAG
+    if _git_ref_exists "$branch_latest_indicator" >/dev/null 2>&1; then
+      __git checkout "$branch_latest_indicator"
+      exit 0
+    fi
+    
+    # Extract by BRANCH AFFINITY - BRANCH
+    __git checkout "${PPL_NEAREST_WELL_KNOWN_BRANCH}"
   )
   
   DATA_REPO_PATH="$PWD/$data_repo_dir"
@@ -33,34 +52,36 @@ _ppl_clone_and_configure_data_repo() {
   _ppl_is_feature_enabled "DEBUG-CONFIG" && DEBUG_CONFIG=true
 
   _ppl_load_settings --stdin < <(
+    __cd "$DATA_REPO_PATH"
     _exec_with_empty_env \
-      "$data_repo_dir/configure.sh" \
-      "$DATA_REPO_PATH" "$PPL_REPO" "$PPL_NEAREST_WELL_KNOWN_BRANCH" \
-      "$PPL_BRANCHING_TYPE" "$PPL_JOB" "$ENTANDO_OPT_ENVIRONMENT_NAMES" \
-      "$first_step" "$DEBUG_CONFIG" || {
-      _FATAL "Configuration script returned error state \"$?\""
+      "./configure.sh" \
+        "$PPL_REPO" "${PPL_NEAREST_WELL_KNOWN_BRANCH}" \
+        "$PPL_BRANCHING_TYPE" "$PPL_JOB" "$ENTANDO_OPT_ENVIRONMENT_NAMES" \
+        "$first_step" "$DEBUG_CONFIG" || {
+      _FATAL "Configuration script returned error state \"$?\"" 1>&2
     }
   ) || _SOE
   
   # EXPECTED RESULT:
-  # - ENTANDO_ENVIRONMENT_FILE  => always assigned
-  # - ENTANDO_ENVIRONMENT_NAMES => may be assigned
-  # - ENTANDO_SNYK_FILE         => may be assigned
+  # - ENTANDO_OPT_ENVIRONMENT_FILE            => always assigned
+  # - ENTANDO_OPT_ENVIRONMENT_NAMES           => may be assigned
+  # - ENTANDO_OPT_SNYK_SUPPRESSION_FILE       => may be assigned
+  # - ENTANDO_OPT_SNYK_SCAN_SUPPRESSION_MODE  => may be assigned
   
   $DEBUG_CONFIG && {
-    _pp ENTANDO_ENVIRONMENT_FILE ENTANDO_ENVIRONMENT_NAMES ENTANDO_SNYK_FILE
+    _pp ENTANDO_OPT_ENVIRONMENT_FILE ENTANDO_OPT_ENVIRONMENT_NAMES ENTANDO_OPT_SNYK_SUPPRESSION_FILE ENTANDO_OPT_SNYK_SCAN_SUPPRESSION_MODE
   }
   
-  if [ -z "$ENTANDO_ENVIRONMENT_FILE" ]; then
-    _FATAL "Error configuring the pipelines: configuration script returned no or empty ENTANDO_ENVIRONMENT_FILE"
+  if [ -z "$ENTANDO_OPT_ENVIRONMENT_FILE" ]; then
+    _FATAL "Error configuring the pipelines: configuration script returned no or empty ENTANDO_OPT_ENVIRONMENT_FILE"
   fi
     
-  ENTANDO_OPT_ENVIRONMENTS="$(<"$ENTANDO_ENVIRONMENT_FILE")"
+  ENTANDO_OPT_ENVIRONMENTS="$(<"$ENTANDO_OPT_ENVIRONMENT_FILE")"
   
   if [ -z "$ENTANDO_OPT_ENVIRONMENTS" ]; then
-    _FATAL "Error configuring the pipelines: configuration script returned unexistent or empty environment file ($ENTANDO_ENVIRONMENT_FILE)"
+    _FATAL "Error configuring the pipelines: configuration script returned unexistent or empty environment file ($ENTANDO_OPT_ENVIRONMENT_FILE)"
   fi
-  
+
   __cd "$saved_pwd"
 }
 

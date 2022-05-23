@@ -832,7 +832,7 @@
 
 ---
 
-### `_git_tag_exists()`
+### `_git_ref_exists()`
 
 **Tells if a given tag exists on the repo**
 
@@ -1870,7 +1870,7 @@
 
 ---
 
-### `_git_tag_exists()`
+### `_git_ref_exists()`
 
 **Tells if a given tag exists on the repo**
 
@@ -2194,7 +2194,7 @@
 
 ---
 
-### `_git_tag_exists()`
+### `_git_ref_exists()`
 
 **Tells if a given tag exists on the repo**
 

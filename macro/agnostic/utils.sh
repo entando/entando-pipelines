@@ -85,3 +85,10 @@ ppl--repl() {
   [ -t 0 ] && IN_TTY=false || IN_TTY=true
   DBGSHELL --quiet --customize
 }
+
+_sed_comment() {
+  case "$1" in
+    "starts-with") sed 's/^\('"$2"'.*\)$/#\1/';;
+    *) _FATAL "Unsupported mode \"$1\"";;
+  esac
+}
