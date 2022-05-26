@@ -31,7 +31,7 @@ ppl--scan() {
       snyk)
         ppl--scan.PREREQUIREMENTS
         ppl--scan.SETUP
-        ppl--scan.SCAN
+        ppl--scan.SCAN || _SOE
         ppl--scan.CLEANUP
         ;;
       snyk-container)
@@ -93,6 +93,7 @@ ppl--scan.SETUP() {
 ppl--scan.CLEANUP() {
   # Restores the original .snyk file
   git checkout "$ENTANDO_SNYK_LOCAL_FILE" &> /dev/null
+  true
 }
 
 ppl--scan.SETUP.use-global() {

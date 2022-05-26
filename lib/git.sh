@@ -327,9 +327,11 @@ __git_get_parent_pr() {
   TOLERANT=false;[ "$1" = "--tolerant" ] && { TOLERANT=true; shift; }
   local _tmp_base_ _tmp_pr_
   # shellcheck disable=SC2034
+
   if ! $TOLERANT; then
     IFS=' ' read -r _tmp_base_ _tmp_pr_ < <(__git log --pretty="%P" -n 1 "$2")
-    _NONNULL _tmp_base_ _tmp_pr_
+    [ -z "$_tmp_base_" ] && _FATAL "Unable to find the base parent of the given merge commit (\"$2\")"
+    [ -z "$_tmp_pr_" ] && _FATAL "Unable to find the pr parent of the given merge commit (\"$2\")"
   else
     IFS=' ' read -r _tmp_base_ _tmp_pr_ < <(git log --pretty="%P" -n 1 "$2")
   fi

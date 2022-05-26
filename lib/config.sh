@@ -9,10 +9,26 @@ _ppl_clone_and_configure_data_repo() {
     ENTANDO_OPT_DATA_REPO="${ENTANDO_OPT_DATA_REPO:3}"
   fi
   
-  local data_repo_dir="entando-data-repo"
-  local first_step=false
+  # GATHERING OF BUILT REPO INFORMATION
+  local pr_title_qualifier=""
+  pr_title_qualifier="$(
+    __ppl_enter_local_clone_dir 1>&2
+    RES=""
+    if [ "$PPL_NO_REPO" ]; then
+      _ppl_determine_qualifier --skip-if-merge RES 1>&2
+    else
+      _ppl_determine_qualifier RES 1>&2
+    fi
+    echo "$RES"
+  )"
+  
   local saved_pwd="$PWD"
   
+  # SWITCHING TO THE DATA REPO
+  local data_repo_dir="entando-data-repo"
+  local first_step=false
+  
+  # EXTACT THE DATA REPO DIR
   __cd "$HOME"
   if [ ! -d "$data_repo_dir" ]; then
     _git_full_clone --shallow "$ENTANDO_OPT_DATA_REPO" "$data_repo_dir" "" "${ENTANDO_OPT_DATA_REPO_TOKEN}"
@@ -21,36 +37,32 @@ _ppl_clone_and_configure_data_repo() {
   
   local branch_latest_indicator="${PPL_NEAREST_WELL_KNOWN_BRANCH}-latest"
   
-  (
-    local pr_title_qualifier=""
-    __cd "$data_repo_dir"
-    
-    # Extract by STORY AFFINITY
-    _ppl_extract_artifact_qualifier_from_pr_title --epic-name "$PPL_EPIC_NAME" pr_title_qualifier "$PPL_PR_TITLE"
-    
-    if [ -n "$pr_title_qualifier" ]; then
-      pr_title_qualifier="${PPL_NEAREST_WELL_KNOWN_BRANCH}/$pr_title_qualifier"
-      if _git_ref_exists "$pr_title_qualifier" >/dev/null 2>&1; then
-        __git checkout "$branch_latest_indicator"
-        exit 0
-      fi
-    fi
-    
-    # Extract by BRANCH AFFINITY - TAG
-    if _git_ref_exists "$branch_latest_indicator" >/dev/null 2>&1; then
-      __git checkout "$branch_latest_indicator"
-      exit 0
-    fi
-    
-    # Extract by BRANCH AFFINITY - BRANCH
-    __git checkout "${PPL_NEAREST_WELL_KNOWN_BRANCH}"
-  )
+  __cd "$data_repo_dir"
+  DATA_REPO_PATH="$PWD"
   
-  DATA_REPO_PATH="$PWD/$data_repo_dir"
+  # Extract by STORY AFFINITY
+  if [ -n "$pr_title_qualifier" ]; then
+    git fetch origin "$pr_title_qualifier":"$pr_title_qualifier" --depth 1 &> /dev/null
+    if [ -n "$pr_title_qualifier" ] && _git_ref_exists "$pr_title_qualifier" >/dev/null 2>&1; then
+      ENTANDO_DATA_REPO_REF="$pr_title_qualifier"
+    fi
+  fi
   
-  DEBUG_CONFIG=false
+  # Extract by BRANCH AFFINITY - TAG
+  if [ -z "$ENTANDO_DATA_REPO_REF" ] && _git_ref_exists "$branch_latest_indicator" >/dev/null 2>&1; then
+    ENTANDO_DATA_REPO_REF="$branch_latest_indicator"
+  fi
+  
+  # Extract by BRANCH AFFINITY - BRANCH
+  [ -z "$ENTANDO_DATA_REPO_REF" ] && ENTANDO_DATA_REPO_REF="${PPL_NEAREST_WELL_KNOWN_BRANCH}"
+  
+  # ~
+  _log_d "Selected data-repo ref \"${ENTANDO_DATA_REPO_REF}\""
+  __git checkout "${ENTANDO_DATA_REPO_REF}"
+  
+  DEBUG_CONFIG=true
   _ppl_is_feature_enabled "DEBUG-CONFIG" && DEBUG_CONFIG=true
-
+  
   _ppl_load_settings --stdin < <(
     __cd "$DATA_REPO_PATH"
     _exec_with_empty_env \
@@ -69,7 +81,8 @@ _ppl_clone_and_configure_data_repo() {
   # - ENTANDO_OPT_SNYK_SCAN_SUPPRESSION_MODE  => may be assigned
   
   $DEBUG_CONFIG && {
-    _pp ENTANDO_OPT_ENVIRONMENT_FILE ENTANDO_OPT_ENVIRONMENT_NAMES ENTANDO_OPT_SNYK_SUPPRESSION_FILE ENTANDO_OPT_SNYK_SCAN_SUPPRESSION_MODE
+    _pp ENTANDO_DATA_REPO_REF ENTANDO_OPT_ENVIRONMENT_FILE ENTANDO_OPT_ENVIRONMENT_NAMES \
+        ENTANDO_OPT_SNYK_SUPPRESSION_FILE ENTANDO_OPT_SNYK_SCAN_SUPPRESSION_MODE
   }
   
   if [ -z "$ENTANDO_OPT_ENVIRONMENT_FILE" ]; then

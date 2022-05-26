@@ -419,8 +419,8 @@ __cd() {
   local L="$1"
   [ "${L:0:7}" = "file://" ] && L="${L:7}"
   [ -z "$L" ] && _FATAL "Null directory provided"
-  cd "$L" 1>/dev/null || _FATAL -S 2 "Unable to enter directory \"$1\""
-  _log_t "Entered directory \"$L\""
+  cd "$L" 1>/dev/null || _FATAL -S 1 "Unable to enter directory \"$1\""
+  _log_t "Entered directory \"$L\"" 1>&2
 }
 
 # File/dir existsor fatals
@@ -786,12 +786,17 @@ _ppl_extract_version_part() {
     # shellcheck disable=SC2034
     IFS='-' read -r _tmp1_ _tmp2_ _tmp3_ _tmp4_ _tmp5_<<< "$_tmpV_"
   fi
+
   case "$3" in
     "base-version") 
       _tmp_res_="$_tmp1_"
       [[ "${_tmp_res_:0:1}" = "v" ]] && _tmp_res_="${_tmp_res_:1}"
       ;;
-    "qualifier") _tmp_res_="$_tmp2_-$_tmp3_";;
+    "qualifier")
+      [[ -n "$_tmp2_" && -n "$_tmp3_" ]] && {
+        _tmp_res_="$_tmp2_-$_tmp3_"
+      }
+      ;;
     "pr-num") _tmp_res_="$_tmp5_";;
     "meta:kb"|"meta:bb")
       if [[ "${_tmpM_:0:3}" =~ ^..- ]]; then

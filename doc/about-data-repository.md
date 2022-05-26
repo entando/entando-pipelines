@@ -63,11 +63,10 @@ The pipeline will try to load the data-repo commit more suitable for the codebas
 
 **Then:**
 
-1. The pipeline tries to checkout the data-repo branch of name `{{branch-name}}/{{qualifier}}`
+1. The pipeline tries to checkout the data-repo branch of name `{{qualifier}}`
 2. If the branch is not found, the pipeline tries to checkout the data-repo tag of name `{{branch-name}}-latest`
 3. If the tag is not found then the pipelines checkout the data-repo branch `{{branch-name}}`
 4. If none of the above are satisfied, then the execution is terminated with an error
-
 
 # More advanced config scripts
 

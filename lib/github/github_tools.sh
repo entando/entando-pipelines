@@ -220,6 +220,8 @@ _ppl-load-context() {
   Q+='.sha,'
   Q+='.base_ref,'
   Q+='.head_ref,'
+  Q+='.event_name,'
+  Q+='.event.base_ref,'
   Q+=".event.repository.name,"
   Q+=".event.repository.clone_url,"
   Q+='.event.repository.statuses_url,'
@@ -248,6 +250,8 @@ _ppl-load-context() {
       PPL_SHA \
       PPL_BASE_REF \
       PPL_HEAD_REF \
+      PPL_EVENT_NAME \
+      PPL_EVENT_BASE_REF \
       PPL_REPO_NAME \
       PPL_CLONE_URL \
       PPL_STATUSES_URL \
@@ -412,7 +416,6 @@ _ppl_determine_branch_info.step1() {
   # > PR-SYNC EVENTS (PPL_REF_NAME=the feature branch, PPL_BASE_REF=the base well-known branch)
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   PPL_IN_PR_BRANCH=false
-  # shellcheck disable=SC2034
   [[ -n "$PPL_BASE_REF" ]] && {
     PPL_IN_PR_BRANCH=true
     PPL_BASE_BRANCH="$PPL_BASE_REF"
@@ -436,8 +439,20 @@ _ppl_determine_branch_info.step1() {
   ##### $PPL_NO_REPO && { return 0; }  # Preliminar steps of an action don't need the below details
 
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # > STANDARD VERSION TAGGING :: IN WELL-KNOWN BRANCH
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  # shellcheck disable=SC2034
+  if [[ -n "$PPL_EVENT_BASE_REF" && "$PPL_EVENT_NAME" == "push" ]]; then
+    _ppl_extract_branch_name_from_ref PPL_NEAREST_WELL_KNOWN_BRANCH "$PPL_EVENT_BASE_REF"
+    _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_NEAREST_WELL_KNOWN_BRANCH"
+    return 0
+  fi
+  
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # > STANDARD VERSION TAGGING :: IN WELL-KNOWN BRANCH - .. (PPL_REF_NAME=tag with KB segment, PPL_BASE_REF="")
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # shellcheck disable=SC2034
   _ppl_extract_version_part PPL_NEAREST_WELL_KNOWN_BRANCH "$PPL_REF_NAME" "meta:kb" && {
     _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_NEAREST_WELL_KNOWN_BRANCH"
     return 0

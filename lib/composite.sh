@@ -266,3 +266,23 @@ __ppl_determine_current_project_type() {
   fi
 }
 
+
+# Finds the artifact qualifier
+#
+_ppl_determine_qualifier() {
+  local SKIP_IF_MERGE=false; [ "$1" = "--skip-if-merge" ] && { SKIP_IF_MERGE=true;shift; }
+  if [[ "$PPL_REF" = */tags/* ]]; then
+    # TAG EVENT
+    _ppl_extract_version_part "$1" "$PPL_REF_NAME" "qualifier"
+  elif [[ -n "$PPL_PR_TITLE" ]]; then
+    # PR EVENT
+    _ppl_extract_artifact_qualifier_from_pr_title --epic-name "$PPL_EPIC_NAME" "$1" "$PPL_PR_TITLE"
+  else
+    if ! $SKIP_IF_MERGE; then
+      # MERGE EVENT
+      local snapshotVersionTag
+      ppl--publication._determine_snapshot_version_tag snapshotVersionTag
+      _ppl_extract_version_part "$1" "$snapshotVersionTag" "qualifier"
+    fi
+  fi
+}

@@ -12,27 +12,16 @@ on:
       - release/*
 
 env:
-  ENTANDO_OPT_USE_PPL_TAG: "v1.2.1"
-  ENTANDO_OPT_PROJECT_TYPE: "${{ secrets.ENTANDO_OPT_PROJECT_TYPE }}"
+  ENTANDO_OPT_USE_PPL_TAG: "v1.4.0"
+  ENTANDO_OPT_DATA_REPO: "${{ secrets.ENTANDO_OPT_DATA_REPO }}"
+  ENTANDO_OPT_DATA_REPO_TOKEN: "${{ secrets.ENTANDO_OPT_DATA_REPO_TOKEN }}"
+  ENTANDO_OPT_ENVIRONMENT_NAMES: "${{ secrets.ENTANDO_OPT_ENVIRONMENT_NAMES }}"
   ENTANDO_OPT_FEATURES: "${{ secrets.ENTANDO_OPT_FEATURES }}"
   ENTANDO_OPT_GLOBAL_FEATURES: "${{ secrets.ENTANDO_OPT_GLOBAL_FEATURES }}"
   ENTANDO_OPT_LOG_LEVEL: "${{ secrets.ENTANDO_OPT_LOG_LEVEL }}"
-  ENTANDO_OPT_REPO_BOM_URL: "${{ secrets.ENTANDO_OPT_REPO_BOM_URL }}"
   ENTANDO_OPT_CUSTOM_ENV: "${{ secrets.ENTANDO_OPT_CUSTOM_ENV }}"
-  ENTANDO_OPT_OKD_LOGIN: "${{ secrets.ENTANDO_OPT_OKD_LOGIN }}"
-  ENTANDO_OPT_IMAGE_REGISTRY_OVERRIDE: "${{ secrets.ENTANDO_OPT_IMAGE_REGISTRY_OVERRIDE }}"
-  ENTANDO_OPT_DOCKER_ORG: "${{ secrets.ENTANDO_OPT_DOCKER_ORG }}"
-  ENTANDO_OPT_TEST_NAMESPACE: "${{ secrets.ENTANDO_OPT_TEST_NAMESPACE }}"
-  ENTANDO_OPT_HELM_CLI_URL: "${{ secrets.ENTANDO_OPT_HELM_CLI_URL }}"
-  ENTANDO_OPT_TEST_POSTDEP_PLAN: "${{ secrets.ENTANDO_OPT_TEST_POSTDEP_PLAN }}"
-  ENTANDO_OPT_TEST_COMPOSE_FILE: "${{ secrets.ENTANDO_OPT_TEST_COMPOSE_FILE }}"
-  ENTANDO_OPT_TEST_OPERATOR_BUNDLE_URL: "${{ secrets.ENTANDO_OPT_TEST_OPERATOR_BUNDLE_URL }}"
-  ENTANDO_OPT_TEST_OPERATOR_BUNDLE_VERSION: "${{ secrets.ENTANDO_OPT_TEST_OPERATOR_BUNDLE_VERSION }}"
   PPL_CONTEXT: ${{ toJson(github) }}
-  GIT_USER_NAME: "${{ secrets.GIT_USER_NAME }}"
-  GIT_USER_EMAIL: "${{ secrets.GIT_USER_EMAIL }}"
   LOCAL_CLONE_DIR: "local-checkout"
-  SNYK_ORG: "${{ secrets.SNYK_ORG }}"
 
 
 jobs:
@@ -70,12 +59,9 @@ jobs:
     needs: [ 'prepare' ]
     runs-on: ubuntu-latest
     env:
-      ENTANDO_BOT_TOKEN: ${{ secrets.ENTANDO_BOT_TOKEN }}
-      ENTANDO_OPT_OKD_LOGIN_URL: "${{ secrets.ENTANDO_OPT_OKD_LOGIN_URL }}"
+      ENTANDO_BOT_TOKEN: "${{ secrets.ENTANDO_BOT_TOKEN }}"
       ENTANDO_OPT_OKD_LOGIN_TOKEN: "${{ secrets.ENTANDO_OPT_OKD_LOGIN_TOKEN }}"
-      ENTANDO_OPT_OKD_LOGIN_NAMESPACE: "${{ secrets.ENTANDO_OPT_OKD_LOGIN_NAMESPACE }}"
-      ENTANDO_OPT_OKD_LOGIN_INSECURE: "${{ secrets.ENTANDO_OPT_OKD_LOGIN_INSECURE }}"
-      ENTANDO_OPT_OKD_CLI_URL: "${{ secrets.ENTANDO_OPT_OKD_CLI_URL }}"
+
     steps:
       #~ CHECKOUT
       - name: "CHECKOUT"
@@ -94,7 +80,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: "${{ env.LOCAL_CLONE_DIR}}/${{ env.BUILD_TARGET_DIR }}/"
-          key: ${{ runner.os }}-enp-build-${{ env.BUILD_CACHE_KEY }}
+          key: "${{ runner.os }}-enp-build-${{ env.BUILD_CACHE_KEY }}"
       #~ BUILD
       - name: "FULL BUILD"
         env:
@@ -121,19 +107,11 @@ jobs:
         run: |
           ${{ secrets.ENTANDO_OPT_PPL_INSTALL_CMD }}
           ~/ppl-run checkout-branch pr --lcd "$LOCAL_CLONE_DIR"
-          ~/ppl-run generic GENERATE-BUILD-CACHE-KEY "BUILD_CACHE_KEY" --lcd "$LOCAL_CLONE_DIR" >> $GITHUB_ENV
-          ~/ppl-run generic GENERATE-BUILD-TARGET-DIR "BUILD_TARGET_DIR" --lcd "$LOCAL_CLONE_DIR" >> $GITHUB_ENV
-      #~ BUILD CACHE
-      - name: "Cache Build Dir"
-        id: build-cache
-        uses: actions/cache@v2
-        with:
-          path: "${{ env.LOCAL_CLONE_DIR}}/${{ env.BUILD_TARGET_DIR }}/"
-          key: ${{ runner.os }}-enp-build-${{ env.BUILD_CACHE_KEY }}
       #~ SCAN
       - name: "Run the matrix step ${{ matrix.mtx-step }}"
         run: |
           MTX_STEP="${{ matrix.mtx-step }}"
+
           ~/ppl-run generic GENERATE-REQUIREMENT-SPEC "MTX_REQUIREMENT" "$MTX_STEP" >> $GITHUB_ENV
           for spec in (("${{ env.MTX_REQUIREMENT }}")); do
             case "${{ env.MTX_REQUIREMENT }}" in
@@ -144,16 +122,8 @@ jobs:
                 export SNYK_TOKEN="${{ secrets.SNYK_TOKEN }}"
                 ;;
               ENTANDO-REQ-POST-DEP)
-                export ENTANDO_OPT_OKD_LOGIN_URL="${{ secrets.ENTANDO_OPT_OKD_LOGIN_URL }}"
                 export ENTANDO_OPT_OKD_LOGIN_TOKEN="${{ secrets.ENTANDO_OPT_OKD_LOGIN_TOKEN }}"
-                export ENTANDO_OPT_OKD_LOGIN_NAMESPACE="${{ secrets.ENTANDO_OPT_OKD_LOGIN_NAMESPACE }}"
-                export ENTANDO_OPT_OKD_LOGIN_INSECURE="${{ secrets.ENTANDO_OPT_OKD_LOGIN_INSECURE }}"
-                export ENTANDO_OPT_OKD_CLI_URL="${{ secrets.ENTANDO_OPT_OKD_CLI_URL }}"
                 export ENTANDO_OPT_IMAGE_REGISTRY_CREDENTIALS="${{ secrets.ENTANDO_OPT_IMAGE_REGISTRY_CREDENTIALS }}"
-                export ENTANDO_OPT_TEST_NAMESPACE="${{ secrets.ENTANDO_OPT_TEST_NAMESPACE }}"
-                export ENTANDO_OPT_TEST_HOSTNAME_SUFFIX="${{ secrets.ENTANDO_OPT_TEST_HOSTNAME_SUFFIX }}"
-                export ENTANDO_OPT_DOCKER_BUILDS="${{ secrets.ENTANDO_OPT_DOCKER_BUILDS }}"
-                export ENTANDO_OPT_DOCKER_ORG="${{ secrets.ENTANDO_OPT_DOCKER_ORG }}"
                 export ENTANDO_OPT_DOCKER_USERNAME="${{ secrets.ENTANDO_OPT_DOCKER_USERNAME }}"
                 export ENTANDO_OPT_DOCKER_PASSWORD="${{ secrets.ENTANDO_OPT_DOCKER_PASSWORD }}"
                 export ENTANDO_OPT_TEST_TLS_CRT="${{ secrets.ENTANDO_OPT_TEST_TLS_CRT }}"
@@ -161,4 +131,5 @@ jobs:
                 ;;
             esac
           done
+
           ~/ppl-run generic "$MTX_STEP" --id "$MTX_STEP" --lcd "$LOCAL_CLONE_DIR"

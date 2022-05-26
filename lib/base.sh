@@ -17,21 +17,9 @@ BASE.init_default_vars() {
 #
 # shellcheck disable=SC2034
 START_MACRO() {
-  # PIPELINES CONTEXT
-  _ppl-load-context "$PPL_CONTEXT"
-    
-  # PARTIAL INFO ABOUT THE CURRENT BRANCHING
-  PPL_NO_REPO=true _ppl_determine_branch_info
-  
-  # READS CONFIGURATIONS FROM THE DATA REPO
-  _ppl_clone_and_configure_data_repo
-
   # BASICS
-  START_SIMPLE_MACRO "$@"
+  START_SIMPLE_MACRO --full "$@"
 
-  # COMPLETE INFO ABOUT THE CURRENT BRANCHING
-  _ppl_determine_branch_info
-  
   # FEATURES
   _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_FEATURES}"
   _ppl_is_feature_enabled "INHERIT-GLOBAL-FEATURES" true && {
@@ -41,25 +29,16 @@ START_MACRO() {
   _ppl_is_feature_enabled "$PPL_CURRENT_MACRO" true || {
     _EXIT "Macro of id \"$PPL_CURRENT_MACRO\" is not enabled"
   }
-  
-  # ..
-  if _log_on_level DEBUG; then
-    echo -e "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo "~~ ${comment}${PPL_CURRENT_MACRO} invoked on $(date +'%Y-%m-%d %H-%M-%S')"
-    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-  else
-    _log_i "~~ ${comment}${PPL_CURRENT_MACRO} invoked"
-  fi
 }
 
 START_SIMPLE_MACRO() {
   set +e
   
-  _load_entando_opts
+  local FULL=false;[ "$1" == "--full" ] && { FULL=true;shift; }
 
-  ${ENTANDO_OPT_STEP_DEBUG:-false} && {
+  if [[ "$ENTANDO_OPT_STEP_DEBUG" = "true" || "$ENTANDO_OPT_STEP_DEBUG" = "###true" ]]; then
     sys_trace_ctl enable
-  }
+  fi
 
   # shellcheck disable=SC2034
   ARGS_FLAGS=(--no-skip --no-repo)
@@ -76,6 +55,29 @@ START_SIMPLE_MACRO() {
   _get_arg PPL_LOCAL_CLONE_DIR --lcd
   _get_arg PPL_TOKEN_OVERRIDE --token
   _get_arg PPL_OUTPUT_FILE --out
+  
+  $FULL && {
+    if _log_on_level DEBUG; then
+      echo -e "\n▒▒▒"
+      echo "▒▒▒ ${comment}${PPL_CURRENT_MACRO} invoked on $(date +'%Y-%m-%d %H-%M-%S')"
+      echo -e "\n▒▒▒\n"
+    else
+      _log_i "~~ ${comment}${PPL_CURRENT_MACRO} invoked"
+    fi
+
+    # PIPELINES CONTEXT
+    _ppl-load-context "$PPL_CONTEXT"
+    
+      if [ "$PPL_NO_REPO" != "true" ]; then
+      # PARTIAL INFO ABOUT THE CURRENT BRANCHING
+      _ppl_determine_branch_info
+      
+      # READS CONFIGURATIONS FROM THE DATA REPO
+      _ppl_clone_and_configure_data_repo
+    fi
+  }
+
+  _load_entando_opts
   
   if [ "${PPL_CURRENT_MACRO:0:1}" = "@" ]; then
     # shellcheck disable=SC2034
@@ -127,6 +129,7 @@ _EXIT() {
 # $1  error message
 #
 _FATAL() {
+  set +x
   local rv=77
   sys_trace_ctl disable
 

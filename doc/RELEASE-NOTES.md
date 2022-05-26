@@ -5,6 +5,7 @@
 - Support for a data repository in order to centralize configurations (see about-data-repository.md)
 - Most of the non-secret configurations moved to the data repository
 - Support for centralization of the snyk suppression file approach (see about-security-scans.md)
+- ENP projects now support publication and the standard ppl tagging (see about-enp-projects.md)
 
 ## Breaking changes
 

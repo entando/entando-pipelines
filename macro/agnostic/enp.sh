@@ -30,6 +30,8 @@ ppl--enp() {
     case "$action" in
       "FULL-BUILD") ppl--enp.FULL-BUILD;;
       "PUBLISH") ppl---enp.PUBLISH;;
+      "PUBLISH-IMAGE") ppl---enp.PUBLISH-IMAGE;;
+      "SCAN-IMAGE") ppl---enp.SCAN-IMAGE;;
       *)
         _FATAL "Invalid macro action \"$action\""
         ;;
@@ -43,14 +45,13 @@ ppl--enp.FULL-BUILD() {
   _log_i "Building and testing"
   
   if [ -n "$ENTANDO_PRJ_BUILD_COMMAND" ]; then
-    "$ENTANDO_PRJ_BUILD_COMMAND" | _summarize_stream --ppl-pg 50 "enp"
+    source "$ENTANDO_PRJ_BUILD_COMMAND" | _summarize_stream --ppl-pg 50 "enp"
     _SOE --pipe 0
-
   fi
-  if [ -n "$ENTANDO_PRJ_TEST_COMMAND" ]; then
-    "$ENTANDO_PRJ_TEST_COMMAND" | _summarize_stream --ppl-pg 50 "enp"
-    _SOE --pipe 0
 
+  if [ -n "$ENTANDO_PRJ_TEST_COMMAND" ]; then
+    source "$ENTANDO_PRJ_TEST_COMMAND" | _summarize_stream --ppl-pg 50 "enp"
+    _SOE --pipe 0
   fi
   
   $notagging && return 0
@@ -69,15 +70,24 @@ ppl--enp.FULL-BUILD() {
 ppl---enp.PUBLISH() {
   case "$PPL_REF_NAME" in
     v*)
-      # NOTE that enp pipelines doesn't actually publish an artifact,
-      # they only prepare the repository for the docker publication
+      # NOTE in this case the code doesn't actually publish an artifact,
+      # it only prepares the repository for the docker publication
       
-      _log_i "Preparing for publication"
-
+      sys_trace_ctl enable
+      
       local projectVersion
       _ppl_extract_version_part projectVersion "$PPL_REF_NAME" "effective-number"
       _ppl_set_current_project_version "$projectVersion"
+      ENTANDO_PRJ_VERSION="$projectVersion"
       ppl--enp.FULL-BUILD --no-tagging
+      
+      if [ -n "$ENTANDO_PRJ_PUBLICATION_COMMAND" ]; then
+        source "$ENTANDO_PRJ_PUBLICATION_COMMAND" | _summarize_stream --ppl-pg 50 "enp"
+        _SOE --pipe 0
+      else
+        _log_d "publication skipped (undefined variabled)"
+      fi
+      
       ;;
     *)
       _log_d "publication skipped"
@@ -86,3 +96,66 @@ ppl---enp.PUBLISH() {
   esac
 }
 
+ppl---enp.PUBLISH-IMAGE() {
+  case "$PPL_REF_NAME" in
+    v*)
+      _log_i "Publishing image"
+
+      if [ -n "$ENTANDO_PRJ_IMAGE_PUBLICATION_COMMAND" ]; then
+        source "$ENTANDO_PRJ_IMAGE_PUBLICATION_COMMAND" | _summarize_stream --ppl-pg 50 "enp"
+        _SOE --pipe 0
+      else
+        _log_d "image publication skipped (undefined variabled)"
+      fi
+
+      ;;
+    *)
+      _log_d "image publication skipped"
+      return 1
+      ;;
+  esac
+}
+
+ppl---enp.SCAN-IMAGE() {
+  _log_d "image scan skipped (not implemented)"
+  exit 0
+}
+
+# Generates the key to store the build cache
+#
+ppl--enp.generate-build-cache-key() {
+  local VARIABLE_NAME="$1"
+  _NONNULL VARIABLE_NAME
+
+  _enp_load
+  
+  if [ -n "$PPL_BASE_REF" ]; then
+    local snapshotVersionTag
+    ppl--publication._determine_snapshot_version_tag snapshotVersionTag
+    local projectVersion="${snapshotVersionTag:1}"
+    _ppl_extract_version_part projectVersion "$PPL_REF_NAME" "effective-number"
+    _ppl_set_current_project_version "$projectVersion"
+    ENTANDO_PRJ_VERSION="$projectVersion"
+  fi
+
+  local KEY=""
+  if [ -n "$ENTANDO_PRJ_BUILD_KEY_COMMAND" ]; then
+    KEY="$(
+      source "$ENTANDO_PRJ_BUILD_KEY_COMMAND"
+    )"
+    
+    [ -z "$KEY" ] && _FATAL "Error generating the build key"
+    echo "$VARIABLE_NAME=$KEY"
+  else
+    _log_d "Build cache disabled"
+  fi
+}
+
+# Generates the key to store the build cache
+#
+ppl--enp.generate-build-dir-path() {
+  local VARIABLE_NAME="$1"
+  _NONNULL VARIABLE_NAME
+  _enp_load
+  echo "$VARIABLE_NAME=$ENTANDO_PRJ_BUILD_DIR_PATH"
+}

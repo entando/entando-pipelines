@@ -12,7 +12,7 @@
 #
 ppl--pr-preflight-checks() {
   (
-    START_MACRO --no-repo "PREFLIGHT-CHECKS" "$@"
+    START_MACRO "PREFLIGHT-CHECKS" "$@"
     _pkg_get "xmlstarlet"
     
     _get_arg ONLY --only

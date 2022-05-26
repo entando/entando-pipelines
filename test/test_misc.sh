@@ -384,6 +384,8 @@ test_versioning_utils() {
   ASSERT RES = "6.4.0"
   _ppl_extract_version_part RES "v6.4.0-ENG-2268-PR-143+$ENCODED_REF" "meta:kb"
   ASSERT RES = "epic/an-epic-branch"
+  _ppl_extract_version_part RES "v6.4.0" "qualifier"
+  ASSERT RES = ""
 }
 
 #TEST:lib

@@ -8,7 +8,7 @@
 ppl--status-report() {
   # shellcheck disable=SC2034
   (
-    START_MACRO "STATUS-REPORT" "$@"
+    START_MACRO --no-repo "STATUS-REPORT" "$@"
     
     IN="$PPL_REPO: $PPL_WORKFLOW/$PPL_JOB ($PPL_EVENT)"
     PR_MERGE_TARGET_BRANCH="$PPL_BASE_REF"
@@ -47,8 +47,8 @@ ppl--status-report() {
     else
       _pp \
         IN \
-        FEATURES \
         ENV \
+        FEATURES \
         OKD_LOGIN_ENABLED \
         CUSTOM_ENV \
         PPL_REF \

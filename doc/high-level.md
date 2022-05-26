@@ -613,3 +613,10 @@
 
 **Reads the current branch from a give dir, or the current one if none is given**
 
+
+---
+
+### `_ppl_determine_qualifier()`
+
+**Finds the artifact qualifier**
+
