@@ -142,13 +142,7 @@ ppl--pr-preflight-checks.CHECK_TITLE_FORMAT() {
 }
 
 ppl--pr-preflight-checks.CHECK_WITH_CUSTOM_SCRIPT() {
-  [ ! -f "./.github/custom-pr-check.sh" ] && return 0
-  if ./.github/custom-pr-check.sh; then
-    _log_i "Custom PR validation script passed"
-    true
-  else
-    _FATAL "Custom PR validation script failed with error code: \"$?\""
-  fi
+  _ppl_run_custom_script "PR validation" "$ENTANDO_OPT_CUSTOM_PR_VALIDATION_SCRIPT"
 }
 
 ppl--pr-preflight-checks.SETUP_MERGE_RELATED_FLAGS() {

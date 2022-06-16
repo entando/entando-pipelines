@@ -73,8 +73,6 @@ ppl---enp.PUBLISH() {
       # NOTE in this case the code doesn't actually publish an artifact,
       # it only prepares the repository for the docker publication
       
-      sys_trace_ctl enable
-      
       local projectVersion
       _ppl_extract_version_part projectVersion "$PPL_REF_NAME" "effective-number"
       _ppl_set_current_project_version "$projectVersion"

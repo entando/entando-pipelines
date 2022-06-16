@@ -2,6 +2,12 @@
 
 # shellcheck disable=SC2034
 BASE.init_default_vars() {
+  ENTANDO_PIPELINE=true
+  if [ -n "$GITHUB_ACTIONS" ]; then
+    export ENTANDO_IN_REAL_PIPELINE=true
+  else
+    export ENTANDO_IN_REAL_PIPELINE=false
+  fi
   ENTANDO_DEFAULT_DOCKER_ORG="entando"
   ENTANDO_OPERATOR_POD_NAME_PATTERN="^entando-operator-.*"
   ENTANDO_OPERATOR_STARTUP_TIMEOUT="60"

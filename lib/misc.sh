@@ -446,7 +446,7 @@ __jq() {
   jq "$@" || _FATAL "Error parsing the json input"
 }
 
-# Intercept the stdin and instead prints an summary
+# Intercepts the stdin and instead prints an summary
 #
 # Params:
 # $1    the title of the summary
@@ -1071,4 +1071,25 @@ sys_trace_ctl() {
       export PS4='+'
       ;;
   esac
+}
+
+
+# Executes a custom PR script given:
+#
+# $1  the task name
+# $2  the location of the script
+#
+_ppl_run_custom_script() {
+  local DESC="$1"
+  local SCRIPT="$2"
+  [ -z "$SCRIPT" ] && return 0
+  [ ! -f "$SCRIPT" ] && return 0
+  _log_i "> Running $DESC"
+  "$SCRIPT"
+  if [ "$?" = "0" ]; then
+    _log_i "Custom $DESC script completed successfully"
+    true
+  else
+    _FATAL "Custom $DESC failed with error code: \"$?\""
+  fi
 }

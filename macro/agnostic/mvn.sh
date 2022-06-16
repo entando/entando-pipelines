@@ -69,13 +69,24 @@ ppl--mvn() {
 
 ppl--mvn.run-plan() {
   local plan="$1"
-  _pkg_get "xmlstarlet"
   
   _ppl_is_feature_action "INTEGRATION-TESTS" "D" && {
     _log_i "INTEGRATION TESTS SKIPPED"
     export ENTANDO_OPT_SKIP_INTEGRATION_TESTS=true
   }
+  
+  echo "########################################################################################"
+  echo "########################################################################################"
+  echo "########################################################################################"
+  
+  _pkg_get "xmlstarlet"
+  
+  _ppl_is_feature_enabled "BUILD-ESSENTIAL" false && {
+    _pkg_get "build-essential"
+  }
 
+  _ppl_run_custom_script "PLAN initialization" "$ENTANDO_OPT_CUSTOM_PLAN_INIT_SCRIPT" || _SOE
+  
   local projectName projectVersion prNumber
   {
     if [ "$PPL_BRANCHING_TYPE" != "release" ]; then

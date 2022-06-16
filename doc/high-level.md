@@ -482,6 +482,22 @@
 
 ---
 
+### `_ppl_run_custom_script()`
+
+**Executes a custom PR script given:**
+
+<details>
+
+```
+ $1  the task name
+ $2  the location of the script
+```
+
+</details>
+
+
+---
+
 ### `_ppl_clone_and_configure_data_repo()`
 
 **Load the pipeline configuration from the pipelines data repository**

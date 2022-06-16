@@ -523,3 +523,18 @@ test_path_functions() {
   ASSERT -v CONCAT_RES "$(path-concat "a" "b" "c")" = "a/b/c"
   ASSERT -v CONCAT_RES "$(path-concat "a" "b" "c" "")" = "a/b/c/"
 }
+
+
+#TEST:lib
+test_str_functions() {
+  print_current_function_name "> " ".."
+  # shellcheck disable=SC2034
+  local CONCAT_RES
+  
+  ASSERT -v RES "$(_str_last_char_of "123")" = "3"
+  ASSERT -v RES "$(_str_chop "123")" = "12"
+  ASSERT -v RES "$(_str_last_char_of "1")" = "1"
+  ASSERT -v RES "$(_str_chop "1")" = ""
+  ASSERT -v RES "$(_str_last_char_of "")" = ""
+  ASSERT -v RES "$(_str_chop "")" = ""
+}

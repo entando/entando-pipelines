@@ -82,6 +82,7 @@ _ppl_load_settings() {
       
         # shellcheck disable=SC2162
         IFS='=' read -r name value <<< "$line"
+        [[ "$(_str_last_char_of "$name")" = "+" ]] && { name="$(_str_chop "$name")"; append=true; }
         
         _is_valid_var_name "$name" || {
           _log_d "Invalid var name: \"$name\""

@@ -92,3 +92,23 @@ _sed_comment() {
     *) _FATAL "Unsupported mode \"$1\"";;
   esac
 }
+
+_str_last_char_of() {
+  local len="${#1}"
+  ((len--))
+  if [ $len -ge 0 ]; then
+    echo -n "${1:$len}"
+  else
+    echo -n ""
+  fi
+}
+
+_str_chop() {
+  local len="${#1}"
+  ((len--))
+  if [ $len -ge 0 ]; then
+    echo -n "${1:0:$len}"
+  else
+    echo -n ""
+  fi
+}
