@@ -96,6 +96,10 @@ ppl---npm.PUBLISH() {
       _ppl_extract_version_part projectVersion "$PPL_REF_NAME" "effective-number"
       _ppl_set_current_project_version "$projectVersion"
       ppl--npm.FULL-BUILD --no-tagging
+      __npm_exec install husky
+      __aws_login
+      #__npm unpublish...
+      __npm_exec publish
       ;;
     *)
       _log_d "publication skipped"

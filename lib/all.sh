@@ -22,6 +22,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
   . "$SCRIPT_DIR/lib/npm.sh"
   . "$SCRIPT_DIR/lib/enp.sh"
   . "$SCRIPT_DIR/lib/project.sh"
+  . "$SCRIPT_DIR/lib/aws.sh"
   
   # Composite
   . "$SCRIPT_DIR/lib/composite.sh"
