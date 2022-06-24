@@ -416,6 +416,7 @@ _ppl_determine_branch_info.step1() {
   # > PR-SYNC EVENTS (PPL_REF_NAME=the feature branch, PPL_BASE_REF=the base well-known branch)
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   PPL_IN_PR_BRANCH=false
+  # shellcheck disable=SC2034
   [[ -n "$PPL_BASE_REF" ]] && {
     PPL_IN_PR_BRANCH=true
     PPL_BASE_BRANCH="$PPL_BASE_REF"
@@ -489,3 +490,26 @@ _github._parse_known_branch() {
   esac
   return 0
 }
+
+
+
+# Rempves a label frpm a PR
+#
+# Params:
+# $1: the PR number
+# $2: the label to remove
+#
+_ppl-pr-remove-label() {
+  if github-request DELETE "$PPL_ISSUES_URL/labels/{label}" "" "number" "$1" "label" "$2"; then
+    _log_d "Removed label \"$2\" from pr #$1"
+    return 0
+  else
+    _log_d "Failed removing label \"$2\" from pr #$1"
+    return 1
+  fi
+}
+
+
+curl \
+  https://api.github.com/orgs/ORG//PACKAGE_TYPE/PACKAGE_NAME/versions/PACKAGE_VERSION_ID
+  

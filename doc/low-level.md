@@ -269,6 +269,55 @@
 
 ---
 
+### `__aws_exec()`
+
+**Runs a aws operation and summarise the output**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the aws command and params of _summarize_stream
+```
+
+</details>
+
+
+---
+
+### `__aws()`
+
+**Runs a aws operation**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the aws command
+```
+
+</details>
+
+
+---
+
+### `__aws_npm_unpublish()`
+
+**Unpublish a version from an aws npm repo**
+
+<details>
+
+```
+ Params:
+ $1: the project name
+ $2: the project version
+```
+
+</details>
+
+
+---
+
 ### `_url_add_token()`
 
 **Adds a token or replaces a tocken to/in a URL**
@@ -1303,6 +1352,55 @@
 ### `DBGSHELL()`
 
 **Drops a shell that inherits the caller environment**
+
+
+---
+
+### `__aws_exec()`
+
+**Runs a aws operation and summarise the output**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the aws command and params of _summarize_stream
+```
+
+</details>
+
+
+---
+
+### `__aws()`
+
+**Runs a aws operation**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the aws command
+```
+
+</details>
+
+
+---
+
+### `__aws_npm_unpublish()`
+
+**Unpublish a version from an aws npm repo**
+
+<details>
+
+```
+ Params:
+ $1: the project name
+ $2: the project version
+```
+
+</details>
 
 
 ---

@@ -1,3 +1,10 @@
+# `v1.4.1`
+
+## Relevant additions
+
+- Support for standard npm publication
+- Updated npm workflow samples
+
 # `v1.4.0`
 
 ## Relevant additions

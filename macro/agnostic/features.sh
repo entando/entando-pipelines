@@ -13,7 +13,7 @@
 #
 ppl--setup-feature-flags() {
   (
-    START_MACRO "SETUP-FEATURES-FLAGS" "$@"
+    START_MACRO --no-repo "SETUP-FEATURES-FLAGS" "$@"
     
     local n=1 feature feature_as_var ACTION
 
@@ -57,7 +57,7 @@ ppl--setup-feature-flags() {
 #
 ppl--setup-features-list() {
   (
-    START_MACRO "SETUP-FEATURES-LIST" "$@"
+    START_MACRO --no-repo "SETUP-FEATURES-LIST" "$@"
     
     _get_arg res_var 1
     _get_arg def_val 2

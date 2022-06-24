@@ -92,14 +92,43 @@ ppl---npm.PUBLISH() {
       
       _log_i "Preparing for publication"
 
-      local projectVersion
+      local projectName projectVersion
       _ppl_extract_version_part projectVersion "$PPL_REF_NAME" "effective-number"
       _ppl_set_current_project_version "$projectVersion"
+      _ppl_get_current_project_name projectName
       ppl--npm.FULL-BUILD --no-tagging
       __npm_exec install husky
-      __aws_login
-      #__npm unpublish...
-      __npm_exec publish
+      #__aws_login
+      echo XXXXXXXXXXXXXXXXXXXXXXXXXXX
+      echo XXXXXXXXXXXXXXXXXXXXXXXXXXX
+      echo XXXXXXXXXXXXXXXXXXXXXXXXXXX
+      echo XXXXXXXXXXXXXXXXXXXXXXXXXXX
+      echo XXXXXXXXXXXXXXXXXXXXXXXXXXX
+      echo LOGIN
+      
+      #if ! _ppl_is_release_version_number "$projectVersion"; then
+        #__aws_npm_unpublish "$projectName" "$projectVersion" &>/dev/null && {
+        #  _log_d "old package version unpublished"
+        #}
+        #__npm_exec unpublish --force
+      #fi
+      echo XXXXXXXXXXXXXXXXXXXXXXXXXXX
+      echo XXXXXXXXXXXXXXXXXXXXXXXXXXX
+      echo XXXXXXXXXXXXXXXXXXXXXXXXXXX
+      echo PUB
+      
+      #R="npm.pkg.github.com"
+      #echo "//$R//:_authToken=${GITHUB_TOKEN}" > ~/.npmrc
+      #echo "always-auth = true" >> ~/.npmrc
+      #cp ~/.npmrc .npmrc
+      #npm publish --registry "https://$R"
+      
+      _pp GITHUB_TOKEN PPL_TOKEN
+
+      echo "//npm.pkg.github.com/:_authToken=$PPL_TOKEN" > ~/.npmrc
+      cp ~/.npmrc .npmrc
+      npm config set registry="https://npm.pkg.github.com"
+      npm publish
       ;;
     *)
       _log_d "publication skipped"

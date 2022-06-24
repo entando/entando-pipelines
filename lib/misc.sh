@@ -818,12 +818,13 @@ _ppl_extract_version_part() {
 }
 
 _ppl_validate_command_version() {
-  local DESC="$1"; REQ_VER="$2" shift
+  local DESC="$1" VER_CMD="$2" REQ_VER="$3"
   local VER
   
-  VER=$(eval "$3")
+  VER=$(eval "$VER_CMD")
   
   if [ $? -ne 0 ] || [ -z "$VER" ]; then
+    _pp VER
     _FATAL "Command \"$DESC\" is not available"
   fi
   

@@ -60,7 +60,8 @@ ppl--scan.PREREQUIREMENTS() {
 ppl--scan.SETUP() {
   local MD="mode = \"$ENTANDO_OPT_SNYK_SCAN_SUPPRESSION_MODE\""
   local FD="suppression file"
-  
+
+  # shellcheck disable=SC2034  
   ENTANDO_OPT_LOG_LEVEL=DEBUG
   
   case "$ENTANDO_OPT_SNYK_SCAN_SUPPRESSION_MODE" in

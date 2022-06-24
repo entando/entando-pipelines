@@ -44,6 +44,7 @@ ppl--checkout-branch.checkout() {
 }
 
 ppl--checkout-branch.finalize() {
+  # shellcheck disable=SC2034
   PPL_NO_REPO=false
   _ppl_determine_branch_info
   _ppl_clone_and_configure_data_repo

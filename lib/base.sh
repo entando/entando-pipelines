@@ -64,11 +64,11 @@ START_SIMPLE_MACRO() {
   
   $FULL && {
     if _log_on_level DEBUG; then
-      echo -e "\n▒▒▒"
-      echo "▒▒▒ ${comment}${PPL_CURRENT_MACRO} invoked on $(date +'%Y-%m-%d %H-%M-%S')"
-      echo -e "\n▒▒▒\n"
+      echo -e "\n▒▒▒" 1>&2
+      echo "▒▒▒ ${comment}${PPL_CURRENT_MACRO} invoked on $(date +'%Y-%m-%d %H-%M-%S')" 1>&2
+      echo -e "▒▒▒\n" 1>&2
     else
-      _log_i "~~ ${comment}${PPL_CURRENT_MACRO} invoked"
+      _log_i "~~ ${comment}${PPL_CURRENT_MACRO} invoked" 1>&2
     fi
 
     # PIPELINES CONTEXT

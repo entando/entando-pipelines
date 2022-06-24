@@ -131,6 +131,10 @@ test_semver_cmp() {
   ASSERT RES = 0
   _semver_cmp RES "6" "6.0.0"
   ASSERT RES = 0
+  
+  _ppl_validate_command_version "test" "echo '14.2.3'" "14.x"
+  RES="$?"
+  ASSERT RES = 0
 }
 
 #TEST:lib

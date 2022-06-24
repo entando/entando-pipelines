@@ -204,6 +204,23 @@
 
 ---
 
+### `_ppl-pr-remove-label()`
+
+**Rempves a label frpm a PR**
+
+<details>
+
+```
+ Params:
+ $1: the PR number
+ $2: the label to remove
+```
+
+</details>
+
+
+---
+
 ### `_ppl_get_current_project_version()`
 
 **Extacts the version of a artifactId from a pom**

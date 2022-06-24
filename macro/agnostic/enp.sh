@@ -133,6 +133,7 @@ ppl--enp.generate-build-cache-key() {
     local projectVersion="${snapshotVersionTag:1}"
     _ppl_extract_version_part projectVersion "$PPL_REF_NAME" "effective-number"
     _ppl_set_current_project_version "$projectVersion"
+    # shellcheck disable=SC2034
     ENTANDO_PRJ_VERSION="$projectVersion"
   fi
 

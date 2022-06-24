@@ -3,11 +3,12 @@
 # Load the pipeline configuration from the pipelines data repository
 #
 _ppl_clone_and_configure_data_repo() {
-  [ -z "$ENTANDO_OPT_DATA_REPO" ] && return 0
-  
   if [ "${ENTANDO_OPT_DATA_REPO:0:3}" = "###" ]; then
     ENTANDO_OPT_DATA_REPO="${ENTANDO_OPT_DATA_REPO:3}"
   fi
+  
+  [ -z "$ENTANDO_OPT_DATA_REPO" ] && return 0
+  [ "$ENTANDO_OPT_DATA_REPO" = "{{test-run}}" ] && return 0
   
   # GATHERING OF BUILT REPO INFORMATION
   local pr_title_qualifier=""
@@ -60,7 +61,6 @@ _ppl_clone_and_configure_data_repo() {
   _log_d "Selected data-repo ref \"${ENTANDO_DATA_REPO_REF}\""
   __git checkout "${ENTANDO_DATA_REPO_REF}"
   
-  DEBUG_CONFIG=true
   _ppl_is_feature_enabled "DEBUG-CONFIG" && DEBUG_CONFIG=true
   
   _ppl_load_settings --stdin < <(
