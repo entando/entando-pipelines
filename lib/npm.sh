@@ -42,3 +42,21 @@ _npm_set() {
     *) _FATAL "Unknown property \"$2\"";;
   esac
 }
+
+# Logins to an npm registry
+_npm_login() {
+  (
+    TMP=${ENTANDO_OPT_NPM_REPO_DEVL_NAME/https:/}
+    TMP=${TMP/http:/}
+    echo "//$TMP/:_authToken=$PPL_TOKEN" > "$HOME/.npmrc"
+    #cp "$HOME/.npmrc" ".npmrc"
+    npm config set registry="$ENTANDO_OPT_NPM_REPO_PROD"
+  ) || _SOE
+}
+
+_npm_logout() {
+  (
+    rm "$HOME/.npmrc"
+    npm config del registry
+  ) || _SOE
+}
