@@ -175,13 +175,13 @@ _LOW_LEVEL_FATAL() {
 # STOP ON ERROR
 #
 # Options:
-# --pipe N  checks the result of the part #N of a pipe expression, can be specified up to 3 times
+# --pipe N  checks the result of the part #N of a pipe expression
 #
 _SOE() {
-  local R="$?" PPS="${PIPESTATUS[0]}"
-  [ "$1" == "--pipe" ] && { R="$PPS"; shift; }
-  [ "$R" != 0 ] && _exit "$R"
-  return "$R"
+  local R="$?" PPS=("${PIPESTATUS[@]}")
+  [ "$1" == "--pipe" ] && { shift; R="${PPS[$1]}"; shift; }
+  [ "$R" = 0 ] && return 0
+  exit "$R"
 }
 
 # Sets a variable given the name and the value
