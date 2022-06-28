@@ -1,4 +1,4 @@
-name: Internal Snapshot Publication
+name: PUB
 
 on:
   push:

@@ -44,19 +44,23 @@ _npm_set() {
 }
 
 # Logins to an npm registry
-_npm_login() {
+_npm_setup_login_data() {
   (
-    TMP=${ENTANDO_OPT_NPM_REPO_DEVL_NAME/https:/}
-    TMP=${TMP/http:/}
+    TMP=${ENTANDO_OPT_NPM_REPO_PROD/https:\/\//}
+    TMP=${TMP/http:\/\//}
     echo "//$TMP/:_authToken=$PPL_TOKEN" > "$HOME/.npmrc"
     #cp "$HOME/.npmrc" ".npmrc"
     npm config set registry="$ENTANDO_OPT_NPM_REPO_PROD"
-  ) || _SOE
+  )
 }
 
-_npm_logout() {
+_npm_clear_login_data() {
   (
     rm "$HOME/.npmrc"
     npm config del registry
-  ) || _SOE
+  )
+}
+
+_npm_unpublish() {
+  _github.remove-package "$1" "$2"
 }

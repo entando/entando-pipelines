@@ -118,7 +118,7 @@ ppl--publication._determine_snapshot_version_number() {
 
 ppl--publication._determine_snapshot_version_tag.in_non_pr_event() {
   local _tmp_ver_tag_
-  _NONNULL PPL_NEAREST_WELL_KNOWN_BRANCH
+  _NONNULL PPL_NEAREST_MAIN_BRANCH
   
   # ON THE BASE BRANCH
   __git_get_commit_tag --snapshot-tag _tmp_ver_tag_ "$PPL_COMMIT_ID"
@@ -143,7 +143,7 @@ ppl--publication._determine_snapshot_version_tag.in_non_pr_event() {
   
   _ppl_extract_version_part _tmp_ver_tag_ "${_tmp_ver_tag_}" "effective-number"
   
-  _set_var "$1" "${_tmp_ver_tag_}+$(_ppl_encode-branch-for-tagging "KB" "$PPL_NEAREST_WELL_KNOWN_BRANCH")"
+  _set_var "$1" "${_tmp_ver_tag_}+$(_ppl_encode-branch-for-tagging "KB" "$PPL_NEAREST_MAIN_BRANCH")"
 }
 
 # Reaction to direct commits on a non-PR branch:

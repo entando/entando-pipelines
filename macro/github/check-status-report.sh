@@ -40,7 +40,7 @@ ppl--status-report() {
         PR_LABELS \
         PR_BRANCH \
         PR_MERGE_TARGET_BRANCH \
-        PPL_NEAREST_WELL_KNOWN_BRANCH \
+        PPL_NEAREST_MAIN_BRANCH \
         PPL_BRANCHING_TYPE \
         PPL_EPIC_NAME \
       ;
@@ -54,7 +54,7 @@ ppl--status-report() {
         PPL_REF \
         PPL_COMMIT_ID \
         PPL_CLONE_URL \
-        PPL_NEAREST_WELL_KNOWN_BRANCH \
+        PPL_NEAREST_MAIN_BRANCH \
         PPL_BRANCHING_TYPE \
         PPL_EPIC_NAME \
       ;

@@ -91,17 +91,39 @@ ppl---npm.PUBLISH() {
       # subsequent publication methods (eg: docker)
       
       _log_i "Preparing for publication"
-
+      
       local projectName projectVersion
       _ppl_extract_version_part projectVersion "$PPL_REF_NAME" "effective-number"
       _ppl_set_current_project_version "$projectVersion"
       _ppl_get_current_project_name projectName
-      ppl--npm.FULL-BUILD --no-tagging
-      __npm_exec install husky
       
-      _npm_login
-      __npm_exec publish
-      _npm_logout
+      ppl--npm.FULL-BUILD --no-tagging
+      
+      _log_i "Publishing"
+      
+      if [ -n "$ENTANDO_OPT_NPM_REPO_PROD" ]; then
+        _log_d "Setting up login data"
+        _npm_setup_login_data || _SOE
+
+        if ! _ppl_is_release_version_number "$projectVersion"; then
+          (_npm_unpublish "$PPL_REPO" "$projectVersion") && {
+            _log_d "old package version unpublished"
+          }
+        fi
+        _log_d "Actual publication"
+        __npm_exec publish
+        _npm_clear_login_data
+      else
+        _log_d "Trying to login"
+        __aws_login
+        if ! _ppl_is_release_version_number "$projectVersion"; then
+          __aws_npm_unpublish "$projectName" "$projectVersion" &>/dev/null && {
+            _log_d "old package version unpublished"
+          }
+        fi
+        _log_d "Actual publication"
+        __npm_exec publish
+      fi
       ;;
     *)
       _log_d "publication skipped"

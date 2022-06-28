@@ -37,6 +37,13 @@
 
 ---
 
+### `_npm_setup_login_data()`
+
+**Logins to an npm registry**
+
+
+---
+
 ### `_semver_parse()`
 
 **Parses a semver into its complonent digits**
@@ -406,7 +413,7 @@
 
 ```
  Options:
- --pipe N  checks the result of the part #N of a pipe expression, can be specified up to 3 times
+ --pipe N  checks the result of the part #N of a pipe expression
 ```
 
 </details>
@@ -1124,6 +1131,13 @@
 
 ---
 
+### `_npm_setup_login_data()`
+
+**Logins to an npm registry**
+
+
+---
+
 ### `_semver_parse()`
 
 **Parses a semver into its complonent digits**
@@ -1493,7 +1507,7 @@
 
 ```
  Options:
- --pipe N  checks the result of the part #N of a pipe expression, can be specified up to 3 times
+ --pipe N  checks the result of the part #N of a pipe expression
 ```
 
 </details>
@@ -2175,6 +2189,23 @@
 
 ---
 
+### `_github.remove-package()`
+
+**Removes a package from a repository**
+
+<details>
+
+```
+ Params:
+ $1: full repository identifier (owner/name)
+ $2: package version
+```
+
+</details>
+
+
+---
+
 ### `_git_full_clone()`
 
 **Clones a repository and the tags**
@@ -2302,4 +2333,21 @@
 ### `_git_is_dirty()`
 
 **Fails if the worktre has uncommitted or untracked files**
+
+
+---
+
+### `_github.remove-package()`
+
+**Removes a package from a repository**
+
+<details>
+
+```
+ Params:
+ $1: full repository identifier (owner/name)
+ $2: package version
+```
+
+</details>
 

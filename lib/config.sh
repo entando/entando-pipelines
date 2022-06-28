@@ -13,11 +13,11 @@ _ppl_clone_and_configure_data_repo() {
   # GATHERING OF BUILT REPO INFORMATION
   local pr_title_qualifier=""
   pr_title_qualifier="$(
-    __ppl_enter_local_clone_dir 1>&2
     RES=""
     if [ "$PPL_NO_REPO" ]; then
       _ppl_determine_qualifier --skip-if-merge RES 1>&2
     else
+      __ppl_enter_local_clone_dir 1>&2
       _ppl_determine_qualifier RES 1>&2
     fi
     echo "$RES"
@@ -36,7 +36,7 @@ _ppl_clone_and_configure_data_repo() {
     first_step=true
   fi
   
-  local branch_latest_indicator="${PPL_NEAREST_WELL_KNOWN_BRANCH}-latest"
+  local branch_latest_indicator="${PPL_NEAREST_MAIN_BRANCH}-latest"
   
   __cd "$data_repo_dir"
   DATA_REPO_PATH="$PWD"
@@ -55,7 +55,7 @@ _ppl_clone_and_configure_data_repo() {
   fi
   
   # Extract by BRANCH AFFINITY - BRANCH
-  [ -z "$ENTANDO_DATA_REPO_REF" ] && ENTANDO_DATA_REPO_REF="${PPL_NEAREST_WELL_KNOWN_BRANCH}"
+  [ -z "$ENTANDO_DATA_REPO_REF" ] && ENTANDO_DATA_REPO_REF="${PPL_NEAREST_MAIN_BRANCH}"
   
   # ~
   _log_d "Selected data-repo ref \"${ENTANDO_DATA_REPO_REF}\""
@@ -67,7 +67,7 @@ _ppl_clone_and_configure_data_repo() {
     __cd "$DATA_REPO_PATH"
     _exec_with_empty_env \
       "./configure.sh" \
-        "$PPL_REPO" "${PPL_NEAREST_WELL_KNOWN_BRANCH}" \
+        "$PPL_REPO" "${PPL_NEAREST_MAIN_BRANCH}" \
         "$PPL_BRANCHING_TYPE" "$PPL_JOB" "$ENTANDO_OPT_ENVIRONMENT_NAMES" \
         "$first_step" "$DEBUG_CONFIG" || {
       _FATAL "Configuration script returned error state \"$?\"" 1>&2
@@ -80,10 +80,10 @@ _ppl_clone_and_configure_data_repo() {
   # - ENTANDO_OPT_SNYK_SUPPRESSION_FILE       => may be assigned
   # - ENTANDO_OPT_SNYK_SCAN_SUPPRESSION_MODE  => may be assigned
   
-  $DEBUG_CONFIG && {
+  $DEBUG_CONFIG && $first_step && {
     _pp ENTANDO_DATA_REPO_REF ENTANDO_OPT_ENVIRONMENT_FILE ENTANDO_OPT_ENVIRONMENT_NAMES \
         ENTANDO_OPT_SNYK_SUPPRESSION_FILE ENTANDO_OPT_SNYK_SCAN_SUPPRESSION_MODE
-  }
+  } 1>&2
   
   if [ -z "$ENTANDO_OPT_ENVIRONMENT_FILE" ]; then
     _FATAL "Error configuring the pipelines: configuration script returned no or empty ENTANDO_OPT_ENVIRONMENT_FILE"

@@ -28,7 +28,7 @@ _log() {
   local B A
   "${ENTANDO_OPT_NO_COL:-true}" && _to_col B A "$SY"
 
-  printf "➤ $B%-5s | %s | %s$A\n" "$SY" "$(date +'%Y-%m-%d %H-%M-%S')" "$*"
+  printf "➤ $B%-5s | %s | %s$A\n" "$SY" "$(date +'%Y-%m-%d %H-%M-%S')" "$*" 1>&2
   return 0
 }
 

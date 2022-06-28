@@ -268,6 +268,16 @@ test_str() {
     ASSERT ENTANDO_TEST = ''
     ASSERT -v EXPORTED_ENTANDO_OPT_A_TEST "$(bash -c 'echo $ENTANDO_OPT_A_TEST')" = 'another-test'
   )
+  
+  #~ _str_strip_quote
+  RES="$(_str_strip_quotes '"te"st"')"
+  ASSERT RES = 'te"st'
+  RES="$(_str_strip_quotes 'te"st')"
+  ASSERT RES = 'te"st'
+  RES="$(_str_strip_quotes '"te"st')"
+  ASSERT RES = '"te"st'
+  RES="$(_str_strip_quotes 'te"st"')"
+  ASSERT RES = 'te"st"'
 }
 
 #TEST:lib

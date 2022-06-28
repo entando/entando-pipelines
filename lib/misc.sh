@@ -327,7 +327,25 @@ _str_last_pos() {
   _set_var "$1" "$_slp_tmp4_"
 }
 
+_str_strip_quotes() { 
+  if [ "${1:0:1}" = "\"" ]; then
+    local len="${#1}"; ((len--))
+    if [ "${1:$len:1}" = "\"" ]; then
+      ((len--))
+      echo "${1:1:$len}"
+      return 0
+    fi
+  fi
+  echo "$1"
+}
+
 # prints a quoted version of the give value
+#
+# Params
+# $1 the string to manipulate
+#
+# Options
+# -s: simple mode; only escapes the string without surrounding it with the quotes
 #
 _str_quote() {
   local _sq_simple_=false;[ "$1" = "-s" ] && { _sq_simple_=true; shift; }
@@ -1093,4 +1111,9 @@ _ppl_run_custom_script() {
   else
     _FATAL "Custom $DESC failed with error code: \"$?\""
   fi
+}
+
+
+_filter_empty_lines() {
+  sed '/^\s*$/d'
 }

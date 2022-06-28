@@ -74,13 +74,11 @@ START_SIMPLE_MACRO() {
     # PIPELINES CONTEXT
     _ppl-load-context "$PPL_CONTEXT"
     
-      if [ "$PPL_NO_REPO" != "true" ]; then
-      # PARTIAL INFO ABOUT THE CURRENT BRANCHING
-      _ppl_determine_branch_info
+    # PARTIAL INFO ABOUT THE CURRENT BRANCHING
+    _ppl_determine_branch_info
       
-      # READS CONFIGURATIONS FROM THE DATA REPO
-      _ppl_clone_and_configure_data_repo
-    fi
+    # READS CONFIGURATIONS FROM THE DATA REPO
+    _ppl_clone_and_configure_data_repo
   }
 
   _load_entando_opts
@@ -227,4 +225,15 @@ _exit() {
 #
 _exec_with_empty_env() {
   env -i "$@"
+}
+
+__assert_valid_identifier() {
+  local N V i=1 P="$1"; shift
+  while [ $# -gt 0 ]; do
+    N="$1";V="$2";shift 2;
+    # shellcheck disable=SC2234
+    ([[ "$V" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]]) || { # NOTE: the subshell restricts the side effects, don't remove it
+      _FATAL "Invalid identifier detected in argument \"$N\" of procedure \"$P\""
+    }
+  done
 }

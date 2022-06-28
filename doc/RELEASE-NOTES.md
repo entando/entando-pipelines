@@ -4,6 +4,7 @@
 
 - Support for standard npm publication
 - Updated npm workflow samples
+- Support for aws npm publication
 
 # `v1.4.0`
 

@@ -133,6 +133,7 @@ _ppl-pr-has-label() {
 github-request() {
   local TOKEN="$PPL_TOKEN";[ "$1" = "--no-auth" ] && { TOKEN=""; shift; }
   local SET=false VAR;[ "$1" = "--set" ] && { SET=true; shift; VAR="$1"; shift; }
+  local ACCEPT="application/vnd.github.v3+json";[ "$1" = "--accept" ] && {  shift; ACCEPT="$1"; shift; }
   _ppl_must_have_env
   local VERB="$1"; shift
   local URL="$1"; shift
@@ -151,13 +152,13 @@ github-request() {
     STATUS="$(
       curl -sL -o "$RESFILE" -w "%{http_code}" "$URL" \
         -X "$VERB" \
-        -H "Accept: application/vnd.github.v3+json" \
+        -H "Accept: $ACCEPT" \
         ${TOKEN:+-H "Authorization: token $TOKEN"} \
         ${DATA:+-d "$DATA"} \
       ;
     )"
     
-    _log_on_level TRACE && cat "$RESFILE"
+    _log_on_level TRACE && cat "$RESFILE" 1>&2
     
     $SET && _set_var "$VAR" "$(cat "$RESFILE")"
     rm "$RESFILE"
@@ -211,6 +212,7 @@ _ppl-load-context() {
   local Q="["
   Q+=".repository,"
   Q+=".repositoryUrl,"
+  Q+=".repository_owner,"
   Q+=".workflow,"
   Q+=".job,"
   Q+=".event_name,"
@@ -241,6 +243,7 @@ _ppl-load-context() {
     IFS=',' read -r \
       PPL_REPO \
       PPL_REPO_GIT_URL \
+      PPL_REPO_OWNER \
       PPL_WORKFLOW \
       PPL_JOB \
       PPL_EVENT \
@@ -401,87 +404,91 @@ _ppl_determine_branch_info() {
   
   _ppl_is_feature_enabled "EPIC-BRANCHES" true && {
     if [ "$PPL_BRANCHING_TYPE" == "epic" ]; then
-      _ppl_extract_branch_short_name PPL_EPIC_NAME "$PPL_NEAREST_WELL_KNOWN_BRANCH"
+      _ppl_extract_branch_short_name PPL_EPIC_NAME "$PPL_NEAREST_MAIN_BRANCH"
     fi
   }
 }
 
 _ppl_determine_branch_info.step1() {
-  if ! $PPL_NO_REPO; then
-    [ -n "$PPL_LOCAL_CLONE_DIR" ] && __exist -d "$PPL_LOCAL_CLONE_DIR"
-    PPL_CURRENT_REPO_BRANCH="$(_ppl_print_current_branch_of_dir "$PPL_LOCAL_CLONE_DIR")"
-  fi
-
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  # > PR-SYNC EVENTS (PPL_REF_NAME=the feature branch, PPL_BASE_REF=the base well-known branch)
+  # > PR-SYNC EVENTS (PPL_REF_NAME=the feature branch, PPL_BASE_REF=the base branch)
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   PPL_IN_PR_BRANCH=false
   # shellcheck disable=SC2034
   [[ -n "$PPL_BASE_REF" ]] && {
     PPL_IN_PR_BRANCH=true
     PPL_BASE_BRANCH="$PPL_BASE_REF"
-    PPL_NEAREST_WELL_KNOWN_BRANCH="$PPL_BASE_REF"
-    ! _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_BASE_REF" && {
+    PPL_NEAREST_MAIN_BRANCH="$PPL_BASE_REF"
+    ! _github._parse_ref_to_main_branch PPL_BRANCHING_TYPE "$PPL_BASE_REF" && {
       _FATAL "PR with invalid base branch \"$PPL_BASE_REF\""
     }
     return 0
   }
   
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  # > NON-TAGGING EVENTS on "well-known" branches, like bumps (PPL_REF_NAME=a well-known branch)
+  # > NON-TAGGING EVENTS on "MAIN" branches, like bumps (PPL_REF_NAME=a main branch)
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # shellcheck disable=SC2153
-  _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_REF_NAME" && {
-    _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_REF_NAME"
-    PPL_NEAREST_WELL_KNOWN_BRANCH="$PPL_REF_NAME"
+  _github._parse_ref_to_main_branch PPL_BRANCHING_TYPE "$PPL_REF_NAME" && {
+    _github._parse_ref_to_main_branch PPL_BRANCHING_TYPE "$PPL_REF_NAME"
+    PPL_NEAREST_MAIN_BRANCH="$PPL_REF_NAME"
     return 0
   }
 
   ##### $PPL_NO_REPO && { return 0; }  # Preliminar steps of an action don't need the below details
 
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  # > STANDARD VERSION TAGGING :: IN WELL-KNOWN BRANCH
+  # > STANDARD VERSION TAGGING :: IN MAIN BRANCH
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   # shellcheck disable=SC2034
   if [[ -n "$PPL_EVENT_BASE_REF" && "$PPL_EVENT_NAME" == "push" ]]; then
-    _ppl_extract_branch_name_from_ref PPL_NEAREST_WELL_KNOWN_BRANCH "$PPL_EVENT_BASE_REF"
-    _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_NEAREST_WELL_KNOWN_BRANCH"
+    _ppl_extract_branch_name_from_ref PPL_NEAREST_MAIN_BRANCH "$PPL_EVENT_BASE_REF"
+    _github._parse_ref_to_main_branch PPL_BRANCHING_TYPE "$PPL_NEAREST_MAIN_BRANCH"
     return 0
   fi
   
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  # > STANDARD VERSION TAGGING :: IN WELL-KNOWN BRANCH - .. (PPL_REF_NAME=tag with KB segment, PPL_BASE_REF="")
+  # > STANDARD VERSION TAGGING :: IN MAIN BRANCH - .. (PPL_REF_NAME=tag with KB segment, PPL_BASE_REF="")
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # shellcheck disable=SC2034
-  _ppl_extract_version_part PPL_NEAREST_WELL_KNOWN_BRANCH "$PPL_REF_NAME" "meta:kb" && {
-    _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_NEAREST_WELL_KNOWN_BRANCH"
+  _ppl_extract_version_part PPL_NEAREST_MAIN_BRANCH "$PPL_REF_NAME" "meta:kb" && {
+    _github._parse_ref_to_main_branch PPL_BRANCHING_TYPE "$PPL_NEAREST_MAIN_BRANCH"
     return 0
   }
 
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # > STANDARD VERSION TAGGING :: IN FEATURE BRANCH - .. (PPL_REF_NAME=tag with BB segment, PPL_BASE_REF="")
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  _ppl_extract_version_part PPL_NEAREST_WELL_KNOWN_BRANCH "$PPL_REF_NAME" "meta:bb" && {
-    _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_NEAREST_WELL_KNOWN_BRANCH"
+  _ppl_extract_version_part PPL_NEAREST_MAIN_BRANCH "$PPL_REF_NAME" "meta:bb" && {
+    _github._parse_ref_to_main_branch PPL_BRANCHING_TYPE "$PPL_NEAREST_MAIN_BRANCH"
       return 0
   }
   
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  # > NON-STANDARD VERSION TAGGING (no well-known-branch metadata segment is present)
-  # - likely a tag set manually and likely a release tag on a well-known branch
-  # - any other case can be considered illegal
+  # > NON-STANDARD VERSION TAGGING
+  # 
+  # - CONDITION: unable to dermine the nearest main branch
+  # - USE-CASE: likely a manually added tag
+  #
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  #
+  [ -n "$PPL_NEAREST_MAIN_BRANCH" ] && return 0
+  [ "$PPL_NO_REPO" = "true" ] && return 0
+  
+  [ -n "$PPL_LOCAL_CLONE_DIR" ] && __exist -d "$PPL_LOCAL_CLONE_DIR"
+  PPL_CURRENT_REPO_BRANCH="$(_ppl_print_current_branch_of_dir "$PPL_LOCAL_CLONE_DIR")"
   [ -z "$PPL_CURRENT_REPO_BRANCH" ] && return 0
+  
   _ppl_is_release_version_number "$PPL_CURRENT_REPO_BRANCH" && {
-    PPL_NEAREST_WELL_KNOWN_BRANCH="$PPL_CURRENT_REPO_BRANCH"
-    _github._parse_known_branch PPL_BRANCHING_TYPE "$PPL_CURRENT_REPO_BRANCH" && return 0
+    PPL_NEAREST_MAIN_BRANCH="$PPL_CURRENT_REPO_BRANCH"
+    _github._parse_ref_to_main_branch PPL_BRANCHING_TYPE "$PPL_CURRENT_REPO_BRANCH" && return 0
   }
   
   _FATAL "Illegal tag format detected: No metadata and it's not a release tag"
 }
 
-_github._parse_known_branch() {
+_github._parse_ref_to_main_branch() {
   case "$2" in
     develop|master) _set_var "$1" "$2";;
     epic/*) _set_var "$1" "epic";;
@@ -509,7 +516,73 @@ _ppl-pr-remove-label() {
   fi
 }
 
+_github.parse_fqrepo() {
+  IFS=/ read "$1" "$1" <<<"$3"
+  __assert_valid_identifier "$4" ORG "${!1}" REPO "${!2}"
+}
 
-curl \
-  https://api.github.com/orgs/ORG//PACKAGE_TYPE/PACKAGE_NAME/versions/PACKAGE_VERSION_ID
+_github.list-package-versions() {
+  local FQREPO="$1" VERSION="$2"
   
+  _github.parse_fqrepo ORG REPO "$1" "LIST PACKAGES VERSIONS"
+}
+
+# Removes a package from a repository
+#
+# Params:
+# $1: full repository identifier (owner/name)
+# $2: package version
+#
+_github.remove-package() {
+  local FQREPO="$1" VERSION="$2"
+  local QUERY RES RESCOUNT RES_ID RES_VER
+  
+  local VERSION_ESC="$(_str_quote -s "$VERSION")"
+
+  QUERY=""  
+  QUERY+='query{repository(owner:"{OWNER}",name:"{REPO}")'
+  QUERY+='{packages(first: 100,orderBy: {field:CREATED_AT, direction: DESC})'
+  QUERY+='{nodes{packageType,name,id,versions(first: 100,orderBy: {field:CREATED_AT, direction: DESC})'
+  QUERY+='{nodes{id,version}}}}}}'
+  
+  IFS=/ read OWNER REPO <<<"$FQREPO"
+  __assert_valid_identifier "REMOVE PACKAGE VERSION / LOOKUP" OWNER "$OWNER" REPO "$REPO"
+  
+  _tpl_set_var QUERY "$QUERY" OWNER "$OWNER"
+  _tpl_set_var QUERY "$QUERY" REPO "$REPO"
+  _tpl_set_var QUERY "$QUERY" VER "$VERSION_ESC"
+  
+  QUERY='{"query":"'"$(_str_quote -s "$QUERY")"'"}'
+ 
+  github-request --set RES \
+    --accept "*/*" \
+    POST "https://api.github.com/graphql" "$QUERY";
+  
+  _SOE
+  
+  RES="$(
+    jq '.data.repository.packages.nodes[] | select( .versions.nodes[].version = "'"$VERSION_ESC"'") | .versions.nodes[] | [.id,.version] | @csv' -r 2>/dev/null <<<"$RES"
+  )"
+  _SOE
+
+  RESCOUNT="$(_filter_empty_lines <<< "$RES" | wc -l)"
+  
+  [[ "$RESCOUNT" -eq 0 ]] && return 0
+  [[ "$RESCOUNT" -gt 1 ]] && _FATAL "Multiple results found while trying to delete version \"$VERSION\" of package \"FQREPO\" "
+  
+  IFS=, read RES_ID RES_VER <<< "$RES"
+  
+  RES_ID="$(_str_strip_quotes "$RES_ID")"
+  RES_VER="$(_str_strip_quotes "$RES_VER")"
+  
+  [[ "$RES_VER" != "$VERSION" ]] && _FATAL "Wrong version \"$RES_VER\" returned while trying to delete package \"FQREPO\" with version \"$VERSION\""
+  
+  QUERY='{"query":"mutation { deletePackageVersion(input:{packageVersionId:\"{ID}\"}) { success }}"}'
+  
+  __assert_valid_identifier "REMOVE PACKAGE VERSION / DELETE" OWNER "$OWNER" REPO "$REPO"
+  _tpl_set_var QUERY "$QUERY" ID "$RES_ID"
+
+  github-request --set RES \
+    --accept "application/vnd.github.package-deletes-preview+json" \
+    POST "https://api.github.com/graphql" "$QUERY";
+}
