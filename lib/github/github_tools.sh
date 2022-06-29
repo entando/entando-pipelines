@@ -541,7 +541,7 @@ _github.remove-package() {
 
   QUERY=""  
   QUERY+='query{repository(owner:"{OWNER}",name:"{REPO}")'
-  QUERY+='{packages(first: 100,orderBy: {field:CREATED_AT, direction: DESC})'
+  QUERY+='{packages(names:["{NAME}"], last: 100,orderBy: {field:CREATED_AT, direction: DESC})'
   QUERY+='{nodes{packageType,name,id,versions(first: 100,orderBy: {field:CREATED_AT, direction: DESC})'
   QUERY+='{nodes{id,version}}}}}}'
   
@@ -550,6 +550,7 @@ _github.remove-package() {
   
   _tpl_set_var QUERY "$QUERY" OWNER "$OWNER"
   _tpl_set_var QUERY "$QUERY" REPO "$REPO"
+  _tpl_set_var QUERY "$QUERY" NAME "$REPO"
   _tpl_set_var QUERY "$QUERY" VER "$VERSION_ESC"
   
   QUERY='{"query":"'"$(_str_quote -s "$QUERY")"'"}'
@@ -568,14 +569,14 @@ _github.remove-package() {
   RESCOUNT="$(_filter_empty_lines <<< "$RES" | wc -l)"
   
   [[ "$RESCOUNT" -eq 0 ]] && return 0
-  [[ "$RESCOUNT" -gt 1 ]] && _FATAL "Multiple results found while trying to delete version \"$VERSION\" of package \"FQREPO\" "
+  [[ "$RESCOUNT" -gt 1 ]] && _FATAL "Multiple results found while trying to delete version \"$VERSION\" of package \"$FQREPO\" "
   
   IFS=, read RES_ID RES_VER <<< "$RES"
   
   RES_ID="$(_str_strip_quotes "$RES_ID")"
   RES_VER="$(_str_strip_quotes "$RES_VER")"
   
-  [[ "$RES_VER" != "$VERSION" ]] && _FATAL "Wrong version \"$RES_VER\" returned while trying to delete package \"FQREPO\" with version \"$VERSION\""
+  [[ "$RES_VER" != "$VERSION" ]] && _FATAL "Wrong version \"$RES_VER\" returned while trying to delete package \"$FQREPO\" with version \"$VERSION\""
   
   QUERY='{"query":"mutation { deletePackageVersion(input:{packageVersionId:\"{ID}\"}) { success }}"}'
   
