@@ -29,7 +29,7 @@ ppl--mvn() {
     __exist -f "pom.xml"
 
     __mvn_cleanup_old
-    mvn -B dependency:tree | _group_stream DEPENDENCY-TREE
+    _mvn_print_dependency_tree "DEPENDENCY-TREE"
 
     case "$action" in
       "FULL-BUILD")
@@ -183,6 +183,9 @@ ppl--mvn.full-build() {
       export ENTANDO_TEST_NAMESPACE_OVERRIDE="$ENTANDO_TEST_NAMESPACE"
       export ENTANDO_DEFAULT_ROUTING_SUFFIX="$ENTANDO_OPT_TEST_HOSTNAME_SUFFIX"
       
+      export ENTANDO_TEST_DOCKER_BUNDLE_ADDRESS="$ENTANDO_OPT_TEST_DOCKER_BUNDLE_ADDRESS"
+      export ENTANDO_TEST_DOCKER_BUNDLE_TAG="$ENTANDO_OPT_TEST_DOCKER_BUNDLE_TAG"
+      
       __mvn_exec --ppl-timestamp -B clean test \
         ${ENTANDO_OPT_SONAR_PROJECT_KEY:+-Dsonar.projectKey="$ENTANDO_OPT_SONAR_PROJECT_KEY"} \
         org.jacoco:jacoco-maven-plugin:prepare-agent \
@@ -234,7 +237,7 @@ ppl--mvn.publish() {
       local projectVersion
       _ppl_extract_version_part projectVersion "$PPL_REF_NAME" "effective-number"
       _pom_set_project_version "$projectVersion" "./pom.xml"
-      mvn -B dependency:tree | _group_stream DEPENDENCY-TREE
+      _mvn_print_dependency_tree "DEPENDENCY-TREE"
       __mvn_deploy "internal-nexus" "$ENTANDO_OPT_MAVEN_REPO_PROD"
       ;;
     *)

@@ -59,3 +59,6 @@ __mvn_cleanup_old() {
   rm -rf "$HOME/.m2/repository/org/entando"
 }
 
+_mvn_print_dependency_tree() {
+  mvn -B dependency:tree | grep -v '[INFO] Download' | _group_stream "$1"
+}
