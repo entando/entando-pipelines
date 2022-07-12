@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090 disable=SC1091
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../../lib/all.sh"
 
 # MACRO OPERATIONS RELATED TO MAVEN
@@ -29,7 +29,7 @@ ppl--mvn() {
     __exist -f "pom.xml"
 
     __mvn_cleanup_old
-    mvn -B dependency:tree | _group_stream DEPENDENCY-TREE
+    _mvn_print_dependency_tree "DEPENDENCY-TREE"
 
     case "$action" in
       "FULL-BUILD")
@@ -69,13 +69,24 @@ ppl--mvn() {
 
 ppl--mvn.run-plan() {
   local plan="$1"
-  _pkg_get "xmlstarlet"
   
   _ppl_is_feature_action "INTEGRATION-TESTS" "D" && {
     _log_i "INTEGRATION TESTS SKIPPED"
     export ENTANDO_OPT_SKIP_INTEGRATION_TESTS=true
   }
+  
+  echo "########################################################################################"
+  echo "########################################################################################"
+  echo "########################################################################################"
+  
+  _pkg_get "xmlstarlet"
+  
+  _ppl_is_feature_enabled "BUILD-ESSENTIAL" false && {
+    _pkg_get "build-essential"
+  }
 
+  _ppl_run_custom_script "PLAN initialization" "$ENTANDO_OPT_CUSTOM_PLAN_INIT_SCRIPT" || _SOE
+  
   local projectName projectVersion prNumber
   {
     if [ "$PPL_BRANCHING_TYPE" != "release" ]; then
@@ -172,6 +183,9 @@ ppl--mvn.full-build() {
       export ENTANDO_TEST_NAMESPACE_OVERRIDE="$ENTANDO_TEST_NAMESPACE"
       export ENTANDO_DEFAULT_ROUTING_SUFFIX="$ENTANDO_OPT_TEST_HOSTNAME_SUFFIX"
       
+      export ENTANDO_TEST_DOCKER_BUNDLE_ADDRESS="$ENTANDO_OPT_TEST_DOCKER_BUNDLE_ADDRESS"
+      export ENTANDO_TEST_DOCKER_BUNDLE_TAG="$ENTANDO_OPT_TEST_DOCKER_BUNDLE_TAG"
+      
       __mvn_exec --ppl-timestamp -B clean test \
         ${ENTANDO_OPT_SONAR_PROJECT_KEY:+-Dsonar.projectKey="$ENTANDO_OPT_SONAR_PROJECT_KEY"} \
         org.jacoco:jacoco-maven-plugin:prepare-agent \
@@ -185,6 +199,8 @@ ppl--mvn.full-build() {
   
   if [ -n "$ENTANDO_OPT_TEST_COMPOSE_FILE" ]; then
     docker-compose -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" down 2>&1 | _summarize_stream --ppl-pg 500 "COMPOSE-DOWN"
+  else
+    true
   fi
   
   if _ppl_is_feature_enabled "MVN-QUARKUS-NATIVE"; then
@@ -198,11 +214,11 @@ ppl--mvn.full-build() {
   
   if _ppl_is_feature_enabled "TAG-SNAPSHOT-AFTER-BUILD" true; then
     # Adds snapshot-tag to provide context data and trigger publication workflow
-    ppl--publication tag-git-version
+    ppl--publication.tag-git-version "v"
     true
   else
     # Adds pseudo-snapshot-tag to provide the required context data, but it doesn't trigger the workflow
-    ppl--publication tag-git-pseudo-version
+    ppl--publication.tag-git-version "p"
     true
   fi
 
@@ -221,7 +237,7 @@ ppl--mvn.publish() {
       local projectVersion
       _ppl_extract_version_part projectVersion "$PPL_REF_NAME" "effective-number"
       _pom_set_project_version "$projectVersion" "./pom.xml"
-      mvn -B dependency:tree | _group_stream DEPENDENCY-TREE
+      _mvn_print_dependency_tree "DEPENDENCY-TREE"
       __mvn_deploy "internal-nexus" "$ENTANDO_OPT_MAVEN_REPO_PROD"
       ;;
     *)

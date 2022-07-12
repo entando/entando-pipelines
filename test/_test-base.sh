@@ -26,8 +26,8 @@
 
 # shellcheck disable=2034
 TEST__BEFORE_RUN() {
-  GIT_USER_NAME="CiCd Bot"
-  GIT_USER_EMAIL="cicd@example.com"
+  ENTANDO_OPT_GIT_USER_NAME="CiCd Bot"
+  ENTANDO_OPT_GIT_USER_EMAIL="cicd@example.com"
   PPL_CONTEXT="$(cat "$PROJECT_DIR/test/resources/github-context-base.json")"
   ENTANDO_CORE_BOM_REPO_URL="${ENTANDO_OPT_REPO_BOM_URL:-$TEST__ENTANDO_OPT_REPO_BOM_URL}"
 }

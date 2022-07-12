@@ -1,3 +1,24 @@
+# `v1.4.1`
+
+## Relevant additions
+
+- Support for standard npm publication
+- Updated npm workflow samples
+- Support for aws npm publication
+
+# `v1.4.0`
+
+## Relevant additions
+
+- Support for a data repository in order to centralize configurations (see about-data-repository.md)
+- Most of the non-secret configurations moved to the data repository
+- Support for centralization of the snyk suppression file approach (see about-security-scans.md)
+- ENP projects now support publication and the standard ppl tagging (see about-enp-projects.md)
+
+## Breaking changes
+
+- The default snyk suppression file is now the global one stored on the data repository
+
 # `v1.3.0`
 
 ## Relevant additions

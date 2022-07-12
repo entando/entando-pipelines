@@ -204,6 +204,23 @@
 
 ---
 
+### `_ppl-pr-remove-label()`
+
+**Rempves a label frpm a PR**
+
+<details>
+
+```
+ Params:
+ $1: the PR number
+ $2: the label to remove
+```
+
+</details>
+
+
+---
+
 ### `_ppl_get_current_project_version()`
 
 **Extacts the version of a artifactId from a pom**
@@ -482,6 +499,29 @@
 
 ---
 
+### `_ppl_run_custom_script()`
+
+**Executes a custom PR script given:**
+
+<details>
+
+```
+ $1  the task name
+ $2  the location of the script
+```
+
+</details>
+
+
+---
+
+### `_ppl_clone_and_configure_data_repo()`
+
+**Load the pipeline configuration from the pipelines data repository**
+
+
+---
+
 ### `_ppl_query_latest_bom_version()`
 
 **Extracts the latest bom version given the bom repository URL**
@@ -605,4 +645,11 @@
 ### `_ppl_print_current_branch_of_dir()`
 
 **Reads the current branch from a give dir, or the current one if none is given**
+
+
+---
+
+### `_ppl_determine_qualifier()`
+
+**Finds the artifact qualifier**
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090 disable=SC1091
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../../lib/all.sh"
 
 ppl--run-tests() {
@@ -84,4 +84,31 @@ ppl--repl() {
   # shellcheck disable=SC2034
   [ -t 0 ] && IN_TTY=false || IN_TTY=true
   DBGSHELL --quiet --customize
+}
+
+_sed_comment() {
+  case "$1" in
+    "starts-with") sed 's/^\('"$2"'.*\)$/#\1/';;
+    *) _FATAL "Unsupported mode \"$1\"";;
+  esac
+}
+
+_str_last_char_of() {
+  local len="${#1}"
+  ((len--))
+  if [ "$len" -ge 0 ]; then
+    echo -n "${1:$len}"
+  else
+    echo -n ""
+  fi
+}
+
+_str_chop() {
+  local len="${#1}"
+  ((len--))
+  if [ "$len" -ge 0 ]; then
+    echo -n "${1:0:$len}"
+  else
+    echo -n ""
+  fi
 }

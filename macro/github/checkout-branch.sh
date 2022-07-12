@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090 disable=SC1091
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../../lib/all.sh"
 
 # EXECUTES THE CLONE AND CHECKOUT OF THE CURRENT DEFAULT REPO AND REF
@@ -21,6 +21,8 @@ ppl--checkout-branch() {
     _NONNULL PPL_LOCAL_CLONE_DIR PPL_CLONE_URL branchToCheckout
     
     ppl--checkout-branch.checkout "$PPL_CLONE_URL" "$PPL_LOCAL_CLONE_DIR" "$branchToCheckout" "${PPL_TOKEN_OVERRIDE:-$PPL_TOKEN}"
+    ppl--checkout-branch.finalize
+
     
     _log_i "Checkout of repo \"$PPL_CLONE_URL\" and branch \"$branchToCheckout\" completed"
   )
@@ -33,12 +35,21 @@ ppl--checkout-branch.checkout() {
   _git_full_clone "$url" "$lcd" "" "$token"
   
   # CHECKOUT
-  __cd "$lcd"
-  _git_auto_setup_commit_config
-  
   (
+    __cd "$lcd"
     _log_on_level TRACE || exec 1>/dev/null
     git config pull.rebase false
     git -c advice.detachedHead=false checkout "$branch"
   ) || _FATAL "Git checkout failed"
+}
+
+ppl--checkout-branch.finalize() {
+  # shellcheck disable=SC2034
+  PPL_NO_REPO=false
+  _ppl_determine_branch_info
+  _ppl_clone_and_configure_data_repo
+  _load_entando_opts
+
+  __cd "$PPL_LOCAL_CLONE_DIR"
+  _git_auto_setup_commit_config
 }

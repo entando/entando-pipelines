@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090 disable=SC1091
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../../lib/all.sh"
 
 # MACRO OPERATIONS RELATED TO THE BOM
@@ -60,7 +60,7 @@ ppl--bom.UPDATE-PROJECT_REFERENCE_ON_BOM() {
   _NONNULL projectArtifactId projectVersion
   
   local bom_branch="$ENTANDO_OPT_REPO_BOM_MAIN_BRANCH"
-  [ -z "$bom_branch" ] && bom_branch="$PPL_NEAREST_WELL_KNOWN_BRANCH"
+  [ -z "$bom_branch" ] && bom_branch="$PPL_NEAREST_MAIN_BRANCH"
   [ -z "$bom_branch" ] && bom_branch="$DEFAULT_BOM_BRANCH"
   _git_full_clone --as-work-area "$ENTANDO_OPT_REPO_BOM_URL" "" "$bom_branch" "$token"
   

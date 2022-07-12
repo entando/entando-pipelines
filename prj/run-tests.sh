@@ -17,6 +17,7 @@ cd "$SCRIPT_DIR/.." || { echo "Unable to enter the script dir"; exit 99; }
 ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-DEBUG}"
 # Composes the execution labels "itmlst"
 EXECUTION_LABELS=""
+ENTANDO_OPT_DATA_REPO="{{test-run}}"
 _itmlst_fill EXECUTION_LABELS "$@"
 _itmlst_empty "$EXECUTION_LABELS" && _itmlst_fill EXECUTION_LABELS "lib" "macro"
 

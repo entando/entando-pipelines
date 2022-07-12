@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090 disable=SC1091
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../../lib/all.sh"
 
 # EXECUTES PRELIMINAR CHECKS ABOUT THE CURRENT PR
@@ -12,7 +12,7 @@
 #
 ppl--pr-preflight-checks() {
   (
-    START_MACRO --no-repo "PREFLIGHT-CHECKS" "$@"
+    START_MACRO "PREFLIGHT-CHECKS" "$@"
     _pkg_get "xmlstarlet"
     
     _get_arg ONLY --only
@@ -142,13 +142,7 @@ ppl--pr-preflight-checks.CHECK_TITLE_FORMAT() {
 }
 
 ppl--pr-preflight-checks.CHECK_WITH_CUSTOM_SCRIPT() {
-  [ ! -f "./.github/custom-pr-check.sh" ] && return 0
-  if ./.github/custom-pr-check.sh; then
-    _log_i "Custom PR validation script passed"
-    true
-  else
-    _FATAL "Custom PR validation script failed with error code: \"$?\""
-  fi
+  _ppl_run_custom_script "PR validation" "$ENTANDO_OPT_CUSTOM_PR_VALIDATION_SCRIPT"
 }
 
 ppl--pr-preflight-checks.SETUP_MERGE_RELATED_FLAGS() {

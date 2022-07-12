@@ -2,9 +2,17 @@
 
 # shellcheck disable=SC2034
 BASE.init_default_vars() {
+  ENTANDO_PIPELINE=true
+  if [ -n "$GITHUB_ACTIONS" ]; then
+    export ENTANDO_IN_REAL_PIPELINE=true
+  else
+    export ENTANDO_IN_REAL_PIPELINE=false
+  fi
   ENTANDO_DEFAULT_DOCKER_ORG="entando"
   ENTANDO_OPERATOR_POD_NAME_PATTERN="^entando-operator-.*"
   ENTANDO_OPERATOR_STARTUP_TIMEOUT="60"
+  # SNYK
+  ENTANDO_SNYK_LOCAL_FILE="./.snyk"
 }
 
 # Setups the enviroment for a macro execution
@@ -16,14 +24,8 @@ BASE.init_default_vars() {
 # shellcheck disable=SC2034
 START_MACRO() {
   # BASICS
-  START_SIMPLE_MACRO "$@"
-  
-  # PIPELINES CONTEXT
-  _ppl-load-context "$PPL_CONTEXT"
-  
-  # INFO ABOUT THE CURRENT BRANCHING
-  _ppl_determine_branch_info
-  
+  START_SIMPLE_MACRO --full "$@"
+
   # FEATURES
   _itmlst_from_string PPL_FEATURES "${ENTANDO_OPT_FEATURES}"
   _ppl_is_feature_enabled "INHERIT-GLOBAL-FEATURES" true && {
@@ -33,25 +35,16 @@ START_MACRO() {
   _ppl_is_feature_enabled "$PPL_CURRENT_MACRO" true || {
     _EXIT "Macro of id \"$PPL_CURRENT_MACRO\" is not enabled"
   }
-  
-  # ..
-  if _log_on_level DEBUG; then
-    echo -e "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo "~~ ${comment}${PPL_CURRENT_MACRO} invoked on $(date +'%Y-%m-%d %H-%M-%S')"
-    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-  else
-    _log_i "~~ ${comment}${PPL_CURRENT_MACRO} invoked"
-  fi
 }
 
 START_SIMPLE_MACRO() {
   set +e
   
-  _load_entando_opts
-  
-  ${ENTANDO_OPT_STEP_DEBUG:-false} && {
+  local FULL=false;[ "$1" == "--full" ] && { FULL=true;shift; }
+
+  if [[ "$ENTANDO_OPT_STEP_DEBUG" = "true" || "$ENTANDO_OPT_STEP_DEBUG" = "###true" ]]; then
     sys_trace_ctl enable
-  }
+  fi
 
   # shellcheck disable=SC2034
   ARGS_FLAGS=(--no-skip --no-repo)
@@ -69,6 +62,27 @@ START_SIMPLE_MACRO() {
   _get_arg PPL_TOKEN_OVERRIDE --token
   _get_arg PPL_OUTPUT_FILE --out
   
+  $FULL && {
+    if _log_on_level DEBUG; then
+      echo -e "\n▒▒▒" 1>&2
+      echo "▒▒▒ ${comment}${PPL_CURRENT_MACRO} invoked on $(date +'%Y-%m-%d %H-%M-%S')" 1>&2
+      echo -e "▒▒▒\n" 1>&2
+    else
+      _log_i "~~ ${comment}${PPL_CURRENT_MACRO} invoked" 1>&2
+    fi
+
+    # PIPELINES CONTEXT
+    _ppl-load-context "$PPL_CONTEXT"
+    
+    # PARTIAL INFO ABOUT THE CURRENT BRANCHING
+    _ppl_determine_branch_info
+      
+    # READS CONFIGURATIONS FROM THE DATA REPO
+    _ppl_clone_and_configure_data_repo
+  }
+
+  _load_entando_opts
+  
   if [ "${PPL_CURRENT_MACRO:0:1}" = "@" ]; then
     # shellcheck disable=SC2034
     PPL_CURRENT_MACRO_PREFIX="@"
@@ -84,8 +98,6 @@ START_SIMPLE_MACRO() {
   else
     ENTANDO_OPT_SUDO=""
   fi
-
-  ENTANDO_OPT_REPO_BOM_URL="${ENTANDO_OPT_REPO_BOM_URL}"
 
   # LOG LEVEL
   ENTANDO_OPT_LOG_LEVEL="${ENTANDO_OPT_LOG_LEVEL:-INFO}"
@@ -121,6 +133,7 @@ _EXIT() {
 # $1  error message
 #
 _FATAL() {
+  set +x
   local rv=77
   sys_trace_ctl disable
 
@@ -160,13 +173,13 @@ _LOW_LEVEL_FATAL() {
 # STOP ON ERROR
 #
 # Options:
-# --pipe N  checks the result of the part #N of a pipe expression, can be specified up to 3 times
+# --pipe N  checks the result of the part #N of a pipe expression
 #
 _SOE() {
-  local R="$?" PPS="${PIPESTATUS[0]}"
-  [ "$1" == "--pipe" ] && { R="$PPS"; shift; }
-  [ "$R" != 0 ] && _exit "$R"
-  return "$R"
+  local R="$?" PPS=("${PIPESTATUS[@]}")
+  [ "$1" == "--pipe" ] && { shift; R="${PPS[$1]}"; shift; }
+  [ "$R" = 0 ] && return 0
+  exit "$R"
 }
 
 # Sets a variable given the name and the value
@@ -206,4 +219,21 @@ _exit() {
   else
     exit "$@"
   fi
+}
+
+# Executes a command in an expty enviroment
+#
+_exec_with_empty_env() {
+  env -i "$@"
+}
+
+__assert_valid_identifier() {
+  local N V i=1 P="$1"; shift
+  while [ $# -gt 0 ]; do
+    N="$1";V="$2";shift 2;
+    # shellcheck disable=SC2234
+    ([[ "$V" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]]) || { # NOTE: the subshell restricts the side effects, don't remove it
+      _FATAL "Invalid identifier detected in argument \"$N\" of procedure \"$P\""
+    }
+  done
 }

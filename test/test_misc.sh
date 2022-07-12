@@ -131,6 +131,10 @@ test_semver_cmp() {
   ASSERT RES = 0
   _semver_cmp RES "6" "6.0.0"
   ASSERT RES = 0
+  
+  _ppl_validate_command_version "test" "echo '14.2.3'" "14.x"
+  RES="$?"
+  ASSERT RES = 0
 }
 
 #TEST:lib
@@ -264,6 +268,16 @@ test_str() {
     ASSERT ENTANDO_TEST = ''
     ASSERT -v EXPORTED_ENTANDO_OPT_A_TEST "$(bash -c 'echo $ENTANDO_OPT_A_TEST')" = 'another-test'
   )
+  
+  #~ _str_strip_quote
+  RES="$(_str_strip_quotes '"te"st"')"
+  ASSERT RES = 'te"st'
+  RES="$(_str_strip_quotes 'te"st')"
+  ASSERT RES = 'te"st'
+  RES="$(_str_strip_quotes '"te"st')"
+  ASSERT RES = '"te"st'
+  RES="$(_str_strip_quotes 'te"st"')"
+  ASSERT RES = 'te"st"'
 }
 
 #TEST:lib
@@ -384,6 +398,8 @@ test_versioning_utils() {
   ASSERT RES = "6.4.0"
   _ppl_extract_version_part RES "v6.4.0-ENG-2268-PR-143+$ENCODED_REF" "meta:kb"
   ASSERT RES = "epic/an-epic-branch"
+  _ppl_extract_version_part RES "v6.4.0" "qualifier"
+  ASSERT RES = ""
 }
 
 #TEST:lib
@@ -520,4 +536,19 @@ test_path_functions() {
   ASSERT -v CONCAT_RES "$(path-concat "" "/b")" = "/b"
   ASSERT -v CONCAT_RES "$(path-concat "a" "b" "c")" = "a/b/c"
   ASSERT -v CONCAT_RES "$(path-concat "a" "b" "c" "")" = "a/b/c/"
+}
+
+
+#TEST:lib
+test_str_functions() {
+  print_current_function_name "> " ".."
+  # shellcheck disable=SC2034
+  local CONCAT_RES
+  
+  ASSERT -v RES "$(_str_last_char_of "123")" = "3"
+  ASSERT -v RES "$(_str_chop "123")" = "12"
+  ASSERT -v RES "$(_str_last_char_of "1")" = "1"
+  ASSERT -v RES "$(_str_chop "1")" = ""
+  ASSERT -v RES "$(_str_last_char_of "")" = ""
+  ASSERT -v RES "$(_str_chop "")" = ""
 }

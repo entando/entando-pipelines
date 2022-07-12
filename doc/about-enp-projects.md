@@ -29,3 +29,7 @@ The file `entando-project` has more priority than the file `./ent/ent-prj`.
 | `ENTANDO_PRJ_VERSION` | The artifact |
 | `ENTANDO_PRJ_BUILD_COMMAND` | the command to execute to perform the build |
 | `ENTANDO_PRJ_TEST_COMMAND` | the command to execute to run the tests |
+| `ENTANDO_PRJ_PUBLICATION_COMMAND` | the command to execute to run the artifact publication |
+| `ENTANDO_PRJ_IMAGE_PUBLICATION_COMMAND` | the command to execute to the image publication |
+| `ENTANDO_PRJ_BUILD_DIR_PATH` | path of the build output directory |
+| `ENTANDO_PRJ_BUILD_KEY_COMMAND` | command to execute to build the build cache key |

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090 disable=SC1091
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../../lib/all.sh"
 
 # SETUP IN THE CI A SET OF FEATURE-FLAGS ACCORDING WITH USER DIRECTIVES
@@ -13,11 +13,12 @@
 #
 ppl--setup-feature-flags() {
   (
-    START_MACRO "SETUP-FEATURES-FLAGS" "$@"
+    START_MACRO --no-repo "SETUP-FEATURES-FLAGS" "$@"
     
     local n=1 feature feature_as_var ACTION
 
     while [ $# -gt 0 ]; do
+      # shellcheck disable=SC2030
       ACTION=""
       _get_arg feature "$n"; ((n++)); shift
       
@@ -56,7 +57,7 @@ ppl--setup-feature-flags() {
 #
 ppl--setup-features-list() {
   (
-    START_MACRO "SETUP-FEATURES-LIST" "$@"
+    START_MACRO --no-repo "SETUP-FEATURES-LIST" "$@"
     
     _get_arg res_var 1
     _get_arg def_val 2
@@ -102,6 +103,7 @@ ppl--setup-features-list.with-list() {
   res_var="$1"; shift
   def_val="$2"; shift
   
+  # shellcheck disable=SC2031
   while [ $# -gt 0 ]; do
     feature="$1"; shift
     
@@ -110,7 +112,7 @@ ppl--setup-features-list.with-list() {
     case "$ACTION" in
       E*) RES+="'$feature',";;
     esac
-    
+
     _common_action_handling "$feature" "$ACTION"
   done
   

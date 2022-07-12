@@ -301,6 +301,20 @@
 
 ---
 
+### `ppl--enp.generate-build-cache-key()`
+
+**Generates the key to store the build cache**
+
+
+---
+
+### `ppl--enp.generate-build-dir-path()`
+
+**Generates the key to store the build cache**
+
+
+---
+
 ### `ppl--docker()`
 
 **MACRO OPERATIONS RELATED TO DOCKER**

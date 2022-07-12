@@ -327,7 +327,25 @@ _str_last_pos() {
   _set_var "$1" "$_slp_tmp4_"
 }
 
+_str_strip_quotes() { 
+  if [ "${1:0:1}" = "\"" ]; then
+    local len="${#1}"; ((len--))
+    if [ "${1:$len:1}" = "\"" ]; then
+      ((len--))
+      echo "${1:1:$len}"
+      return 0
+    fi
+  fi
+  echo "$1"
+}
+
 # prints a quoted version of the give value
+#
+# Params
+# $1 the string to manipulate
+#
+# Options
+# -s: simple mode; only escapes the string without surrounding it with the quotes
 #
 _str_quote() {
   local _sq_simple_=false;[ "$1" = "-s" ] && { _sq_simple_=true; shift; }
@@ -411,74 +429,6 @@ _resolve_entando_opt() {
   _set_var "$1" "${!_reo_var_name}${_reo_rest}"
 }
 
-# Scans the environment for ENTANDO_OPT_XXX variables and decodes/derefence them
-# See also _decode_entando_opt and _resolve_entando_opt
-#
-# NOTE 
-# 1) The reference resolution process is limited to 3 passes, so a sequence of 
-# nested references that goes beyond that limit will not be properly satisfied.
-#
-_load_entando_opts() {
-  if [[ -n "$ENTANDO_OPT_ENVIRONMENT_NAMES" || -n "$ENTANDO_OPT_ENVIRONMENTS" ]]; then
-    _decode_entando_opt ENTANDO_OPT_ENVIRONMENT_NAMES
-    last=false
-    while :; do
-      IFS= read -r env_name || last=true
-      _resolve_entando_opt env_name
-       if [ -n "$env_name" ]; then
-        _ppl_load_settings --section "$env_name" "$ENTANDO_OPT_ENVIRONMENTS"
-      fi
-      $last && break
-    done <<< "${ENTANDO_OPT_ENVIRONMENT_NAMES//,/$'\n'}"
-  fi
-  
-  for varname in ${!ENTANDO_OPT*}; do
-    _decode_entando_opt "$varname"
-  done
-  
-  for i in {1..3}; do
-    for varname in ${!ENTANDO_OPT*}; do
-      _resolve_entando_opt "$varname"
-    done
-  done
-  for varname in ${!ENTANDO_OPT*}; do
-    _resolve_entando_opt --finalize "$varname"
-  done
-  
-  _ppl_load_settings "$ENTANDO_OPT_CUSTOM_ENV"
-}
-
-# Unsets all the ENTANDO_OPT* vars matching the criteria.
-# All of the if no match criteria is provided
-#
-# Options:
-# --like pattern   matches all the vars with a name mathing the pattern.
-#                  can be specified up to 3 times
-#
-# shellcheck disable=SC2120
-_unset_all_entano_options() {
-  local WITH1=""; [ "$1" == "--like" ] && { WITH1="$2"; shift 2; }
-  local WITH2=""; [ "$1" == "--like" ] && { WITH2="$2"; shift 2; }
-  local WITH3=""; [ "$1" == "--like" ] && { WITH3="$2"; shift 2; }
-  for varname in ${!ENTANDO_OPT*}; do
-    if [[ "varname" =~ $WITH1 || "varname" =~ $WITH2 || "varname" =~ $WITH3 ]]; then
-      unset "$varname"
-    fi
-  done
-}
-
-
-# Scans args for --ENTANDO_OPT_XXX arguments and uses them to set the related environment vars
-#
-_read_entando_options_from_args() {
-  local tmp
-  for i in "${!ARGS_OPT[@]}"; do
-    if [ "${i:0:14}" == "--ENTANDO_OPT_" ]; then
-      _get_arg "$@" "${i:2}" "$i"
-    fi
-  done
-}
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Successfully changes dir or fatals
@@ -487,8 +437,8 @@ __cd() {
   local L="$1"
   [ "${L:0:7}" = "file://" ] && L="${L:7}"
   [ -z "$L" ] && _FATAL "Null directory provided"
-  cd "$L" 1>/dev/null || _FATAL -S 2 "Unable to enter directory \"$1\""
-  _log_t "Entered directory \"$L\""
+  cd "$L" 1>/dev/null || _FATAL -S 1 "Unable to enter directory \"$1\""
+  _log_t "Entered directory \"$L\"" 1>&2
 }
 
 # File/dir existsor fatals
@@ -514,7 +464,7 @@ __jq() {
   jq "$@" || _FATAL "Error parsing the json input"
 }
 
-# Intercept the stdin and instead prints an summary
+# Intercepts the stdin and instead prints an summary
 #
 # Params:
 # $1    the title of the summary
@@ -854,12 +804,17 @@ _ppl_extract_version_part() {
     # shellcheck disable=SC2034
     IFS='-' read -r _tmp1_ _tmp2_ _tmp3_ _tmp4_ _tmp5_<<< "$_tmpV_"
   fi
+
   case "$3" in
     "base-version") 
       _tmp_res_="$_tmp1_"
       [[ "${_tmp_res_:0:1}" = "v" ]] && _tmp_res_="${_tmp_res_:1}"
       ;;
-    "qualifier") _tmp_res_="$_tmp2_-$_tmp3_";;
+    "qualifier")
+      [[ -n "$_tmp2_" && -n "$_tmp3_" ]] && {
+        _tmp_res_="$_tmp2_-$_tmp3_"
+      }
+      ;;
     "pr-num") _tmp_res_="$_tmp5_";;
     "meta:kb"|"meta:bb")
       if [[ "${_tmpM_:0:3}" =~ ^..- ]]; then
@@ -881,12 +836,13 @@ _ppl_extract_version_part() {
 }
 
 _ppl_validate_command_version() {
-  local DESC="$1"; REQ_VER="$2" shift
+  local DESC="$1" VER_CMD="$2" REQ_VER="$3"
   local VER
   
-  VER=$(eval "$3")
+  VER=$(eval "$VER_CMD")
   
   if [ $? -ne 0 ] || [ -z "$VER" ]; then
+    _pp VER
     _FATAL "Command \"$DESC\" is not available"
   fi
   
@@ -1134,4 +1090,30 @@ sys_trace_ctl() {
       export PS4='+'
       ;;
   esac
+}
+
+
+# Executes a custom PR script given:
+#
+# $1  the task name
+# $2  the location of the script
+#
+_ppl_run_custom_script() {
+  local DESC="$1"
+  local SCRIPT="$2"
+  [ -z "$SCRIPT" ] && return 0
+  [ ! -f "$SCRIPT" ] && return 0
+  _log_i "> Running $DESC"
+  "$SCRIPT"
+  if [ "$?" = "0" ]; then
+    _log_i "Custom $DESC script completed successfully"
+    true
+  else
+    _FATAL "Custom $DESC failed with error code: \"$?\""
+  fi
+}
+
+
+_filter_empty_lines() {
+  sed '/^\s*$/d'
 }

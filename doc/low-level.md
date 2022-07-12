@@ -37,6 +37,13 @@
 
 ---
 
+### `_npm_setup_login_data()`
+
+**Logins to an npm registry**
+
+
+---
+
 ### `_semver_parse()`
 
 **Parses a semver into its complonent digits**
@@ -269,6 +276,55 @@
 
 ---
 
+### `__aws_exec()`
+
+**Runs a aws operation and summarise the output**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the aws command and params of _summarize_stream
+```
+
+</details>
+
+
+---
+
+### `__aws()`
+
+**Runs a aws operation**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the aws command
+```
+
+</details>
+
+
+---
+
+### `__aws_npm_unpublish()`
+
+**Unpublish a version from an aws npm repo**
+
+<details>
+
+```
+ Params:
+ $1: the project name
+ $2: the project version
+```
+
+</details>
+
+
+---
+
 ### `_url_add_token()`
 
 **Adds a token or replaces a tocken to/in a URL**
@@ -357,7 +413,7 @@
 
 ```
  Options:
- --pipe N  checks the result of the part #N of a pipe expression, can be specified up to 3 times
+ --pipe N  checks the result of the part #N of a pipe expression
 ```
 
 </details>
@@ -386,6 +442,13 @@
 ```
 
 </details>
+
+
+---
+
+### `_exec_with_empty_env()`
+
+**Executes a command in an expty enviroment**
 
 
 ---
@@ -644,8 +707,8 @@
  according with the information on the environment
 
  Expected Vars:
- GIT_USER_NAME: user name
- GIT_USER_EMAIL: user email
+ ENTANDO_OPT_GIT_USER_NAME: user name
+ ENTANDO_OPT_GIT_USER_EMAIL: user email
 ```
 
 </details>
@@ -821,6 +884,13 @@
 ### `_git_commit_exists()`
 
 **Tells if a given commit reference exists on the repo**
+
+
+---
+
+### `_git_ref_exists()`
+
+**Tells if a given tag exists on the repo**
 
 
 ---
@@ -1061,6 +1131,13 @@
 
 ---
 
+### `_npm_setup_login_data()`
+
+**Logins to an npm registry**
+
+
+---
+
 ### `_semver_parse()`
 
 **Parses a semver into its complonent digits**
@@ -1293,6 +1370,55 @@
 
 ---
 
+### `__aws_exec()`
+
+**Runs a aws operation and summarise the output**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the aws command and params of _summarize_stream
+```
+
+</details>
+
+
+---
+
+### `__aws()`
+
+**Runs a aws operation**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the aws command
+```
+
+</details>
+
+
+---
+
+### `__aws_npm_unpublish()`
+
+**Unpublish a version from an aws npm repo**
+
+<details>
+
+```
+ Params:
+ $1: the project name
+ $2: the project version
+```
+
+</details>
+
+
+---
+
 ### `_url_add_token()`
 
 **Adds a token or replaces a tocken to/in a URL**
@@ -1381,7 +1507,7 @@
 
 ```
  Options:
- --pipe N  checks the result of the part #N of a pipe expression, can be specified up to 3 times
+ --pipe N  checks the result of the part #N of a pipe expression
 ```
 
 </details>
@@ -1410,6 +1536,13 @@
 ```
 
 </details>
+
+
+---
+
+### `_exec_with_empty_env()`
+
+**Executes a command in an expty enviroment**
 
 
 ---
@@ -1668,8 +1801,8 @@
  according with the information on the environment
 
  Expected Vars:
- GIT_USER_NAME: user name
- GIT_USER_EMAIL: user email
+ ENTANDO_OPT_GIT_USER_NAME: user name
+ ENTANDO_OPT_GIT_USER_EMAIL: user email
 ```
 
 </details>
@@ -1845,6 +1978,13 @@
 ### `_git_commit_exists()`
 
 **Tells if a given commit reference exists on the repo**
+
+
+---
+
+### `_git_ref_exists()`
+
+**Tells if a given tag exists on the repo**
 
 
 ---
@@ -2049,6 +2189,23 @@
 
 ---
 
+### `_github.remove-package()`
+
+**Removes a package from a repository**
+
+<details>
+
+```
+ Params:
+ $1: full repository identifier (owner/name)
+ $2: package version
+```
+
+</details>
+
+
+---
+
 ### `_git_full_clone()`
 
 **Clones a repository and the tags**
@@ -2098,8 +2255,8 @@
  according with the information on the environment
 
  Expected Vars:
- GIT_USER_NAME: user name
- GIT_USER_EMAIL: user email
+ ENTANDO_OPT_GIT_USER_NAME: user name
+ ENTANDO_OPT_GIT_USER_EMAIL: user email
 ```
 
 </details>
@@ -2166,7 +2323,31 @@
 
 ---
 
+### `_git_ref_exists()`
+
+**Tells if a given tag exists on the repo**
+
+
+---
+
 ### `_git_is_dirty()`
 
 **Fails if the worktre has uncommitted or untracked files**
+
+
+---
+
+### `_github.remove-package()`
+
+**Removes a package from a repository**
+
+<details>
+
+```
+ Params:
+ $1: full repository identifier (owner/name)
+ $2: package version
+```
+
+</details>
 

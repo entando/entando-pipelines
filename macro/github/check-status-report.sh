@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# shellcheck disable=SC1090
+# shellcheck disable=SC1090 disable=SC1091
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../../lib/all.sh"
 
 # PRINTS A GENERIC STATUS REPORT ABOUT CURRENT RUN
@@ -8,7 +8,7 @@
 ppl--status-report() {
   # shellcheck disable=SC2034
   (
-    START_MACRO "STATUS-REPORT" "$@"
+    START_MACRO --no-repo "STATUS-REPORT" "$@"
     
     IN="$PPL_REPO: $PPL_WORKFLOW/$PPL_JOB ($PPL_EVENT)"
     PR_MERGE_TARGET_BRANCH="$PPL_BASE_REF"
@@ -40,21 +40,21 @@ ppl--status-report() {
         PR_LABELS \
         PR_BRANCH \
         PR_MERGE_TARGET_BRANCH \
-        PPL_NEAREST_WELL_KNOWN_BRANCH \
+        PPL_NEAREST_MAIN_BRANCH \
         PPL_BRANCHING_TYPE \
         PPL_EPIC_NAME \
       ;
     else
       _pp \
         IN \
-        FEATURES \
         ENV \
+        FEATURES \
         OKD_LOGIN_ENABLED \
         CUSTOM_ENV \
         PPL_REF \
         PPL_COMMIT_ID \
         PPL_CLONE_URL \
-        PPL_NEAREST_WELL_KNOWN_BRANCH \
+        PPL_NEAREST_MAIN_BRANCH \
         PPL_BRANCHING_TYPE \
         PPL_EPIC_NAME \
       ;
