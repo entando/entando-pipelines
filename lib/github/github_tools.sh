@@ -562,9 +562,12 @@ _github.remove-package() {
   _SOE
   
   RES="$(
-    jq '.data.repository.packages.nodes[] | select( .versions.nodes[].version = "'"$VERSION_ESC"'") | .versions.nodes[] | [.id,.version] | @csv' -r 2>/dev/null <<<"$RES"
+    jq '.data.repository.packages.nodes[].versions.nodes[] | select(.version == "'"$VERSION_ESC"'") | [.id,.version] | @csv' -r 2>/dev/null <<<"$RES"
   )"
   _SOE
+
+   _log_i "Package versions found:"
+   _log_i "$RES"
 
   RESCOUNT="$(_filter_empty_lines <<< "$RES" | wc -l)"
   
