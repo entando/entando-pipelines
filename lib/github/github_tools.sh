@@ -539,30 +539,17 @@ _github.remove-package() {
   
   local VERSION_ESC="$(_str_quote -s "$VERSION")"
 
-  QUERY=""  
-  QUERY+='query{repository(owner:"{OWNER}",name:"{REPO}")'
-  QUERY+='{packages(names:["{NAME}"], last: 100,orderBy: {field:CREATED_AT, direction: DESC})'
-  QUERY+='{nodes{packageType,name,id,versions(first: 100,orderBy: {field:CREATED_AT, direction: DESC})'
-  QUERY+='{nodes{id,version}}}}}}'
-  
   IFS=/ read OWNER REPO <<<"$FQREPO"
   __assert_valid_identifier "REMOVE PACKAGE VERSION / LOOKUP" OWNER "$OWNER" REPO "$REPO"
   
-  _tpl_set_var QUERY "$QUERY" OWNER "$OWNER"
-  _tpl_set_var QUERY "$QUERY" REPO "$REPO"
-  _tpl_set_var QUERY "$QUERY" NAME "$REPO"
-  _tpl_set_var QUERY "$QUERY" VER "$VERSION_ESC"
-  
-  QUERY='{"query":"'"$(_str_quote -s "$QUERY")"'"}'
- 
   github-request --set RES \
     --accept "*/*" \
-    POST "https://api.github.com/graphql" "$QUERY";
+    GET "https://api.github.com/orgs/$OWNER/packages/npm/$REPO/versions?per_page=100" "";
   
   _SOE
-  
+
   RES="$(
-    jq '.data.repository.packages.nodes[].versions.nodes[] | select(.version == "'"$VERSION_ESC"'") | [.id,.version] | @csv' -r 2>/dev/null <<<"$RES"
+    jq '.[] | select(.name == "'"$VERSION_ESC"'") | [.id,.name] | @csv' -r 2>/dev/null <<<"$RES"
   )"
   _SOE
 
@@ -581,12 +568,9 @@ _github.remove-package() {
   
   [[ "$RES_VER" != "$VERSION" ]] && _FATAL "Wrong version \"$RES_VER\" returned while trying to delete package \"$FQREPO\" with version \"$VERSION\""
   
-  QUERY='{"query":"mutation { deletePackageVersion(input:{packageVersionId:\"{ID}\"}) { success }}"}'
-  
   __assert_valid_identifier "REMOVE PACKAGE VERSION / DELETE" OWNER "$OWNER" REPO "$REPO"
-  _tpl_set_var QUERY "$QUERY" ID "$RES_ID"
 
   github-request --set RES \
-    --accept "application/vnd.github.package-deletes-preview+json" \
-    POST "https://api.github.com/graphql" "$QUERY";
+    --accept "application/vnd.github+json" \
+    DELETE "https://api.github.com/orgs/$OWNER/packages/npm/$REPO/versions/$RES_ID" "";
 }
