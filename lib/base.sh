@@ -61,6 +61,8 @@ START_SIMPLE_MACRO() {
   _get_arg PPL_LOCAL_CLONE_DIR --lcd
   _get_arg PPL_TOKEN_OVERRIDE --token
   _get_arg PPL_OUTPUT_FILE --out
+
+  _pp PPL_CURRENT_MACRO FULL PPL_NO_REPO 1>&2
   
   $FULL && {
     if _log_on_level DEBUG; then

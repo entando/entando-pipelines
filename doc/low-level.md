@@ -1,6 +1,89 @@
 
 ---
 
+### `_pkg_get()`
+
+**Installs a command given its package name**
+
+<details>
+
+```
+ Params:
+ $1: name of the package
+
+ Options:
+ -c command          command to check if != package name
+ --tar-install url   installation based on the url of the executable archive
+```
+
+</details>
+
+
+---
+
+### `_pkg_apt_install()`
+
+**Installs a package given its apt package name**
+
+
+---
+
+### `_pkg_tar_install()`
+
+**Installs a package given a link to a tarball**
+
+<details>
+
+```
+ $1: semicolon-delimited list containing:
+     position #1     the url
+     position #2..4  3 additional args for the curl command
+
+ this limited syntax was implemented mostly to allow specifying "--insecure"
+ note that all the args are individually quoted
+```
+
+</details>
+
+
+---
+
+### `require_mandatory_command()`
+
+**Ensures that a mandatory command is avaliable**
+
+<details>
+
+```
+ Params:
+ $1:   command
+ [$2]: optional description of the command
+```
+
+</details>
+
+
+---
+
+### `_pkg_is_command_available()`
+
+**Checks for the presence of a command**
+
+<details>
+
+```
+ Params:
+ $1: the command
+
+ Options:
+ [-m] if provided failing finding the command is fatal
+```
+
+</details>
+
+
+---
+
 ### `_npm_get()`
 
 **Sets an npm package.json property**
@@ -40,6 +123,334 @@
 ### `_npm_setup_login_data()`
 
 **Logins to an npm registry**
+
+
+---
+
+### `__aws_exec()`
+
+**Runs a aws operation and summarise the output**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the aws command and params of _summarize_stream
+```
+
+</details>
+
+
+---
+
+### `__aws()`
+
+**Runs a aws operation**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the aws command
+```
+
+</details>
+
+
+---
+
+### `__aws_npm_unpublish()`
+
+**Unpublish a version from an aws npm repo**
+
+<details>
+
+```
+ Params:
+ $1: the project name
+ $2: the project version
+```
+
+</details>
+
+
+---
+
+### `__mvn_exec()`
+
+**Successfully runs a maven command or fatals.**
+
+<details>
+
+```
+ Unless otherise specified it summarize the output.
+
+ Special Options:
+ --ppl-simple:     doesn't summarize the output
+ --ppl-timestamp:  adds a timestamp to every output line
+```
+
+</details>
+
+
+---
+
+### `__mvn_deploy()`
+
+**Runs a maven deploy over the received environment params**
+
+<details>
+
+```
+ Params:
+ $1: repository id
+ $2: repository url
+```
+
+</details>
+
+
+---
+
+### `_pom_get_project_artifact_id()`
+
+**Extacts the artifactId from a pom**
+
+<details>
+
+```
+ Params:
+ $1: dest var
+ $2: pom file pathname
+```
+
+</details>
+
+
+---
+
+### `_pom_get_project_version()`
+
+**Extacts the version of a artifactId from a pom**
+
+<details>
+
+```
+ Params:
+ $1: dest var
+ $2: pom file pathname
+```
+
+</details>
+
+
+---
+
+### `_pom_set_project_version()`
+
+**Sets the version of a artifactId from a pom**
+
+<details>
+
+```
+ Params:
+ $1: new version
+ $2: pom file pathname
+```
+
+</details>
+
+
+---
+
+### `_pom_get_project_property()`
+
+**Extacts a property from a pom**
+
+<details>
+
+```
+ Params:
+ $1: dest var
+ $2: pom file pathname
+ $3: property name
+```
+
+</details>
+
+
+---
+
+### `_pom_set_project_property()`
+
+**Sets a property from a pom**
+
+<details>
+
+```
+ Params:
+ $1: new value
+ $2: pom file pathname
+ $3: property name
+```
+
+</details>
+
+
+---
+
+### `_pom_get_depman_artifact_version()`
+
+**Extacts the version of an artifact dependency of the dependency management section**
+
+<details>
+
+```
+ Params:
+ $1: dest var
+ $2: pom file pathname
+ $3: the artifact id
+```
+
+</details>
+
+
+---
+
+### `_pom_get()`
+
+**Gets a pom property**
+
+<details>
+
+```
+ Params:
+ $1 the receiver var
+ $2 the pom file
+ $3 the XML path of the property to set
+ $4 the property name
+```
+
+</details>
+
+
+---
+
+### `_pom_set()`
+
+**Sets a pom property**
+
+<details>
+
+```
+ Params:
+ $1 the value to set
+ $2 the pom file
+ $3 the XML path of the property to set
+ $4 the property name
+```
+
+</details>
+
+
+---
+
+### `_url_add_token()`
+
+**Adds a token or replaces a tocken to/in a URL**
+
+<details>
+
+```
+ Params:
+ $1  destination var
+ $2  url
+ $3  token
+```
+
+</details>
+
+
+---
+
+### `_extract_pr_title_prefix()`
+
+**Gets the prefix of the PR title**
+
+<details>
+
+```
+ Params:
+ $1 destination var
+ $2 the PR title
+```
+
+</details>
+
+
+---
+
+### `kube.oc.wait_for_resource()`
+
+**Waits for a condition on given resource**
+
+<details>
+
+```
+ $1: max wait
+ $2: condition (until-present, until-not-present)
+ $3: resource type
+ $4: resource name
+```
+
+</details>
+
+
+---
+
+### `kube.oc-login()`
+
+**Logins to an OKD instance given the related OKD variables**
+
+<details>
+
+```
+ Required environment variables:
+  ENTANDO_OPT_OKD_LOGIN_URL        the url of the OKD instance
+  ENTANDO_OPT_OKD_LOGIN_TOKEN      the tocken to use for the login operation
+  ENTANDO_OPT_OKD_LOGIN_NAMESPACE  the namespace to use
+
+ Optional environment variables:
+   ENTANDO_OPT_OKD_LOGIN_INSECURE  forces a TLS-insecure login (default: false)
+   ENTANDO_OPT_OKD_CLI_URL         the URL from which the download tool should be downloaded
+                                   Note that this is a semicolon-delimited list, where the first element
+                                   is the url and the others are the optional curl options
+```
+
+</details>
+
+
+---
+
+### `kube.oc.namespace.reset()`
+
+**Deletes and recreates a namespace**
+
+
+---
+
+### `kube.manifest.filter-document-by-kind()`
+
+**Filters out from the standard-input the triple-dash (---) separed documents that matches the given kind**
+
+<details>
+
+```
+ Params:
+ $1 document kind
+```
+
+</details>
 
 
 ---
@@ -138,39 +549,15 @@
 
 ---
 
-### `_print_callstack()`
+### `__docker_exec()`
 
-**Prints the current callstack**
-
-<details>
-
-```
- Options
- [-d] to debug tty
- [-n] doesn't print the decoration frame
-
- Params:
- $1  start from this element of the start
- $2  number of start
- $3  title
- $4  print command to use
-```
-
-</details>
-
-
----
-
-### `print_current_function_name()`
-
-**Prints the current function name with decorations**
+**Runs a docker operation and summarise the output**
 
 <details>
 
 ```
  Params:
- $1  prefix decoration
- $2  suffix decoration
+ $@: all params are forwarded to the docker command and params of _summarize_stream
 ```
 
 </details>
@@ -178,458 +565,33 @@
 
 ---
 
-### `_pp()`
+### `__docker()`
 
-**Pretty debug prints of variables**
+**Runs a docker operation**
 
 <details>
 
 ```
  Params:
- [-d]       prints to the debug tty
- [-t title] also print a title
- - all params are optional and accept ""
+ $@: all params are forwarded to the docker command
+```
+
+</details>
+
+
+---
+
+### `_docker_is_image_on_registry()`
+
+**Tells if a image is present on the registry**
+
+<details>
+
+```
+ registry is taken from the given address or falls back as for docker standard policies
 
  Params:
- $@  a list of variable names to pretty print (so without dereference operator "$")
-```
-
-</details>
-
-
----
-
-### `_pp_adjust_var()`
-
-**Adjust a variable for pretty printing**
-
-<details>
-
-```
- Params:
- $1: the variable to cut
- $2: the max len
-```
-
-</details>
-
-
----
-
-### `_NONNULL()`
-
-**Validates for non-null a list of mandatory variables**
-
-<details>
-
-```
- Fatals if a violation is found
-```
-
-</details>
-
-
----
-
-### `__VERIFY_EXPRESSION()`
-
-**Verifies a condition**
-
-<details>
-
-```
- Expects a value to match an expected value according with an operator.
- If the verification fails an error and a callstack are printed.
- The function assumes to be wrapped so it skips 2 levels of the callstack.
-
- Syntax1 - Params:
- $1: The error messages prefix
- $2: Name of the variable containing the value to test
- $3: Operator
- $4: expected value
-
- Syntax2 - Params:
- $1: The error messages prefix
- $2: -v
- $3: A description of value
- $4: A value to test
- $5: Operator
- $6: expected value
-```
-
-</details>
-
-
----
-
-### `__VERIFY()`
-
-**See __VERIFY_EXPRESSION**
-
-
----
-
-### `DBGSHELL()`
-
-**Drops a shell that inherits the caller environment**
-
-
----
-
-### `__aws_exec()`
-
-**Runs a aws operation and summarise the output**
-
-<details>
-
-```
- Params:
- $@: all params are forwarded to the aws command and params of _summarize_stream
-```
-
-</details>
-
-
----
-
-### `__aws()`
-
-**Runs a aws operation**
-
-<details>
-
-```
- Params:
- $@: all params are forwarded to the aws command
-```
-
-</details>
-
-
----
-
-### `__aws_npm_unpublish()`
-
-**Unpublish a version from an aws npm repo**
-
-<details>
-
-```
- Params:
- $1: the project name
- $2: the project version
-```
-
-</details>
-
-
----
-
-### `_url_add_token()`
-
-**Adds a token or replaces a tocken to/in a URL**
-
-<details>
-
-```
- Params:
- $1  destination var
- $2  url
- $3  token
-```
-
-</details>
-
-
----
-
-### `_extract_pr_title_prefix()`
-
-**Gets the prefix of the PR title**
-
-<details>
-
-```
- Params:
- $1 destination var
- $2 the PR title
-```
-
-</details>
-
-
----
-
-### `BASE.init_default_vars()`
-
-**shellcheck disable=SC2034**
-
-
----
-
-### `START_MACRO()`
-
-**Setups the enviroment for a macro execution**
-
-<details>
-
-```
- Params:
- $1   macro name
- $..  macro-specific parameters
-
- shellcheck disable=SC2034
-```
-
-</details>
-
-
----
-
-### `_EXIT()`
-
-**Stops the execution with a success result and an info message**
-
-<details>
-
-```
- Params:
- $1  message
-
- Options:
- -d logs using _log_d instead of _log_i
-```
-
-</details>
-
-
----
-
-### `_SOE()`
-
-**STOP ON ERROR**
-
-<details>
-
-```
- Options:
- --pipe N  checks the result of the part #N of a pipe expression
-```
-
-</details>
-
-
----
-
-### `_set_var()`
-
-**Sets a variable given the name and the value**
-
-<details>
-
-```
- WARNING:
- This function can be used to set a variable of the caller's scope and this tecnique
- is commonly used to return values to the caller.
- But note that if there is a variable with same name in the local scope, the local one
- is preferred leaving the caller's variable untouched.
- That's why functions that returns values uses a special naming convention for their
- internal variables (_tmp_...).
-
- Params:
- - $1: variable to set
- - $2: value
-```
-
-</details>
-
-
----
-
-### `_exec_with_empty_env()`
-
-**Executes a command in an expty enviroment**
-
-
----
-
-### `kube.oc.wait_for_resource()`
-
-**Waits for a condition on given resource**
-
-<details>
-
-```
- $1: max wait
- $2: condition (until-present, until-not-present)
- $3: resource type
- $4: resource name
-```
-
-</details>
-
-
----
-
-### `kube.oc-login()`
-
-**Logins to an OKD instance given the related OKD variables**
-
-<details>
-
-```
- Required environment variables:
-  ENTANDO_OPT_OKD_LOGIN_URL        the url of the OKD instance
-  ENTANDO_OPT_OKD_LOGIN_TOKEN      the tocken to use for the login operation
-  ENTANDO_OPT_OKD_LOGIN_NAMESPACE  the namespace to use
-
- Optional environment variables:
-   ENTANDO_OPT_OKD_LOGIN_INSECURE  forces a TLS-insecure login (default: false)
-   ENTANDO_OPT_OKD_CLI_URL         the URL from which the download tool should be downloaded
-                                   Note that this is a semicolon-delimited list, where the first element
-                                   is the url and the others are the optional curl options
-```
-
-</details>
-
-
----
-
-### `kube.oc.namespace.reset()`
-
-**Deletes and recreates a namespace**
-
-
----
-
-### `kube.manifest.filter-document-by-kind()`
-
-**Filters out from the standard-input the triple-dash (---) separed documents that matches the given kind**
-
-<details>
-
-```
- Params:
- $1 document kind
-```
-
-</details>
-
-
----
-
-### `_pkg_get()`
-
-**Installs a command given its package name**
-
-<details>
-
-```
- Params:
- $1: name of the package
-
- Options:
- -c command          command to check if != package name
- --tar-install url   installation based on the url of the executable archive
-```
-
-</details>
-
-
----
-
-### `_pkg_apt_install()`
-
-**Installs a package given its apt package name**
-
-
----
-
-### `_pkg_tar_install()`
-
-**Installs a package given a link to a tarball**
-
-<details>
-
-```
- $1: semicolon-delimited list containing:
-     position #1     the url
-     position #2..4  3 additional args for the curl command
-
- this limited syntax was implemented mostly to allow specifying "--insecure"
- note that all the args are individually quoted
-```
-
-</details>
-
-
----
-
-### `require_mandatory_command()`
-
-**Ensures that a mandatory command is avaliable**
-
-<details>
-
-```
- Params:
- $1:   command
- [$2]: optional description of the command
-```
-
-</details>
-
-
----
-
-### `_pkg_is_command_available()`
-
-**Checks for the presence of a command**
-
-<details>
-
-```
- Params:
- $1: the command
-
- Options:
- [-m] if provided failing finding the command is fatal
-```
-
-</details>
-
-
----
-
-### `__mvn_exec()`
-
-**Successfully runs a maven command or fatals.**
-
-<details>
-
-```
- Unless otherise specified it summarize the output.
-
- Special Options:
- --ppl-simple:     doesn't summarize the output
- --ppl-timestamp:  adds a timestamp to every output line
-```
-
-</details>
-
-
----
-
-### `__mvn_deploy()`
-
-**Runs a maven deploy over the received environment params**
-
-<details>
-
-```
- Params:
- $1: repository id
- $2: repository url
+ $1: the image address
 ```
 
 </details>
@@ -902,15 +864,22 @@
 
 ---
 
-### `__docker_exec()`
+### `_print_callstack()`
 
-**Runs a docker operation and summarise the output**
+**Prints the current callstack**
 
 <details>
 
 ```
+ Options
+ [-d] to debug tty
+ [-n] doesn't print the decoration frame
+
  Params:
- $@: all params are forwarded to the docker command and params of _summarize_stream
+ $1  start from this element of the start
+ $2  number of start
+ $3  title
+ $4  print command to use
 ```
 
 </details>
@@ -918,15 +887,16 @@
 
 ---
 
-### `__docker()`
+### `print_current_function_name()`
 
-**Runs a docker operation**
+**Prints the current function name with decorations**
 
 <details>
 
 ```
  Params:
- $@: all params are forwarded to the docker command
+ $1  prefix decoration
+ $2  suffix decoration
 ```
 
 </details>
@@ -934,17 +904,401 @@
 
 ---
 
-### `_docker_is_image_on_registry()`
+### `_pp()`
 
-**Tells if a image is present on the registry**
+**Pretty debug prints of variables**
 
 <details>
 
 ```
- registry is taken from the given address or falls back as for docker standard policies
+ Params:
+ [-d]       prints to the debug tty
+ [-t title] also print a title
+ - all params are optional and accept ""
 
  Params:
- $1: the image address
+ $@  a list of variable names to pretty print (so without dereference operator "$")
+```
+
+</details>
+
+
+---
+
+### `_pp_adjust_var()`
+
+**Adjust a variable for pretty printing**
+
+<details>
+
+```
+ Params:
+ $1: the variable to cut
+ $2: the max len
+```
+
+</details>
+
+
+---
+
+### `_NONNULL()`
+
+**Validates for non-null a list of mandatory variables**
+
+<details>
+
+```
+ Fatals if a violation is found
+```
+
+</details>
+
+
+---
+
+### `__VERIFY_EXPRESSION()`
+
+**Verifies a condition**
+
+<details>
+
+```
+ Expects a value to match an expected value according with an operator.
+ If the verification fails an error and a callstack are printed.
+ The function assumes to be wrapped so it skips 2 levels of the callstack.
+
+ Syntax1 - Params:
+ $1: The error messages prefix
+ $2: Name of the variable containing the value to test
+ $3: Operator
+ $4: expected value
+
+ Syntax2 - Params:
+ $1: The error messages prefix
+ $2: -v
+ $3: A description of value
+ $4: A value to test
+ $5: Operator
+ $6: expected value
+```
+
+</details>
+
+
+---
+
+### `__VERIFY()`
+
+**See __VERIFY_EXPRESSION**
+
+
+---
+
+### `DBGSHELL()`
+
+**Drops a shell that inherits the caller environment**
+
+
+---
+
+### `BASE.init_default_vars()`
+
+**shellcheck disable=SC2034**
+
+
+---
+
+### `START_MACRO()`
+
+**Setups the enviroment for a macro execution**
+
+<details>
+
+```
+ Params:
+ $1   macro name
+ $..  macro-specific parameters
+
+ shellcheck disable=SC2034
+```
+
+</details>
+
+
+---
+
+### `_EXIT()`
+
+**Stops the execution with a success result and an info message**
+
+<details>
+
+```
+ Params:
+ $1  message
+
+ Options:
+ -d logs using _log_d instead of _log_i
+```
+
+</details>
+
+
+---
+
+### `_SOE()`
+
+**STOP ON ERROR**
+
+<details>
+
+```
+ Options:
+ --pipe N  checks the result of the part #N of a pipe expression
+```
+
+</details>
+
+
+---
+
+### `_set_var()`
+
+**Sets a variable given the name and the value**
+
+<details>
+
+```
+ WARNING:
+ This function can be used to set a variable of the caller's scope and this tecnique
+ is commonly used to return values to the caller.
+ But note that if there is a variable with same name in the local scope, the local one
+ is preferred leaving the caller's variable untouched.
+ That's why functions that returns values uses a special naming convention for their
+ internal variables (_tmp_...).
+
+ Params:
+ - $1: variable to set
+ - $2: value
+```
+
+</details>
+
+
+---
+
+### `_exec_with_empty_env()`
+
+**Executes a command in an expty enviroment**
+
+
+---
+
+### `_pkg_get()`
+
+**Installs a command given its package name**
+
+<details>
+
+```
+ Params:
+ $1: name of the package
+
+ Options:
+ -c command          command to check if != package name
+ --tar-install url   installation based on the url of the executable archive
+```
+
+</details>
+
+
+---
+
+### `_pkg_apt_install()`
+
+**Installs a package given its apt package name**
+
+
+---
+
+### `_pkg_tar_install()`
+
+**Installs a package given a link to a tarball**
+
+<details>
+
+```
+ $1: semicolon-delimited list containing:
+     position #1     the url
+     position #2..4  3 additional args for the curl command
+
+ this limited syntax was implemented mostly to allow specifying "--insecure"
+ note that all the args are individually quoted
+```
+
+</details>
+
+
+---
+
+### `require_mandatory_command()`
+
+**Ensures that a mandatory command is avaliable**
+
+<details>
+
+```
+ Params:
+ $1:   command
+ [$2]: optional description of the command
+```
+
+</details>
+
+
+---
+
+### `_pkg_is_command_available()`
+
+**Checks for the presence of a command**
+
+<details>
+
+```
+ Params:
+ $1: the command
+
+ Options:
+ [-m] if provided failing finding the command is fatal
+```
+
+</details>
+
+
+---
+
+### `_npm_get()`
+
+**Sets an npm package.json property**
+
+<details>
+
+```
+ Params:
+ $1 the receiver var
+ $2 the project file
+ $3 the property name
+```
+
+</details>
+
+
+---
+
+### `_npm_set()`
+
+**Sets an npm package.json property**
+
+<details>
+
+```
+ Params:
+ $1 the project file
+ $2 the property name
+ $3 the property value
+```
+
+</details>
+
+
+---
+
+### `_npm_setup_login_data()`
+
+**Logins to an npm registry**
+
+
+---
+
+### `__aws_exec()`
+
+**Runs a aws operation and summarise the output**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the aws command and params of _summarize_stream
+```
+
+</details>
+
+
+---
+
+### `__aws()`
+
+**Runs a aws operation**
+
+<details>
+
+```
+ Params:
+ $@: all params are forwarded to the aws command
+```
+
+</details>
+
+
+---
+
+### `__aws_npm_unpublish()`
+
+**Unpublish a version from an aws npm repo**
+
+<details>
+
+```
+ Params:
+ $1: the project name
+ $2: the project version
+```
+
+</details>
+
+
+---
+
+### `__mvn_exec()`
+
+**Successfully runs a maven command or fatals.**
+
+<details>
+
+```
+ Unless otherise specified it summarize the output.
+
+ Special Options:
+ --ppl-simple:     doesn't summarize the output
+ --ppl-timestamp:  adds a timestamp to every output line
+```
+
+</details>
+
+
+---
+
+### `__mvn_deploy()`
+
+**Runs a maven deploy over the received environment params**
+
+<details>
+
+```
+ Params:
+ $1: repository id
+ $2: repository url
 ```
 
 </details>
@@ -1095,17 +1449,17 @@
 
 ---
 
-### `_npm_get()`
+### `_url_add_token()`
 
-**Sets an npm package.json property**
+**Adds a token or replaces a tocken to/in a URL**
 
 <details>
 
 ```
  Params:
- $1 the receiver var
- $2 the project file
- $3 the property name
+ $1  destination var
+ $2  url
+ $3  token
 ```
 
 </details>
@@ -1113,17 +1467,16 @@
 
 ---
 
-### `_npm_set()`
+### `_extract_pr_title_prefix()`
 
-**Sets an npm package.json property**
+**Gets the prefix of the PR title**
 
 <details>
 
 ```
  Params:
- $1 the project file
- $2 the property name
- $3 the property value
+ $1 destination var
+ $2 the PR title
 ```
 
 </details>
@@ -1131,9 +1484,67 @@
 
 ---
 
-### `_npm_setup_login_data()`
+### `kube.oc.wait_for_resource()`
 
-**Logins to an npm registry**
+**Waits for a condition on given resource**
+
+<details>
+
+```
+ $1: max wait
+ $2: condition (until-present, until-not-present)
+ $3: resource type
+ $4: resource name
+```
+
+</details>
+
+
+---
+
+### `kube.oc-login()`
+
+**Logins to an OKD instance given the related OKD variables**
+
+<details>
+
+```
+ Required environment variables:
+  ENTANDO_OPT_OKD_LOGIN_URL        the url of the OKD instance
+  ENTANDO_OPT_OKD_LOGIN_TOKEN      the tocken to use for the login operation
+  ENTANDO_OPT_OKD_LOGIN_NAMESPACE  the namespace to use
+
+ Optional environment variables:
+   ENTANDO_OPT_OKD_LOGIN_INSECURE  forces a TLS-insecure login (default: false)
+   ENTANDO_OPT_OKD_CLI_URL         the URL from which the download tool should be downloaded
+                                   Note that this is a semicolon-delimited list, where the first element
+                                   is the url and the others are the optional curl options
+```
+
+</details>
+
+
+---
+
+### `kube.oc.namespace.reset()`
+
+**Deletes and recreates a namespace**
+
+
+---
+
+### `kube.manifest.filter-document-by-kind()`
+
+**Filters out from the standard-input the triple-dash (---) separed documents that matches the given kind**
+
+<details>
+
+```
+ Params:
+ $1 document kind
+```
+
+</details>
 
 
 ---
@@ -1232,39 +1643,15 @@
 
 ---
 
-### `_print_callstack()`
+### `__docker_exec()`
 
-**Prints the current callstack**
-
-<details>
-
-```
- Options
- [-d] to debug tty
- [-n] doesn't print the decoration frame
-
- Params:
- $1  start from this element of the start
- $2  number of start
- $3  title
- $4  print command to use
-```
-
-</details>
-
-
----
-
-### `print_current_function_name()`
-
-**Prints the current function name with decorations**
+**Runs a docker operation and summarise the output**
 
 <details>
 
 ```
  Params:
- $1  prefix decoration
- $2  suffix decoration
+ $@: all params are forwarded to the docker command and params of _summarize_stream
 ```
 
 </details>
@@ -1272,458 +1659,33 @@
 
 ---
 
-### `_pp()`
+### `__docker()`
 
-**Pretty debug prints of variables**
+**Runs a docker operation**
 
 <details>
 
 ```
  Params:
- [-d]       prints to the debug tty
- [-t title] also print a title
- - all params are optional and accept ""
+ $@: all params are forwarded to the docker command
+```
+
+</details>
+
+
+---
+
+### `_docker_is_image_on_registry()`
+
+**Tells if a image is present on the registry**
+
+<details>
+
+```
+ registry is taken from the given address or falls back as for docker standard policies
 
  Params:
- $@  a list of variable names to pretty print (so without dereference operator "$")
-```
-
-</details>
-
-
----
-
-### `_pp_adjust_var()`
-
-**Adjust a variable for pretty printing**
-
-<details>
-
-```
- Params:
- $1: the variable to cut
- $2: the max len
-```
-
-</details>
-
-
----
-
-### `_NONNULL()`
-
-**Validates for non-null a list of mandatory variables**
-
-<details>
-
-```
- Fatals if a violation is found
-```
-
-</details>
-
-
----
-
-### `__VERIFY_EXPRESSION()`
-
-**Verifies a condition**
-
-<details>
-
-```
- Expects a value to match an expected value according with an operator.
- If the verification fails an error and a callstack are printed.
- The function assumes to be wrapped so it skips 2 levels of the callstack.
-
- Syntax1 - Params:
- $1: The error messages prefix
- $2: Name of the variable containing the value to test
- $3: Operator
- $4: expected value
-
- Syntax2 - Params:
- $1: The error messages prefix
- $2: -v
- $3: A description of value
- $4: A value to test
- $5: Operator
- $6: expected value
-```
-
-</details>
-
-
----
-
-### `__VERIFY()`
-
-**See __VERIFY_EXPRESSION**
-
-
----
-
-### `DBGSHELL()`
-
-**Drops a shell that inherits the caller environment**
-
-
----
-
-### `__aws_exec()`
-
-**Runs a aws operation and summarise the output**
-
-<details>
-
-```
- Params:
- $@: all params are forwarded to the aws command and params of _summarize_stream
-```
-
-</details>
-
-
----
-
-### `__aws()`
-
-**Runs a aws operation**
-
-<details>
-
-```
- Params:
- $@: all params are forwarded to the aws command
-```
-
-</details>
-
-
----
-
-### `__aws_npm_unpublish()`
-
-**Unpublish a version from an aws npm repo**
-
-<details>
-
-```
- Params:
- $1: the project name
- $2: the project version
-```
-
-</details>
-
-
----
-
-### `_url_add_token()`
-
-**Adds a token or replaces a tocken to/in a URL**
-
-<details>
-
-```
- Params:
- $1  destination var
- $2  url
- $3  token
-```
-
-</details>
-
-
----
-
-### `_extract_pr_title_prefix()`
-
-**Gets the prefix of the PR title**
-
-<details>
-
-```
- Params:
- $1 destination var
- $2 the PR title
-```
-
-</details>
-
-
----
-
-### `BASE.init_default_vars()`
-
-**shellcheck disable=SC2034**
-
-
----
-
-### `START_MACRO()`
-
-**Setups the enviroment for a macro execution**
-
-<details>
-
-```
- Params:
- $1   macro name
- $..  macro-specific parameters
-
- shellcheck disable=SC2034
-```
-
-</details>
-
-
----
-
-### `_EXIT()`
-
-**Stops the execution with a success result and an info message**
-
-<details>
-
-```
- Params:
- $1  message
-
- Options:
- -d logs using _log_d instead of _log_i
-```
-
-</details>
-
-
----
-
-### `_SOE()`
-
-**STOP ON ERROR**
-
-<details>
-
-```
- Options:
- --pipe N  checks the result of the part #N of a pipe expression
-```
-
-</details>
-
-
----
-
-### `_set_var()`
-
-**Sets a variable given the name and the value**
-
-<details>
-
-```
- WARNING:
- This function can be used to set a variable of the caller's scope and this tecnique
- is commonly used to return values to the caller.
- But note that if there is a variable with same name in the local scope, the local one
- is preferred leaving the caller's variable untouched.
- That's why functions that returns values uses a special naming convention for their
- internal variables (_tmp_...).
-
- Params:
- - $1: variable to set
- - $2: value
-```
-
-</details>
-
-
----
-
-### `_exec_with_empty_env()`
-
-**Executes a command in an expty enviroment**
-
-
----
-
-### `kube.oc.wait_for_resource()`
-
-**Waits for a condition on given resource**
-
-<details>
-
-```
- $1: max wait
- $2: condition (until-present, until-not-present)
- $3: resource type
- $4: resource name
-```
-
-</details>
-
-
----
-
-### `kube.oc-login()`
-
-**Logins to an OKD instance given the related OKD variables**
-
-<details>
-
-```
- Required environment variables:
-  ENTANDO_OPT_OKD_LOGIN_URL        the url of the OKD instance
-  ENTANDO_OPT_OKD_LOGIN_TOKEN      the tocken to use for the login operation
-  ENTANDO_OPT_OKD_LOGIN_NAMESPACE  the namespace to use
-
- Optional environment variables:
-   ENTANDO_OPT_OKD_LOGIN_INSECURE  forces a TLS-insecure login (default: false)
-   ENTANDO_OPT_OKD_CLI_URL         the URL from which the download tool should be downloaded
-                                   Note that this is a semicolon-delimited list, where the first element
-                                   is the url and the others are the optional curl options
-```
-
-</details>
-
-
----
-
-### `kube.oc.namespace.reset()`
-
-**Deletes and recreates a namespace**
-
-
----
-
-### `kube.manifest.filter-document-by-kind()`
-
-**Filters out from the standard-input the triple-dash (---) separed documents that matches the given kind**
-
-<details>
-
-```
- Params:
- $1 document kind
-```
-
-</details>
-
-
----
-
-### `_pkg_get()`
-
-**Installs a command given its package name**
-
-<details>
-
-```
- Params:
- $1: name of the package
-
- Options:
- -c command          command to check if != package name
- --tar-install url   installation based on the url of the executable archive
-```
-
-</details>
-
-
----
-
-### `_pkg_apt_install()`
-
-**Installs a package given its apt package name**
-
-
----
-
-### `_pkg_tar_install()`
-
-**Installs a package given a link to a tarball**
-
-<details>
-
-```
- $1: semicolon-delimited list containing:
-     position #1     the url
-     position #2..4  3 additional args for the curl command
-
- this limited syntax was implemented mostly to allow specifying "--insecure"
- note that all the args are individually quoted
-```
-
-</details>
-
-
----
-
-### `require_mandatory_command()`
-
-**Ensures that a mandatory command is avaliable**
-
-<details>
-
-```
- Params:
- $1:   command
- [$2]: optional description of the command
-```
-
-</details>
-
-
----
-
-### `_pkg_is_command_available()`
-
-**Checks for the presence of a command**
-
-<details>
-
-```
- Params:
- $1: the command
-
- Options:
- [-m] if provided failing finding the command is fatal
-```
-
-</details>
-
-
----
-
-### `__mvn_exec()`
-
-**Successfully runs a maven command or fatals.**
-
-<details>
-
-```
- Unless otherise specified it summarize the output.
-
- Special Options:
- --ppl-simple:     doesn't summarize the output
- --ppl-timestamp:  adds a timestamp to every output line
-```
-
-</details>
-
-
----
-
-### `__mvn_deploy()`
-
-**Runs a maven deploy over the received environment params**
-
-<details>
-
-```
- Params:
- $1: repository id
- $2: repository url
+ $1: the image address
 ```
 
 </details>
@@ -1996,15 +1958,22 @@
 
 ---
 
-### `__docker_exec()`
+### `_print_callstack()`
 
-**Runs a docker operation and summarise the output**
+**Prints the current callstack**
 
 <details>
 
 ```
+ Options
+ [-d] to debug tty
+ [-n] doesn't print the decoration frame
+
  Params:
- $@: all params are forwarded to the docker command and params of _summarize_stream
+ $1  start from this element of the start
+ $2  number of start
+ $3  title
+ $4  print command to use
 ```
 
 </details>
@@ -2012,15 +1981,16 @@
 
 ---
 
-### `__docker()`
+### `print_current_function_name()`
 
-**Runs a docker operation**
+**Prints the current function name with decorations**
 
 <details>
 
 ```
  Params:
- $@: all params are forwarded to the docker command
+ $1  prefix decoration
+ $2  suffix decoration
 ```
 
 </details>
@@ -2028,17 +1998,20 @@
 
 ---
 
-### `_docker_is_image_on_registry()`
+### `_pp()`
 
-**Tells if a image is present on the registry**
+**Pretty debug prints of variables**
 
 <details>
 
 ```
- registry is taken from the given address or falls back as for docker standard policies
+ Params:
+ [-d]       prints to the debug tty
+ [-t title] also print a title
+ - all params are optional and accept ""
 
  Params:
- $1: the image address
+ $@  a list of variable names to pretty print (so without dereference operator "$")
 ```
 
 </details>
@@ -2046,16 +2019,16 @@
 
 ---
 
-### `_pom_get_project_artifact_id()`
+### `_pp_adjust_var()`
 
-**Extacts the artifactId from a pom**
+**Adjust a variable for pretty printing**
 
 <details>
 
 ```
  Params:
- $1: dest var
- $2: pom file pathname
+ $1: the variable to cut
+ $2: the max len
 ```
 
 </details>
@@ -2063,16 +2036,14 @@
 
 ---
 
-### `_pom_get_project_version()`
+### `_NONNULL()`
 
-**Extacts the version of a artifactId from a pom**
+**Validates for non-null a list of mandatory variables**
 
 <details>
 
 ```
- Params:
- $1: dest var
- $2: pom file pathname
+ Fatals if a violation is found
 ```
 
 </details>
@@ -2080,16 +2051,30 @@
 
 ---
 
-### `_pom_set_project_version()`
+### `__VERIFY_EXPRESSION()`
 
-**Sets the version of a artifactId from a pom**
+**Verifies a condition**
 
 <details>
 
 ```
- Params:
- $1: new version
- $2: pom file pathname
+ Expects a value to match an expected value according with an operator.
+ If the verification fails an error and a callstack are printed.
+ The function assumes to be wrapped so it skips 2 levels of the callstack.
+
+ Syntax1 - Params:
+ $1: The error messages prefix
+ $2: Name of the variable containing the value to test
+ $3: Operator
+ $4: expected value
+
+ Syntax2 - Params:
+ $1: The error messages prefix
+ $2: -v
+ $3: A description of value
+ $4: A value to test
+ $5: Operator
+ $6: expected value
 ```
 
 </details>
@@ -2097,17 +2082,39 @@
 
 ---
 
-### `_pom_get_project_property()`
+### `__VERIFY()`
 
-**Extacts a property from a pom**
+**See __VERIFY_EXPRESSION**
+
+
+---
+
+### `DBGSHELL()`
+
+**Drops a shell that inherits the caller environment**
+
+
+---
+
+### `BASE.init_default_vars()`
+
+**shellcheck disable=SC2034**
+
+
+---
+
+### `START_MACRO()`
+
+**Setups the enviroment for a macro execution**
 
 <details>
 
 ```
  Params:
- $1: dest var
- $2: pom file pathname
- $3: property name
+ $1   macro name
+ $..  macro-specific parameters
+
+ shellcheck disable=SC2034
 ```
 
 </details>
@@ -2115,17 +2122,18 @@
 
 ---
 
-### `_pom_set_project_property()`
+### `_EXIT()`
 
-**Sets a property from a pom**
+**Stops the execution with a success result and an info message**
 
 <details>
 
 ```
  Params:
- $1: new value
- $2: pom file pathname
- $3: property name
+ $1  message
+
+ Options:
+ -d logs using _log_d instead of _log_i
 ```
 
 </details>
@@ -2133,17 +2141,15 @@
 
 ---
 
-### `_pom_get_depman_artifact_version()`
+### `_SOE()`
 
-**Extacts the version of an artifact dependency of the dependency management section**
+**STOP ON ERROR**
 
 <details>
 
 ```
- Params:
- $1: dest var
- $2: pom file pathname
- $3: the artifact id
+ Options:
+ --pipe N  checks the result of the part #N of a pipe expression
 ```
 
 </details>
@@ -2151,18 +2157,24 @@
 
 ---
 
-### `_pom_get()`
+### `_set_var()`
 
-**Gets a pom property**
+**Sets a variable given the name and the value**
 
 <details>
 
 ```
+ WARNING:
+ This function can be used to set a variable of the caller's scope and this tecnique
+ is commonly used to return values to the caller.
+ But note that if there is a variable with same name in the local scope, the local one
+ is preferred leaving the caller's variable untouched.
+ That's why functions that returns values uses a special naming convention for their
+ internal variables (_tmp_...).
+
  Params:
- $1 the receiver var
- $2 the pom file
- $3 the XML path of the property to set
- $4 the property name
+ - $1: variable to set
+ - $2: value
 ```
 
 </details>
@@ -2170,21 +2182,9 @@
 
 ---
 
-### `_pom_set()`
+### `_exec_with_empty_env()`
 
-**Sets a pom property**
-
-<details>
-
-```
- Params:
- $1 the value to set
- $2 the pom file
- $3 the XML path of the property to set
- $4 the property name
-```
-
-</details>
+**Executes a command in an expty enviroment**
 
 
 ---

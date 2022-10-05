@@ -1,6 +1,140 @@
 
 ---
 
+### `_ppl_query_latest_bom_version()`
+
+**Extracts the latest bom version given the bom repository URL**
+
+<details>
+
+```
+ Params:
+ $1: dest var
+ $2: bom repo URL
+```
+
+</details>
+
+
+---
+
+### `_ppl_load_settings()`
+
+**Sets one ore more evironment variables given a semicolon-delimited list of assignments**
+
+<details>
+
+```
+ WARNING: the parser interprets the backslash
+ WARNING: the parser doesn't support quotes like a CSV, however you can still escape the colon with the backslash ("\;")
+
+ Options:
+ --var-sep value    the var separator to assume
+ --section          select a specific section of the settings
+ --stdin            reads the environment the stdin
+
+ Line level options:
+
+ [p]VAR=VALUE   <= VAR is set only if currently empty
+
+ Paramers:
+ $1                unless "--stdin" is provider it's the environment to be loaded
+
+ eg:
+ - LEGAL:   _ppl_load_settings 'A=1;B=hey there;C=true'
+ - ILLEGAL: _ppl_load_settings 'A=1;B="hey;there";C=true'
+ - LEGAL:   _ppl_load_settings 'A=1;B=hey\;there;C=true'
+
+ Multisection example:
+ [SECT01]
+ A=1
+ [SECT02]
+ A=2
+```
+
+</details>
+
+
+---
+
+### `_ppl_run_post-deployment-test_setup_script()`
+
+**Runs a the preview environment provisioning script**
+
+<details>
+
+```
+ Params:
+ $1 the test namespace to use
+ $2 the project name
+ $3 the project version
+```
+
+</details>
+
+
+---
+
+### `_ppl_provision_helm_preview_environment()`
+
+**Creates a preview environment by using helm charts present in the dir**
+
+<details>
+
+```
+ Params:
+ $1: project name
+ $2: project version
+ $3: test namespace
+ $4: hostname suffix
+```
+
+</details>
+
+
+---
+
+### `_ppl_set_provisioning_placeholders_in_files()`
+
+**Sets a set of well-known provisioning parameters in a given file**
+
+<details>
+
+```
+ Params:
+ $1: list of files to set, separed by semicolon
+ $2: Project name
+ $3: Project version
+ $4: Namespace to use for testing
+ $5: Hostname suffix
+```
+
+</details>
+
+
+---
+
+### `_ppl_autoset_snapshot_version()`
+
+**Sets the the project snapshot version according with the current pr information**
+
+
+---
+
+### `_ppl_print_current_branch_of_dir()`
+
+**Reads the current branch from a give dir, or the current one if none is given**
+
+
+---
+
+### `_ppl_determine_qualifier()`
+
+**Finds the artifact qualifier**
+
+
+---
+
 ### `_ppl-job-update-status()`
 
 **Updates the state of the current pipeline job**
@@ -214,57 +348,6 @@
  Params:
  $1: the PR number
  $2: the label to remove
-```
-
-</details>
-
-
----
-
-### `_ppl_get_current_project_version()`
-
-**Extacts the version of a artifactId from a pom**
-
-<details>
-
-```
- Params:
- $1: dest var
- $3: project file pathname
-```
-
-</details>
-
-
----
-
-### `_ppl_set_current_project_version()`
-
-**Extacts the version of a artifactId from a pom**
-
-<details>
-
-```
- Params:
- $1:   the value to set
- [$2]: the optional project file pathname
-```
-
-</details>
-
-
----
-
-### `_ppl_get_current_project_name()`
-
-**Extacts the version of a artifactId from a pom**
-
-<details>
-
-```
- Params:
- $1: dest var
- [$2]: the optional project file pathname
 ```
 
 </details>
@@ -522,16 +605,16 @@
 
 ---
 
-### `_ppl_query_latest_bom_version()`
+### `_ppl_get_current_project_version()`
 
-**Extracts the latest bom version given the bom repository URL**
+**Extacts the version of a artifactId from a pom**
 
 <details>
 
 ```
  Params:
  $1: dest var
- $2: bom repo URL
+ $3: project file pathname
 ```
 
 </details>
@@ -539,56 +622,16 @@
 
 ---
 
-### `_ppl_load_settings()`
+### `_ppl_set_current_project_version()`
 
-**Sets one ore more evironment variables given a semicolon-delimited list of assignments**
-
-<details>
-
-```
- WARNING: the parser interprets the backslash
- WARNING: the parser doesn't support quotes like a CSV, however you can still escape the colon with the backslash ("\;")
-
- Options:
- --var-sep value    the var separator to assume
- --section          select a specific section of the settings
- --stdin            reads the environment the stdin
-
- Line level options:
-
- [p]VAR=VALUE   <= VAR is set only if currently empty
-
- Paramers:
- $1                unless "--stdin" is provider it's the environment to be loaded
-
- eg:
- - LEGAL:   _ppl_load_settings 'A=1;B=hey there;C=true'
- - ILLEGAL: _ppl_load_settings 'A=1;B="hey;there";C=true'
- - LEGAL:   _ppl_load_settings 'A=1;B=hey\;there;C=true'
-
- Multisection example:
- [SECT01]
- A=1
- [SECT02]
- A=2
-```
-
-</details>
-
-
----
-
-### `_ppl_run_post-deployment-test_setup_script()`
-
-**Runs a the preview environment provisioning script**
+**Extacts the version of a artifactId from a pom**
 
 <details>
 
 ```
  Params:
- $1 the test namespace to use
- $2 the project name
- $3 the project version
+ $1:   the value to set
+ [$2]: the optional project file pathname
 ```
 
 </details>
@@ -596,60 +639,17 @@
 
 ---
 
-### `_ppl_provision_helm_preview_environment()`
+### `_ppl_get_current_project_name()`
 
-**Creates a preview environment by using helm charts present in the dir**
+**Extacts the version of a artifactId from a pom**
 
 <details>
 
 ```
  Params:
- $1: project name
- $2: project version
- $3: test namespace
- $4: hostname suffix
+ $1: dest var
+ [$2]: the optional project file pathname
 ```
 
 </details>
-
-
----
-
-### `_ppl_set_provisioning_placeholders_in_files()`
-
-**Sets a set of well-known provisioning parameters in a given file**
-
-<details>
-
-```
- Params:
- $1: list of files to set, separed by semicolon
- $2: Project name
- $3: Project version
- $4: Namespace to use for testing
- $5: Hostname suffix
-```
-
-</details>
-
-
----
-
-### `_ppl_autoset_snapshot_version()`
-
-**Sets the the project snapshot version according with the current pr information**
-
-
----
-
-### `_ppl_print_current_branch_of_dir()`
-
-**Reads the current branch from a give dir, or the current one if none is given**
-
-
----
-
-### `_ppl_determine_qualifier()`
-
-**Finds the artifact qualifier**
 

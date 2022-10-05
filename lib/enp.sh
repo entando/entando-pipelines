@@ -38,3 +38,9 @@ _enp_load() {
   }
 }
 
+_enp_load_pipeline_local_settings() {
+  [ -f "entando-pipelines" ] && {
+    _ppl_load_settings --var-sep $'\n' --stdin < "entando-pipelines"
+  }
+}
+

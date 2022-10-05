@@ -40,26 +40,53 @@ _ppl_clone_and_configure_data_repo() {
   
   __cd "$data_repo_dir"
   DATA_REPO_PATH="$PWD"
+  ENTANDO_DATA_REPO_REF=""
+  
+  # Extract by project property
+  if [ -z "$ENTANDO_DATA_REPO_REF" ]; then
+    if [ "$PPL_NO_REPO" != "true" ]; then
+      [ -z "$PPL_LOCAL_CLONE_DIR" ] && _FATAL "Unable to determine the local clone location"
+
+      ENTANDO_DATA_REPO_REF="$(_extract_entando_prj_pipeline_config "$saved_pwd")"
+      cfg.git_fetch_origin "$ENTANDO_DATA_REPO_REF"
+    fi
+  fi
   
   # Extract by STORY AFFINITY
-  if [ -n "$pr_title_qualifier" ]; then
-    git fetch origin "$pr_title_qualifier":"$pr_title_qualifier" --depth 1 &> /dev/null
-    if [ -n "$pr_title_qualifier" ] && _git_ref_exists "$pr_title_qualifier" >/dev/null 2>&1; then
-      ENTANDO_DATA_REPO_REF="$pr_title_qualifier"
+  if [ -z "$ENTANDO_DATA_REPO_REF" ]; then
+    if [ -n "$pr_title_qualifier" ]; then
+      cfg.git_fetch_origin "$pr_title_qualifier"
+      if [ -n "$pr_title_qualifier" ] && _git_ref_exists "$pr_title_qualifier" >/dev/null 2>&1; then
+        ENTANDO_DATA_REPO_REF="$pr_title_qualifier"
+      fi
     fi
   fi
   
   # Extract by BRANCH AFFINITY - TAG
-  if [ -z "$ENTANDO_DATA_REPO_REF" ] && _git_ref_exists "$branch_latest_indicator" >/dev/null 2>&1; then
-    ENTANDO_DATA_REPO_REF="$branch_latest_indicator"
+  if [ -z "$ENTANDO_DATA_REPO_REF" ]; then
+    cfg.git_fetch_origin "$branch_latest_indicator"
+    if _git_ref_exists "$branch_latest_indicator" >/dev/null 2>&1; then
+      ENTANDO_DATA_REPO_REF="$branch_latest_indicator"
+    fi
   fi
-  
+
   # Extract by BRANCH AFFINITY - BRANCH
-  [ -z "$ENTANDO_DATA_REPO_REF" ] && ENTANDO_DATA_REPO_REF="${PPL_NEAREST_MAIN_BRANCH}"
-  
+  if [ -z "$ENTANDO_DATA_REPO_REF" ]; then
+    ENTANDO_DATA_REPO_REF="${PPL_NEAREST_MAIN_BRANCH}"
+    cfg.git_fetch_origin "$ENTANDO_DATA_REPO_REF"
+  fi
+
   # ~
   _log_d "Selected data-repo ref \"${ENTANDO_DATA_REPO_REF}\""
-  __git checkout "${ENTANDO_DATA_REPO_REF}"
+  
+  git checkout "${ENTANDO_DATA_REPO_REF}" &>/dev/null
+  if [ "$?" != 0 ]; then
+    if "$PPL_NO_REPO"; then
+      _log_i "There is no configuration with name \"${ENTANDO_DATA_REPO_REF}\", falling back to the default config"
+    else
+      _FATAL "Unable to extract the pipeline configuration \"${ENTANDO_DATA_REPO_REF}\""
+    fi
+  fi
   
   _ppl_is_feature_enabled "DEBUG-CONFIG" && DEBUG_CONFIG=true
   
@@ -72,7 +99,8 @@ _ppl_clone_and_configure_data_repo() {
         "$first_step" "$DEBUG_CONFIG" || {
       _FATAL "Configuration script returned error state \"$?\"" 1>&2
     }
-  ) || _SOE
+  )
+
   
   # EXPECTED RESULT:
   # - ENTANDO_OPT_ENVIRONMENT_FILE            => always assigned
@@ -98,11 +126,17 @@ _ppl_clone_and_configure_data_repo() {
   __cd "$saved_pwd"
 }
 
+cfg.git_fetch_origin() {
+  git fetch origin "$1":"$1" --depth 1 &> /dev/null || {
+    _log_d "reference \"$1\" not found"
+  }
+}
+
 # Scans the environment for ENTANDO_OPT_XXX variables and decodes/derefence them
 # See also _decode_entando_opt and _resolve_entando_opt
 #
 # NOTE 
-# 1) The reference resolution process is limited to 3 passes, so a sequence of 
+# 1) The reference resolution process is limited to 3 passes, so a sequence of
 # nested references that goes beyond that limit will not be properly satisfied.
 #
 _load_entando_opts() {
@@ -164,4 +198,14 @@ _read_entando_options_from_args() {
       _get_arg "$@" "${i:2}" "$i"
     fi
   done
+}
+
+_extract_entando_prj_pipeline_config() {
+  (
+    cd "$1" &> /dev/null
+    __ppl_enter_local_clone_dir &> /dev/null
+    _enp_load &> /dev/null
+    _enp_load_pipeline_local_settings &>/dev/null
+    echo "$ENTANDO_PPL_CONFIG"
+  )
 }

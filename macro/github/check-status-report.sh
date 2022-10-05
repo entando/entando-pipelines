@@ -43,6 +43,7 @@ ppl--status-report() {
         PPL_NEAREST_MAIN_BRANCH \
         PPL_BRANCHING_TYPE \
         PPL_EPIC_NAME \
+        1>&2 \
       ;
     else
       _pp \
@@ -57,6 +58,7 @@ ppl--status-report() {
         PPL_NEAREST_MAIN_BRANCH \
         PPL_BRANCHING_TYPE \
         PPL_EPIC_NAME \
+        1>&2 \
       ;
     fi
   )
