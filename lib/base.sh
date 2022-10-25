@@ -24,6 +24,7 @@ BASE.init_default_vars() {
 # shellcheck disable=SC2034
 START_MACRO() {
   # BASICS
+  
   START_SIMPLE_MACRO --full "$@"
 
   # FEATURES
@@ -45,7 +46,7 @@ START_SIMPLE_MACRO() {
   if [[ "$ENTANDO_OPT_STEP_DEBUG" = "true" || "$ENTANDO_OPT_STEP_DEBUG" = "###true" ]]; then
     sys_trace_ctl enable
   fi
-
+  
   # shellcheck disable=SC2034
   ARGS_FLAGS=(--no-skip --no-repo)
   PARSE_ARGS "$@"
