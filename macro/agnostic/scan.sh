@@ -19,33 +19,42 @@
 ppl--scan() {
   (
     START_MACRO "SCAN" "$@"
-
     __ppl_enter_local_clone_dir
-    
-    __ppl_determine_current_project_type --check
-
-    local action
-    _get_arg action 1
-
-    case "$action" in
-      snyk)
-        ppl--scan.PREREQUIREMENTS
-        ppl--scan.SETUP
-        ppl--scan.SCAN || _SOE
-        ppl--scan.CLEANUP
-        ;;
-      snyk-container)
-        local imageAddress dockerFile
-        _get_arg imageAddress 2
-        _get_arg dockerFile 3
-        ppl--scan.PREREQUIREMENTS
-        ppl--scan.SCAN --container "$imageAddress" "$dockerFile"
-        ;;
-      *)
-        _FATAL "Invalid scan macro action \"$action\""
-        ;;
-    esac
+    ppl--scan.exec --no-parse
   )
+}    
+
+ppl--scan.exec() {
+  if [ "$1" == "--no-parse" ] ; then
+    shift
+  else
+    ARGS_FLAGS=(--no-skip --no-repo)
+    PARSE_ARGS "$@"
+  fi
+
+  __ppl_determine_current_project_type --check
+
+  local action
+  _get_arg action 1
+
+  case "$action" in
+    snyk)
+      ppl--scan.PREREQUIREMENTS
+      ppl--scan.SETUP
+      ppl--scan.SCAN || _SOE
+      ppl--scan.CLEANUP
+      ;;
+    snyk-container)
+      local imageAddress dockerFile
+      _get_arg imageAddress 2
+      _get_arg dockerFile 3
+      ppl--scan.PREREQUIREMENTS
+      ppl--scan.SCAN --container "$imageAddress" "$dockerFile"
+      ;;
+    *)
+      _FATAL "Invalid scan macro action \"$action\""
+      ;;
+  esac
 }
 
 ppl--scan.PREREQUIREMENTS() {

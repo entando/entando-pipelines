@@ -160,7 +160,7 @@ ppl--docker.publish.BUILD_AND_PUSH() {
 }
 
 ppl--docker.publish.SCAN() {
-  ppl--scan snyk-container "$2" "$1"
+  ppl--scan.exec snyk-container "$2" "$1"
 }
 
 
