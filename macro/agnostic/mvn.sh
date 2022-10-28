@@ -192,6 +192,9 @@ ppl--mvn.full-build() {
         org.jacoco:jacoco-maven-plugin:report \
         org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
         -Ppre-deployment-verification \
+        -DskipTests=true \
+        -DskipPreDeploymentTests=true \
+        -DskipPostDeploymentTests=true \
       ;
     )
   fi
