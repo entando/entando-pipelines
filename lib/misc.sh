@@ -598,8 +598,6 @@ _exec_cmd() {
     CMD+='}'$'\n'
   }
   
-  echo "$CMD"  > /tmp/t
-  
   (
     local RVFILE="$(mktemp)"
     if "$SIMPLE"; then
