@@ -1,6 +1,6 @@
 #/bin/bash
 
-. "$PROJECT_DIR/lib/shared/vars.sh"
+_sys.require "$PROJECT_DIR/lib/shared/vars.sh"
 
 #TEST:unit,lib,vars
 _vars.test.set_var() {

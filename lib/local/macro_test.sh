@@ -1,7 +1,6 @@
 #/bin/bash 
 
-. "$PROJECT_DIR/lib/shared/filesystem.sh"
-. "$PROJECT_DIR/lib/local/macro.sh"
+_sys.require "$PROJECT_DIR/lib/local/macro.sh"
  
 #TEST:unit,lib,local,ppl
 ppl.test.enter_local_clone_dir() {

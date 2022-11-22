@@ -6,11 +6,15 @@
 # __cd() { ... }
 #
 _fs.must.cd() {
-  local SKIP=1;[ "$1" = "-S" ] && { ((SKIP+=$2)); shift 2; }
+  _fs.must._cd 1 "$@"
+}
+
+_fs.must._cd() {
+  local SKIP="$(($1+1))"; shift
   local L="$1"
   [ "${L:0:7}" = "file://" ] && L="${L:7}"
-  [ -z "$L" ] && _FATAL  -S "$SKIP" "Null directory name provided"
-  [[ "$L" = "-" || "$L" = "." ]] && _FATAL  -S "$SKIP" "Illegal directory name \"$L\" provided"
+  [ -z "$L" ] && [ "$BACK" == "false" ] && _FATAL  -S "$SKIP" "Null directory name provided"
+  [[ "$L" = "." || "$L" = "" ]] && _FATAL  -S "$SKIP" "Illegal directory name \"$L\" provided"
   cd "$L" 1>/dev/null 2>/dev/null || _FATAL  -S "$SKIP" "Unable to enter directory \"$1\""
   _log.t "Entered directory \"$L\"" 1>&2
   return 0

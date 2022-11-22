@@ -59,7 +59,7 @@ _FAIL() {
 
 _ASSERT_RC() {
   local rc="$?"
-  _ASSERT -v "EXIT CODE" "$rc" = "$1"
+  _ASSERT -S 1 -v "EXIT CODE" "$rc" = "$1"
 }
 
 DBGSHELL() { :; }

@@ -164,7 +164,7 @@ _ess.simple_print_callstack() {
 # _require() { ... }
 #
 _sys.require() {
-  local script_relative=false;[ "$1" = "-s" ] && { script_relative=true; shift; }
+  local SKIP=1;[ "$1" = "-S" ] && { ((SKIP+=$2)); shift 2; }
   
   local module="$1"
   [[ "$_SYS_LOADED_MODULES" == *"|$module|"* ]] && return 0
@@ -178,14 +178,8 @@ _sys.require() {
     l=0
   fi
   
-  if $script_relative; then
-    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-    [ ! -f "$script_dir/$module" ] && _sys.fatal -S 1 "Unable to load script \"$script_dir/$module\""
-    . "$script_dir/$module"
-  else
-    [ ! -f "$module" ] && _sys.fatal -S 1 "Unable to load script \"$module\""
-    . "$module"
-  fi
+  [ ! -f "$module" ] && _sys.fatal -S "$SKIP" "Unable to load script \"$module\""
+  . "$module"
   
   return 0
 }

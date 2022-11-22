@@ -2,7 +2,7 @@
 
 _sys.require "$PROJECT_DIR/lib/local/project.sh"
  
-#TEST:unit,lib,local,prj,x
+#TEST:unit,lib,local,prj
 prj.test.current.determine_type() {
 
   ( _IT "should be able to determine the type of the project"

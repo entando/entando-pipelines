@@ -1,6 +1,6 @@
 #/bin/bash
 
-. "$PROJECT_DIR/lib/shared/verify.sh"
+_sys.require "$PROJECT_DIR/lib/shared/verify.sh"
 
 #TEST:unit,lib,verify
 _verify.test.verify-expression.numeric() {

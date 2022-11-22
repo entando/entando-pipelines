@@ -2,7 +2,7 @@
 
 _sys.require "lib/shared/cli.sh"
 
-#TEST:unit,lib,cli,x
+#TEST:unit,lib,cli
 _cli.test.parse_args() {
 
   

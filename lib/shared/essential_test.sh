@@ -27,13 +27,6 @@ _sys.test.require() {
   echo "((VAR+=100))" > lib/mod100.sh
   _ASSERT VAR = 0
   
-  ( _IT "should support script-relative path loading"
-  
-    _SYS_TEST_ENABLE=true
-    _sys.require -s "sys_test.sh"
-    _ASSERT VAR = 1
-  )
-  
   ( _IT "should support pwd-relative path loading"
   
     cd lib

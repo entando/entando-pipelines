@@ -1,6 +1,6 @@
 #/bin/bash
 
-. "$PROJECT_DIR/lib/shared/filesystem.sh"
+_sys.require "$PROJECT_DIR/lib/shared/filesystem.sh"
 
 #TEST:unit,lib,fs
 _fs.test.must.cd() {
@@ -12,14 +12,24 @@ _fs.test.must.cd() {
     _ASSERT PWD ends-with "my-dir" 
   )
 
+  ( _IT 'should support "-"'
+    
+    mkdir -p "my-dir/my-sub-dir"
+    _fs.must.cd "my-dir"
+    _fs.must.cd "my-sub-dir"
+    _ASSERT PWD ends-with "my-sub-dir"
+    _fs.must.cd -
+    _ASSERT PWD ends-with "my-dir" 
+  )
+
   ( _IT "should fatal if the dir doesn't exists" SUPPRESS-ERRORS
     
     (_fs.must.cd "not-my-dir") && _FAIL
   )
   
-  ( _IT 'should fatal if the dir name is "-" or "."' SUPPRESS-ERRORS
+  ( _IT 'should fatal if the dir name is null, or "."' SUPPRESS-ERRORS
     
-    (_fs.must.cd "-";exit 0) && _FAIL "-"
+    (_fs.must.cd "";exit 0) && _FAIL "<null dir>"
     (_fs.must.cd ".";exit 0) && _FAIL "."
   )
 }

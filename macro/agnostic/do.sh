@@ -1,7 +1,11 @@
 #!/bin/bash
 
 # shellcheck disable=SC1090 disable=SC1091
-. "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../../lib/all.sh"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../base.sh"
+
+_require "lib/shared/cli.sh"
+_require "lib/local/macro.sh"
+_require "lib/local/project.sh"
 
 # PROXY FUNCTION FOR MULTI-BUILD-SYSTEM MACRO OPERATIONS
 # 
@@ -10,22 +14,22 @@
 # $*: action dependent params
 #
 ppl--do() {
-  START_MACRO "BUILD" "$@"
-  _get_arg action 1; shift
-  __ppl_enter_local_clone_dir
+  _cli.parse_args "" "$@"
+  _cli.get_arg action 1; shift
+  _cli.get_arg PPL_LOCAL_CLONE_DIR --lcd 1
+  ppl.enter_local_clone_dir
 
-  project_type="$(__ppl_determine_current_project_type)"
+  project_type="$(prj.current.determine_type)"
   
-  macro.build.safe-dynamic-invokation "$action" "$project_type"
+  ppl--do.safe-dynamic-invokation "$project_type" "$action"
 }
 
-
-macro.build.safe-dynamic-invokation() {
+ppl--do.safe-dynamic-invokation() {
   local MODULE FUNCTION
   
   # --------------------------------------------------------
   # WARNING:
-  # anti-shell-injection-caution
+  # anti-shell-injection-alert
   # ~
   # The following "routing" code is ==INTENTIONALY==
   # redundant and verbose, ==DON'T== optimize it.
@@ -36,17 +40,17 @@ macro.build.safe-dynamic-invokation() {
   # ~
   # --------------------------------------------------------
   
-  case "$1":
+  case "$1" in
     "MVN") MODULE="mvn";;
     "NPM") MODULE="npm";;
     "ENP") MODULE="enp";;
-    *) _FATAL "Unknown module \"$1\""
+    *) _FATAL "Unknown module \"$1\"";;
   esac
   
   case "$2" in
-    "FULL-BUILD") FUNCTION="full-build"
-    "PUBLISH") FUNCTION="publish"
-    *) _FATAL "Unknown function \"$2\""
+    "FULL-BUILD") FUNCTION="full-build";;
+    "PUBLISH") FUNCTION="publish";;
+    *) _FATAL "Unknown function \"$2\"";;
   esac
 
   shift 2 || _FATAL "Internal error"
