@@ -1,26 +1,59 @@
 #!/bin/bash
 
-#TEST:unit,lib,sys
-_sys.test._FATAL() {
-  ( _IT "should be able to find pattern string in function output"
-  
-    _ASSERT -v "FATAL-MESSAGE" "$(_FATAL "FATAL-ERROR-TEST" 2>&1)" contains "FATAL-ERROR-TEST"
-  )
+_sys.require "$PROJECT_DIR/lib/shared/sys.sh"
+
+[ "$_SYS_TEST_ENABLE" == "true" ] && {
+  ((VAR++))
 }
 
 #TEST:unit,lib,sys
-_sys.test._exit() {
-  ( _IT "should exit with the correct exit code"
-  
-    (_exit 101; exit 33)
-    _ASSERT_RC "101"
-  )
-}
-
-#TEST:unit,lib,sys
-_sys.test._NONNULL() {
+_sys.test.must.nn() {
   local A=1 B=""
-  ( _IT "should accept non null value"; _NONNULL A)
-  ( _IT "shout fatal for a null/empty value" SUPPRESS-ERRORS; _NONNULL B 2>/dev/null)
-  ( _IT "shout fatal for at least one null/empty value" SUPPRESS-ERRORS; _NONNULL A B 2>/dev/null)
+  ( _IT "should accept non null value"; _sys.must.nn A)
+  ( _IT "shout fatal for a null/empty value" SUPPRESS-ERRORS; _sys.must.nn B 2>/dev/null)
+  ( _IT "shout fatal for at least one null/empty value" SUPPRESS-ERRORS; _sys.must.nn A B 2>/dev/null)
+}
+
+#TEST:unit,lib,sys
+_sys.test.soe() {
+  
+  ( _IT "should stop on error" SUPPRESS-ERRORS
+    
+    (false; _sys.soe) && _FAIL
+  )
+  
+  ( _IT "should not stop if no error"
+    
+    (true; _sys.soe) || _FAIL
+  )
+  
+  ( _IT "should stop on error in checked pipe segment" SUPPRESS-ERRORS
+
+    # FALSE|FALSE
+    (false | false; _sys.soe) && _FAIL
+    (false | false; _sys.soe --pipe 0) && _FAIL
+    (false | false; _sys.soe --pipe 1) && _FAIL
+
+    # FALSE|TRUE
+    (false | true; _sys.soe --pipe 0) && _FAIL
+
+    # TRUE|FALSE
+    (true | false; _sys.soe) && _FAIL
+    (true | false; _sys.soe --pipe 1) && _FAIL
+  )
+  
+  ( _IT "should not stop if error is not in checked pipe segment"
+
+    # TRUE|TRUE
+    (true | true; _sys.soe) || _FAIL
+    (true | true; _sys.soe --pipe 0) || _FAIL
+    (true | true; _sys.soe --pipe 1) || _FAIL
+
+    # FALSE|TRUE
+    (false | true; _sys.soe) || _FAIL
+    (false | true; _sys.soe --pipe 1) || _FAIL
+
+    # TRUE|FALSE
+    (true | false; _sys.soe --pipe 0) || _FAIL
+  )
 }

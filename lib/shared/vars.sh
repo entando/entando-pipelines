@@ -14,6 +14,9 @@
 # - $1: variable to set
 # - $2: value
 #
+# Alias:
+# _set_var() { ... }
+#
 _vars.set_var() {
   [ -z "$1" ] && _ess.low_level_fatal "null var_name provided"
   _vars.is_valid_var_name "$1" || _ess.low_level_fatal -S 1 "invalid var_name \"$1\" provided"

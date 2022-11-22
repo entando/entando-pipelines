@@ -22,7 +22,7 @@
 # $6: expected value
 #
 _verify.verify-expression() {
-  local SKIP="";[ "$1" = "-S" ] && { SKIP="$((SKIP+$2))"; shift 2; }
+  local SKIP=1;[ "$1" = "-S" ] && { ((SKIP+=$2)); shift 2; }
   
   local PREFIX="${1:+"$1>" }"; shift
   local A B
@@ -33,7 +33,7 @@ _verify.verify-expression() {
     shift 4
   else
     N="$1";
-    (E="${!N}") || _FATAL -S 1 "Invalid variable name"
+    (E="${!N}") || _FATAL -S "${SKIP}" "Invalid variable name"
     E="${!N}"; O=$2; V=$3
     shift 4
   fi
@@ -52,14 +52,12 @@ _verify.verify-expression() {
     starts-with) O="starting";OD="WITH:";  [[ "$E" = "$V"* ]];;
     ends-with) O="ending";OD="WITH:";  [[ "$E" = *"$V" ]];;
     contains) O="containing";OD="THE VALUE:";  [[ "$E" = *"$V"* ]];;
-    *) _FATAL -S 1 "Unknown operator \"$O\"";;
+    *) _FATAL -S "${SKIP}" "Unknown operator \"$O\"";;
   esac
 
   if [ $? != 0 ]; then
     #local ln fn fl
     #read -r ln fn fl < <(caller "1")
-
-    echo ""
 
     local MSG MSG2
 
@@ -82,7 +80,10 @@ _verify.verify-expression() {
         MSG2="\n${PREFIX}Expected $N $O ${B}[[CENSORED]]${A} but instead I've found ${B}[[CENSORED]]${A}"
     fi
 
-    [ -n "$MSG2" ] && echo -e "$MSG2" 1>&2
+    [ -n "$MSG2" ] && {
+      echo "" 1>&2
+      echo -e "$MSG2" 1>&2
+    }
     _FATAL -S "$SKIP" -99 "$MSG" 1>&2
   fi
 }
@@ -90,7 +91,7 @@ _verify.verify-expression() {
 # See _verify.verify-expression, but with param $1
 #
 _verify() {
-  local SKIP="1";[ "$1" = "-S" ] && { SKIP="$((SKIP+$2))"; shift 2; }
+  local SKIP=1;[ "$1" = "-S" ] && { ((SKIP+=$2)); shift 2; }
   _verify.verify-expression -S "$SKIP" "" "$@"
 }
 

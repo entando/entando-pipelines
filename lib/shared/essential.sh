@@ -28,6 +28,9 @@ _sys.exit() {
 # Params:
 # $1  error message
 #
+# Alias: 
+# _FATAL() { ... }
+#
 _sys.fatal() {
   set +x
   local rv=77
@@ -42,7 +45,7 @@ _sys.fatal() {
       fi
 
       if [ "$1" != "-s" ]; then
-        local SKIP=1;[ "$1" = "-S" ] && { SKIP="$((SKIP+1))"; shift 2; }
+        local SKIP=1;[ "$1" = "-S" ] && { ((SKIP+=$2)); shift 2; }
         [ "$1" = "-99" ] && shift && rv=99
         _sys.print_callstack "$SKIP" 5 "" LOGGER "$@"  1>&2
       else
@@ -55,7 +58,6 @@ _sys.fatal() {
 
   _exit "$rv"
 }
-
 
 # Prints the current callstack
 #
@@ -119,7 +121,7 @@ _sys.print_callstack() {
 }
 
 _ess.low_level_fatal() {
-  local SKIP=1;[ "$1" = "-S" ] && { SKIP="$((SKIP+$2))"; shift 2; }
+  local SKIP=1;[ "$1" = "-S" ] && { ((SKIP+=$2)); shift 2; }
   
   [ "$_ESS_SILENCE_ERRORS" !=  "true" ] && {
     if [[ -n "$TEST__EXPECTED_ERROR" && "$*" =~ $TEST__EXPECTED_ERROR ]]; then
@@ -150,18 +152,41 @@ _ess.simple_print_callstack() {
   done
 }
 
-
-# Reads a configuration value from an enp configuration file.
+# Loads a shell module and avoid reloading it
 #
-# An ENP configuration is a multiline sequence of rows.
-# Multiline values are not supported.
+# Params:
+# $1:   the module file path
 #
-# Row Format: 
-# - key: identifier
-# - sep: the leftmost symbol "="
-# - val: a sequence of any char except for the linefeed
+# Options:
+# -s    module file path is relative to the script path
 #
-_xdev.get-config() {
-  local res="$(grep "^$1=" ".xdev" | sed 's/[^=]*=//')"
-  echo "${res:-$2}";
+# Alias: 
+# _require() { ... }
+#
+_sys.require() {
+  local script_relative=false;[ "$1" = "-s" ] && { script_relative=true; shift; }
+  
+  local module="$1"
+  [[ "$_SYS_LOADED_MODULES" == *"|$module|"* ]] && return 0
+  _SYS_LOADED_MODULES+="|$module|"
+  
+  local l=-1
+  
+  if [[ "${module:0:1}" = "./" ]]; then
+    l=2
+  elif [[ "${module:0:1}" = "../" ]]; then
+    l=0
+  fi
+  
+  if $script_relative; then
+    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+    [ ! -f "$script_dir/$module" ] && _sys.fatal -S 1 "Unable to load script \"$script_dir/$module\""
+    . "$script_dir/$module"
+  else
+    [ ! -f "$module" ] && _sys.fatal -S 1 "Unable to load script \"$module\""
+    . "$module"
+  fi
+  
+  return 0
 }
+

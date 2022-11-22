@@ -1,6 +1,6 @@
 #/bin/bash
 
-
+_sys.require "lib/shared/filesystem.sh"
 
 # Pretty prints of variables
 #
@@ -11,6 +11,9 @@
 #
 # Params:
 # $@  a list of variable names to pretty print (so without dereference operator "$")
+#
+# Alias: 
+# _pp() { ... }
 #
 _sys.pp() {
   if [ "$1" == "-t" ]; then
@@ -99,10 +102,28 @@ _sys.shell() {
 # Validates for non-null a list of mandatory variables
 # Fatals if a violation is found
 #
-_sys.nn() {
+# Alias: 
+# _NONNULL() { ... }
+#
+_sys.must.nn() {
   for var_name in "$@"; do
     local var_value="${!var_name}"
     [ -z "$var_value" ] && _sys.fatal -S 1 "${FUNCNAME[1]}> Variable \"$var_name\" should not be null"
   done
   return 0
+}
+
+# STOP ON ERROR
+#
+# Options:
+# --pipe N  checks the result of the part #N of a pipe expression
+#
+# Alias:
+# _SOE() { ... }
+#
+_sys.soe() {
+  local R="$?" PPS=("${PIPESTATUS[@]}")
+  [ "$1" == "--pipe" ] && { shift; R="${PPS[$1]}"; shift; }
+  [ "$R" = 0 ] && return 0
+  exit "$R"
 }

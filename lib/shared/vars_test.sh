@@ -32,7 +32,7 @@ _vars.test.is_valid_var_name() {
     _vars.is_valid_var_name "a_var9"; _ASSERT_RC "0"
   )
   
-  ( _IT "should fatal is var name is illegal" SUPPRESS-ERRORS
+  ( _IT "should fatal if var name is illegal" SUPPRESS-ERRORS
   
     _vars.is_valid_var_name ""; _ASSERT_RC "1"
     _vars.is_valid_var_name "a.var"; _ASSERT_RC "1"
