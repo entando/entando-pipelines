@@ -4,6 +4,7 @@
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../base.sh"
 
 _require "lib/shared/cli.sh"
+_require "lib/shared/vars.sh"
 _require "lib/local/macro.sh"
 _require "lib/local/project.sh"
 
@@ -13,47 +14,33 @@ _require "lib/local/project.sh"
 # $1: action to apply
 # $*: action dependent params
 #
-ppl--do() {
+macro.do.run() {
   _cli.parse_args "" "$@"
   _cli.get_arg action 1; shift
   _cli.get_arg PPL_LOCAL_CLONE_DIR --lcd 1
   ppl.enter_local_clone_dir
 
   project_type="$(prj.current.determine_type)"
-  
-  ppl--do.safe-dynamic-invokation "$project_type" "$action"
+  _NONNULL project_type
+
+  local AUTH=( "macro.mvn.full-build" )
+  macro.do.safe-dynamic-invokation AUTH "$project_type" "$action"
 }
 
-ppl--do.safe-dynamic-invokation() {
-  local MODULE FUNCTION
-  
-  # --------------------------------------------------------
-  # WARNING:
-  # anti-shell-injection-alert
-  # ~
-  # The following "routing" code is ==INTENTIONALY==
-  # redundant and verbose, ==DON'T== optimize it.
-  # ~
-  # Don't even trust a perfect dynamic version of this code
-  # as your future self, others, or the shell implementation
-  # may introduce bugs or dangerous changes.
-  # ~
-  # --------------------------------------------------------
-  
-  case "$1" in
-    "MVN") MODULE="mvn";;
-    "NPM") MODULE="npm";;
-    "ENP") MODULE="enp";;
-    *) _FATAL "Unknown module \"$1\"";;
-  esac
-  
-  case "$2" in
-    "FULL-BUILD") FUNCTION="full-build";;
-    "PUBLISH") FUNCTION="publish";;
-    *) _FATAL "Unknown function \"$2\"";;
-  esac
+# ----------------------------------------------------------------------------------------------------------------------
+# SUBORDINATE FUNCTIONS
+#
 
-  shift 2 || _FATAL "Internal error"
+macro.do.safe-dynamic-invokation() {
+  local AUTHVAR="$1" MODULE="$2" FUNCTION="$3"
+  shift 3 || _FATAL "Internal error"
 
-  "macro.$MODULE.$FUNCTION" "$@"    
+  local spec="$MODULE.$FUNCTION"
+  local fn="$(tr [:upper:] [:lower:] <<< "macro.$spec")"
+  
+  local arrname="$AUTHVAR[@]"
+  _vars.array.contains "$fn" "${!arrname}" || _FATAL "Unautorized call \"$spec\""
+  type "$fn" &>/dev/null || _FATAL "Unable to find the implementation of call \"$spec\""
+
+  "$fn" "$@"
 }

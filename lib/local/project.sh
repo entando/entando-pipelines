@@ -1,6 +1,6 @@
 #/bin/bash
 
-_sys.require "lib/shared/filesystem.sh"
+_require "lib/shared/filesystem.sh"
 
 prj.current.determine_type() {
   local _tmp_

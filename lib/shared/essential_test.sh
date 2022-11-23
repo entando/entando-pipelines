@@ -4,7 +4,7 @@
 _sys.test.fatal() {
   ( _IT "should be able to find pattern string in function output"
   
-    _ASSERT -v "FATAL-MESSAGE" "$(_FATAL "FATAL-ERROR-TEST" 2>&1)" contains "FATAL-ERROR-TEST"
+    _ASSERT -v "FATAL-MESSAGE" "$(_sys.fatal "FATAL-ERROR-TEST" 2>&1)" contains "FATAL-ERROR-TEST"
   )
 }
 
@@ -30,28 +30,31 @@ _sys.test.require() {
   ( _IT "should support pwd-relative path loading"
   
     cd lib
-    _sys.require "mod1.sh"
+    _require "mod1.sh"
     _ASSERT VAR = 1
-    _sys.require "mod10.sh"
+    _require "mod10.sh"
     _ASSERT VAR = 11
-    _sys.require "mod100.sh"
+    _require "mod100.sh"
     _ASSERT VAR = 111
   )
   
-  ( _IT "should absolute path loading"
+  ( _IT "should support absolute path loading"
   
-    _sys.require "$PWD/lib/mod1.sh"
+    _require "$PWD/lib/mod1.sh"
     _ASSERT VAR = 1
-    _sys.require "$PWD/lib/mod10.sh"
+    _require "$PWD/lib/mod10.sh"
     _ASSERT VAR = 11
-    _sys.require "$PWD/lib/mod100.sh"
+    _require "$PWD/lib/mod100.sh"
     _ASSERT VAR = 111
   )
   
   ( _IT "should prevent double loading"
-    _sys.require "lib/mod1.sh"
+    _require "lib/mod1.sh"
     _ASSERT VAR = 1
-    _sys.require "lib/mod1.sh"
+    _require "lib/mod1.sh"
+    _ASSERT VAR = 1
+    cd lib
+    _require "mod1.sh"
     _ASSERT VAR = 1
   )
   

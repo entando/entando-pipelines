@@ -33,7 +33,7 @@ _verify.verify-expression() {
     shift 4
   else
     N="$1";
-    (E="${!N}") || _FATAL -S "${SKIP}" "Invalid variable name"
+    (E="${!N}") || _sys.fatal -S "${SKIP}" "Invalid variable name"
     E="${!N}"; O=$2; V=$3
     shift 4
   fi
@@ -52,7 +52,7 @@ _verify.verify-expression() {
     starts-with) O="starting";OD="WITH:";  [[ "$E" = "$V"* ]];;
     ends-with) O="ending";OD="WITH:";  [[ "$E" = *"$V" ]];;
     contains) O="containing";OD="THE VALUE:";  [[ "$E" = *"$V"* ]];;
-    *) _FATAL -S "${SKIP}" "Unknown operator \"$O\"";;
+    *) _sys.fatal -S "${SKIP}" "Unknown operator \"$O\"";;
   esac
 
   if [ $? != 0 ]; then
@@ -84,7 +84,7 @@ _verify.verify-expression() {
       echo "" 1>&2
       echo -e "$MSG2" 1>&2
     }
-    _FATAL -S "$SKIP" -99 "$MSG" 1>&2
+    _sys.fatal -S "$SKIP" -99 "$MSG" 1>&2
   fi
 }
 

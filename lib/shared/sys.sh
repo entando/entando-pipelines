@@ -1,6 +1,6 @@
 #/bin/bash
 
-_sys.require "lib/shared/filesystem.sh"
+_require "lib/shared/filesystem.sh"
 
 # Pretty prints of variables
 #
@@ -38,12 +38,12 @@ _sys.shell() {
   SKIP=0;[ "$1" = "-S" ] && { SKIP="$2"; shift 2; }
   (
     $IN_TTY && {
-     _log_w "Refusing to drop shell because this is not an interactive tty session"
+     _log.w "Refusing to drop shell because this is not an interactive tty session"
      exit 0
     }
 
     ! $QUIET && {
-      _log_i 'DROPPING THE DEBUG SHELL FROM:' 1>&2
+      _log.i 'DROPPING THE DEBUG SHELL FROM:' 1>&2
       _sys.print_callstack "$SKIP" 5 "" "" "$@" 1>&2
     
       (
@@ -95,7 +95,7 @@ _sys.shell() {
     bash --rcfile "$TEST__WORK_RCFILE" < /dev/tty > /dev/tty
 
   ) || {
-    [ "$?" = "77" ] && _FATAL "Execution Interrupted: Debug Shell terminated with fatal error" >/dev/tty
+    [ "$?" = "77" ] && _sys.fatal -S "${SKIP}" "Execution Interrupted: Debug Shell terminated with fatal error" >/dev/tty
   }
 }
 

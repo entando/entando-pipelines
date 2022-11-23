@@ -1,6 +1,6 @@
 #!/bin/bash
 
-_sys.require "$PROJECT_DIR/lib/shared/sys.sh"
+_require "$PROJECT_DIR/lib/shared/sys.sh"
 
 [ "$_SYS_TEST_ENABLE" == "true" ] && {
   ((VAR++))

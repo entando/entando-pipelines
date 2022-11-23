@@ -29,6 +29,28 @@ _vars.set_var() {
   return 0
 }
 
+# Tells if an array contains the given element
+#
+# WARNING: DO NOT OPTIMIZE
+# used in sensible contexts, it must be as safe and not fast
+#
+# Params:
+# $1    the element to find
+# $..   the array to search into
+#
+# Examples:
+# > _vars.array.contains "b" "a" "b" "c"
+# > _vars.array.contains "--init" "$@"
+# 
+_vars.array.contains() {
+  local match="$1";shift
+  while [ $# -gt 0 ]; do
+    [ "$1" = "$match" ] && return 0
+    shift
+  done
+  return 1
+}
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # SUBORDINATE METHODS
 #
@@ -37,3 +59,4 @@ _vars.is_valid_var_name() {
   # shellcheck disable=SC2234
   ([[ "$1" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]])  # NOTE: the subshell restricts the side effects, don't remove it
 }
+

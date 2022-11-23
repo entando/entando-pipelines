@@ -1,6 +1,6 @@
 #/bin/bash 
 
-_sys.require "lib/shared/filesystem.sh"
+_require "lib/shared/filesystem.sh"
 
 ppl.enter_local_clone_dir() {
   [ -z "$PPL_LOCAL_CLONE_DIR" ] && return 0

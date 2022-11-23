@@ -1,11 +1,11 @@
 #/bin/bash
 
-_sys.require "$PROJECT_DIR/lib/local/project.sh"
+_require "$PROJECT_DIR/lib/local/project.sh"
  
 #TEST:unit,lib,local,prj
 prj.test.current.determine_type() {
 
-  ( _IT "should be able to determine the type of the project"
+  ( _IT "should be able to determine the type of project"
 
     touch "pom.xml" && _ASSERT -v "PROJECT TYPE" "$(prj.current.determine_type)" = "MVN"
     rm "pom.xml"
@@ -17,7 +17,7 @@ prj.test.current.determine_type() {
     rm "entando-project"
   )
   
-  ( _IT "should be able to determine the type of the project indirectly"
+  ( _IT "should be able to determine the type of project when explicitly declared"
 
     echo "PROJECT_TYPE=npm" > "entando-project"
     _ASSERT -v "PROJECT TYPE" "$(prj.current.determine_type)" = "npm"

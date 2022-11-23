@@ -4,9 +4,15 @@ PROJECT_DIR="$PWD"
 
 . "$PROJECT_DIR/lib/local/shorts.sh"
 . "$PROJECT_DIR/lib/shared/essential.sh"
-_sys.require "$PROJECT_DIR/lib/shared/log.sh"
-_sys.require "$PROJECT_DIR/lib/shared/sys.sh"
-_sys.require "$PROJECT_DIR/lib/shared/verify.sh"
+
+_require() {
+  local SKIP=1;[ "$1" = "-S" ] && { ((SKIP+=$2)); shift 2; }
+  \_sys.require -S "$SKIP" "$1"
+}
+
+_require "$PROJECT_DIR/lib/shared/log.sh"
+_require "$PROJECT_DIR/lib/shared/sys.sh"
+_require "$PROJECT_DIR/lib/shared/verify.sh"
 
 _IT() {
   _ESS_TEST_CALLER="$(caller 0)"
@@ -20,7 +26,7 @@ _IT() {
   _ESS_IGNORE_EXITCODE=false
   _ESS_TEST_FAIL_MESSAGE=""
   _ESS_TEST_FAIL_RC=0
-
+  _ESS_IN_TEST_EXIT_TRAP=false
   
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -33,6 +39,9 @@ _IT() {
 
   TEST_EXIT_TRAP() {
     local rc="$?"
+    
+    [ "$_ESS_IN_TEST_EXIT_TRAP" == true ] && return 0
+    _ESS_IN_TEST_EXIT_TRAP=true
 
     [ "$_ESS_IGNORE_EXITCODE" == "true" ] && {
       rc=0
@@ -40,8 +49,13 @@ _IT() {
     }
 
     [ "$rc" != 0 ] && {
+      local postmsg=""
+      [ "$(_xdev.failures)" = 0 ] && {
+        postmsg="\n\nPLEASE NOTE that no explicit test failure was detected, but the test cloure returned error.\n---"
+      }
+      
       _xdev.test-failed-low-level "$rc" \
-        "${_ESS_TEST_CALLER}" "It $_ESS_TEST_IT${_ESS_TEST_FAIL_MESSAGE:+", details: $_ESS_TEST_FAIL_MESSAGE"}"
+        "${_ESS_TEST_CALLER}" "It $_ESS_TEST_IT${_ESS_TEST_FAIL_MESSAGE:+", details: $_ESS_TEST_FAIL_MESSAGE"}$postmsg"
     }
   }
   trap TEST_EXIT_TRAP EXIT
@@ -53,7 +67,8 @@ _FAIL() {
   _ESS_TEST_FAIL_MESSAGE="$*"
   _ESS_TEST_FAIL_RC=99
   _xdev.failures --inc
-  (_FATAL -S "${SKIP}" -99 "${_ESS_TEST_FAIL_MESSAGE:-"TEST FAILED"}") && $STOP && _exit 99
+  (_FATAL -S "${SKIP}" -99 "${_ESS_TEST_FAIL_MESSAGE:-"TEST FAILED"}") 
+  $STOP && _exit 99
   return 99
 }
 

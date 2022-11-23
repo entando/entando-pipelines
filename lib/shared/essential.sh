@@ -165,22 +165,25 @@ _ess.simple_print_callstack() {
 #
 _sys.require() {
   local SKIP=1;[ "$1" = "-S" ] && { ((SKIP+=$2)); shift 2; }
-  
+  local BASEDIR="$PWD";[ "$1" = "--base" ] && { BASEDIR="$2"; shift 2; }
+
   local module="$1"
-  [[ "$_SYS_LOADED_MODULES" == *"|$module|"* ]] && return 0
-  _SYS_LOADED_MODULES+="|$module|"
-  
-  local l=-1
-  
-  if [[ "${module:0:1}" = "./" ]]; then
-    l=2
-  elif [[ "${module:0:1}" = "../" ]]; then
-    l=0
+  [ ! -f "$module" ] && _sys.fatal -S "$SKIP" "Unable to find script \"$module\""
+
+  local module_inode="$(ls -li "$module" | cut -d' ' -f 1)"
+  [[ "$_SYS_LOADED_MODULES" == *"|$module_inode|"* ]] && return 0
+  _SYS_LOADED_MODULES+="|$module_inode|"
+
+  if [ "${module:0:1}" = "/" ]; then
+    . "$module"
+  else
+    # This is a devex trick.
+    # It's required to make calltraces clickable, in particular when running tests.
+    # It also work with relative formats like "./mypath" although it can be improved in this regard.
+    . "$BASEDIR/$module"
   fi
-  
-  [ ! -f "$module" ] && _sys.fatal -S "$SKIP" "Unable to load script \"$module\""
-  . "$module"
   
   return 0
 }
+
 

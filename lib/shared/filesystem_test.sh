@@ -1,6 +1,6 @@
 #/bin/bash
 
-_sys.require "$PROJECT_DIR/lib/shared/filesystem.sh"
+_require "$PROJECT_DIR/lib/shared/filesystem.sh"
 
 #TEST:unit,lib,fs
 _fs.test.must.cd() {

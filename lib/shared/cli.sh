@@ -1,30 +1,32 @@
 #/bin/bash
 
-_sys.require "lib/shared/log.sh"
-_sys.require "lib/shared/sys.sh"
-_sys.require "lib/shared/vars.sh"
-
-_CLI_ARGS_FLAGS=()
+_require "lib/shared/log.sh"
+_require "lib/shared/sys.sh"
+_require "lib/shared/vars.sh"
 
 # Program Arguments Parser
 # 
 # Parses argumets array for positional and optional arguments
 # and sends the result to _CLI_ARGS_POS (array) and _CLI_ARGS_OPT (map)
 #
-# Node:
-# - _CLI_ARGS_FLAGS indicates "PARSE_ARGS" which optional arguments should be considered booleans with no explicit value
-# 
+# Params:
+# $1  which optional aruments are just flags (space separed list)
+# $.. arguments to parse
+#
 # See also:
 # - _cli.get_arg
 # - _cli.test.parse_args
 #
 _cli.parse_args() {
-  local flags="$1"; shift
+  local flags="$1"
+  shift
+  
+  [ -z "$1" ] && _sys.fatal "No argument to parse was provided"
   
   local K
   local eoo=false
-  
-  _CLI_ARGS_FLAGS=()
+  local cli_args_flags=()
+
   _CLI_ARGS_POS=("")
   _CLI_ARGS_POS_SHIFT=0
   unset _CLI_ARGS_OPT
@@ -32,7 +34,7 @@ _cli.parse_args() {
   
   while read -r -d ' ' flag; do
     [ -n "$flag" ] && {
-      _CLI_ARGS_FLAGS+=("$flag")
+      cli_args_flags+=("$flag")
       _CLI_ARGS_OPT["$flag"]=false
     }
   done <<<"${flags} "
@@ -50,12 +52,12 @@ _cli.parse_args() {
         --*|-*)
           shift
           #~ FLAGS..
-          if [[ " ${_CLI_ARGS_FLAGS[*]} " == *" ${K} "* ]]; then
+          if [[ " ${cli_args_flags[*]} " == *" ${K} "* ]]; then
             #.. NORMAL FLAG
             _CLI_ARGS_OPT["$K"]=true
             continue
           fi          
-          if [[ " --no-${_CLI_ARGS_FLAGS[*]} " == *" --no-${K} "* ]]; then
+          if [[ " --no-${cli_args_flags[*]} " == *" --no-${K} "* ]]; then
             #.. FLAGS NEGATION
             _CLI_ARGS_OPT["$K"]=false
             continue
@@ -91,7 +93,7 @@ _cli.parse_args() {
 #
 # Params:
 # $1 the receiver var
-# $2 the option name or the positional index
+# $2 the option name (prefix: "-" or "--") or the index of the positional argument (a number >= 1)
 # $3 the fallback value
 #
 # Options:
@@ -100,8 +102,8 @@ _cli.parse_args() {
 # [-e] if specified the receiver var is also exported
 #
 # Examples:
-# _cli.get_arg arg1 1         # sets the var "arg1" with the first positional argument
-# _cli.get_arg mode --mode    # sets the var "mode" with optional argument "--mode"
+# _cli.get_arg arg1 1           # sets the var "arg1" with the first positional argument
+# _cli.get_arg the_mode --mode  # sets the var "the_mode" with the optional argument "--mode"
 #
 _cli.get_arg() {
   local MANDATORY=false;[ "$1" = "-m" ] && { MANDATORY=true; shift; }
@@ -113,7 +115,7 @@ _cli.get_arg() {
     *) _tmp_="${_CLI_ARGS_POS[$((_CLI_ARGS_POS_SHIFT+$2))]}";;
   esac
   _tmp_="${_tmp_:-$3}"
-  [ -n "${_tmp_}" ] || { "$MANDATORY" && _sys.fatal "No value or fallback available for mandatory param \"$2\" ($1)" ; }
+  [ -n "${_tmp_}" ] || { "$MANDATORY" && _sys.fatal -S 1 "No value or fallback available for mandatory param \"$2\" ($1)" ; }
   $PRESERVE && [ -z "${_tmp_:-$3}" ] && return 1
   _vars.set_var "$1" "$_tmp_"
   [ -z "${_tmp_:-$3}" ] && return 1
@@ -123,6 +125,7 @@ _cli.get_arg() {
 }
 
 # Shifts left the positional arguments of the given number of positions (equivalent of bash "shift")
+# Doesn't affect the optional arguments
 # 
 _cli.shift_positional_args() {
   ((_CLI_ARGS_POS_SHIFT+=$1))
