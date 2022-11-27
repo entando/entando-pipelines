@@ -21,7 +21,7 @@ _cli.parse_args() {
   local flags="$1"
   shift
   
-  [ -z "$1" ] && _sys.fatal "No argument to parse was provided"
+  [ -z "$1" ] && _sys.fatal -S 1 "No argument to parse was provided"
   
   local K
   local eoo=false

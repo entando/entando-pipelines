@@ -5,8 +5,8 @@ _require "macro/agnostic/do.sh"
 #TEST:unit,macro,do
 ppl.do.test.run() {
   
-  mkdir "local_clone"
-  __cd "local_clone"
+  mkdir "local-clone"
+  __cd "local-clone"
   touch "pom.xml"
   __cd -
   
@@ -14,9 +14,9 @@ ppl.do.test.run() {
     exit 101
   }
 
-  ( _IT "shoud enter the local_clone and determine the project type and run the macro function"
+  ( _IT "shoud enter the local-clone and determine the project type and run the macro function"
     
-    (macro.do.run FULL-BUILD --lcd "local_clone"; exit 0)
+    (macro.do.run FULL-BUILD --lcd "local-clone"; exit 0)
     _ASSERT_RC 101
   )
   

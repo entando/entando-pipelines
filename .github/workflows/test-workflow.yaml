@@ -33,11 +33,9 @@ jobs:
           ${{ secrets.ENTANDO_OPT_PPL_INSTALL_CMD }}
           ~/ppl-run init \
             --type=mvn \
-            --matrix-var=MATRIX
-            --features-var=FEATURES \
             --checkout-with-token "${{ secrets.ENTANDO_BOT_TOKEN }}" \
           >> $GITHUB_ENV
-      - name: "PR preflight checks"
-        id: preflight-checks
-        run: |
-          ~/ppl-run preflight-checks --lcd "$LOCAL_CLONE_DIR"
+      #- name: "PR preflight checks"
+        #id: preflight-checks
+        #run: |
+          #~/ppl-run preflight-checks --lcd "$LOCAL_CLONE_DIR"

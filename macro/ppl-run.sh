@@ -19,8 +19,8 @@ ppl-exit-proc() {
 # shellcheck disable=SC1090
 if [ -n "$GITHUB_ACTIONS" ]; then
   # shellcheck disable=SC1090
-  while read -r fn; do
-    source "$fn"
+  while read -r file; do
+    source "$file"
   done < <(find "$ENTANDO_PPL_HOME/macro/" -mindepth 2 -type f -iname "*.sh")
   [ "$1" = "--activate" ] && return 0
 else

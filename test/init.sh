@@ -90,3 +90,19 @@ _ASSERT() {
     exit "$rc"
   }
 }
+
+_PRINT_TEST_FILE() {
+  local F="$XDEV_FILE_DIR/resource/test/$1"
+  [ -f "$F" ] || _FATAL -S 1 "Unable to find test file \"$F\""
+  cat "$F"
+}
+
+_LOAD_TEST_FILE() {
+  local F="$XDEV_FILE_DIR/resource/test/$2"
+  [ -f "$F" ] || _FATAL -S 1 "Unable to find test file \"$F\""
+  _vars.set_var "$1" "$(cat "$F")"
+}
+
+
+TEST_GIT_USER_NAME="test-user"
+TEST_GIT_USER_EMAIL="test-user@example.com"
