@@ -1,0 +1,43 @@
+name: PR-CYCLE
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+env:
+  ENTANDO_OPT_USE_PPL_TAG: "v2.0.0"
+  ENTANDO_OPT_DATA_REPO: "${{ secrets.ENTANDO_OPT_DATA_REPO }}"
+  ENTANDO_OPT_DATA_REPO_TOKEN: "${{ secrets.ENTANDO_OPT_DATA_REPO_TOKEN }}"
+  LOCAL_CLONE_DIR: "local-checkout"
+
+jobs:
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # FULL-BUILD
+
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # PREPARE
+
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      MATRIX: ${{ steps.START.outputs.MATRIX }}
+      FEATURES: ${{ steps.START.outputs.FEATURES }}
+    steps:
+      #~
+      - name: "SETUP"
+        id: setup
+        run: |
+          ${{ secrets.ENTANDO_OPT_PPL_INSTALL_CMD }}
+          ~/ppl-run init \
+            --type=mvn \
+            --matrix-var=MATRIX
+            --features-var=FEATURES \
+            --checkout-with-token "${{ secrets.ENTANDO_BOT_TOKEN }}" \
+          >> $GITHUB_ENV
+      - name: "PR preflight checks"
+        id: preflight-checks
+        run: |
+          ~/ppl-run preflight-checks --lcd "$LOCAL_CLONE_DIR"

@@ -56,7 +56,7 @@ if [ "$1" != "--source-only" ]; then
         else
           IE=false
         fi
-        CMD+=("ppl--$ELEM")
+        CMD+=("macro.${ELEM}.run")
       else
         CMD+=("$ELEM")
       fi
