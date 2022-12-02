@@ -24,7 +24,6 @@ _github.parse_context() {
   Q+=".repository_owner,"
   Q+=".workflow,"
   Q+=".job,"
-  Q+=".event_name,"
   Q+=".token,"
   Q+=".run_id,"
   Q+='.ref,'
@@ -44,10 +43,10 @@ _github.parse_context() {
   Q+='.event.pull_request.head.sha'
   Q+="] | @csv"
   local RES
-  RES="$(__jq "$Q" -r <<< "$CTX")"
+  RES="$(_github.must.jq "$Q" -r <<< "$CTX")"
   RES="${RES//\"/}"
   
-  local _gh_tmp_REPO _gh_tmp_REPO_GIT_URL _gh_tmp_REPO_OWNER _gh_tmp_WORKFLOW _gh_tmp_JOB _gh_tmp_EVENT \
+  local _gh_tmp_REPO _gh_tmp_REPO_GIT_URL _gh_tmp_REPO_OWNER _gh_tmp_WORKFLOW _gh_tmp_JOB \
         _gh_tmp_TOKEN _gh_tmp_RUN_ID _gh_tmp_REF _gh_tmp_SHA _gh_tmp_BASE_REF _gh_tmp_HEAD_REF _gh_tmp_EVENT_NAME \
         _gh_tmp_EVENT_BASE_REF _gh_tmp_REPO_NAME _gh_tmp_CLONE_URL _gh_tmp_STATUSES_URL _gh_tmp_ISSUES_URL \
         _gh_tmp_PULLS_URL _gh_tmp_PR_HTML_URL _gh_tmp_PR_NUM _gh_tmp_PR_TITLE _gh_tmp_PR_SHA _gh_tmp_PR_LABELS
@@ -59,7 +58,6 @@ _github.parse_context() {
     _gh_tmp_REPO_OWNER \
     _gh_tmp_WORKFLOW \
     _gh_tmp_JOB \
-    _gh_tmp_EVENT \
     _gh_tmp_TOKEN \
     _gh_tmp_RUN_ID \
     _gh_tmp_REF \
@@ -78,19 +76,35 @@ _github.parse_context() {
     _gh_tmp_PR_TITLE \
     _gh_tmp_PR_SHA \
   <<< "$RES"
-    
+  
   _gh_tmp_PR_TITLE="$(echo "$_gh_tmp_PR_TITLE" | base64 -d)"
   
   _gh_tmp_PR_LABELS="$(
-    __jq ".event.pull_request.labels | map(.name)? | join(\",\")?" -r <<< "$CTX" 2> /dev/null
+    _github.must.jq ".event.pull_request.labels | map(.name)? | join(\",\")?" -r <<< "$CTX" 2> /dev/null
   )"
-    
+
   #~
   #~ NORMALIZATION
   #~
 
-  _set_var "${VAR_PREFIX}_COMMIT_ID" "${_gh_tmp_PR_SHA:-$_gh_tmp_SHA}"
-  _set_var "${VAR_PREFIX}_PR_TITLE" "$_gh_tmp_PR_TITLE"
+  _vars.set_var "${VAR_PREFIX}_COMMIT_ID" "${_gh_tmp_PR_SHA:-$_gh_tmp_SHA}"
+  _vars.set_var "${VAR_PREFIX}_PR_TITLE" "$_gh_tmp_PR_TITLE"
+  _vars.set_var "${VAR_PREFIX}_CLONE_URL" "$_gh_tmp_CLONE_URL"
   
+  case "$_gh_tmp_EVENT_NAME" in
+    "pull_request") 
+      _vars.set_var "${VAR_PREFIX}_BRANCH" "$_gh_tmp_HEAD_REF"
+      _vars.set_var "${VAR_PREFIX}_BASE_BRANCH" "$_gh_tmp_BASE_REF"
+    ;;
+    *)
+      _vars.set_var "${VAR_PREFIX}_BRANCH" "$_gh_tmp_HEAD_REF"
+      _vars.set_var "${VAR_PREFIX}_BASE_BRANCH" "$_gh_tmp_BASE_REF"
+    ;;
+  esac 
+
   return 0
+}
+
+_github.must.jq() {
+  jq "$@" || _FATAL -S 1 "Error parsing the json input"
 }

@@ -14,6 +14,9 @@ _require "$PROJECT_DIR/lib/shared/log.sh"
 _require "$PROJECT_DIR/lib/shared/sys.sh"
 _require "$PROJECT_DIR/lib/shared/verify.sh"
 
+export ENTANDO_OPT_GIT_USER_NAME="test-user"
+export ENTANDO_OPT_GIT_USER_EMAIL="test-user@example.com"
+
 _IT() {
   _ESS_TEST_CALLER="$(caller 0)"
   _ESS_TEST_IT="$1"; shift
@@ -91,18 +94,38 @@ _ASSERT() {
   }
 }
 
-_PRINT_TEST_FILE() {
-  local F="$XDEV_FILE_DIR/resource/test/$1"
+_DETERMINE_TEST_RESOURCE_PATH() {
+  if [ "$1" = "--global" ]; then
+    local F="$PROJECT_DIR/test/resource/$2"
+  else
+    local F="$XDEV_FILE_DIR/resource/test/$1"
+  fi
   [ -f "$F" ] || _FATAL -S 1 "Unable to find test file \"$F\""
-  cat "$F"
+  echo "$F"
+}
+
+_PRINT_TEST_FILE() {
+  cat "$(_DETERMINE_TEST_RESOURCE_PATH "$@")"
 }
 
 _LOAD_TEST_FILE() {
-  local F="$XDEV_FILE_DIR/resource/test/$2"
-  [ -f "$F" ] || _FATAL -S 1 "Unable to find test file \"$F\""
-  _vars.set_var "$1" "$(cat "$F")"
+  local OPT="";[ "$1" = "--global" ] && { OPT="$1"; shift; }
+  local VAR="$1";shift
+  _vars.set_var "$VAR" "$(_PRINT_TEST_FILE ${OPT:+"$OPT"} "$@")"
 }
 
-
-TEST_GIT_USER_NAME="test-user"
-TEST_GIT_USER_EMAIL="test-user@example.com"
+_IMPORT_TEST_RESOURCE() {
+  local OPT="";[ "$1" = "--global" ] && { OPT="$1"; shift; }
+  mkdir -p "resource"
+  if [ "$1" = "--untar" ]; then
+    shift
+    (
+      cd "resource"
+      _log.d "Importing resource $* ($OPT)"
+      tar xfvz "$(_DETERMINE_TEST_RESOURCE_PATH ${OPT:+"$OPT"} "$@")" 1>/dev/null
+    )
+  else
+    _log.d "Importing resource $* ($OPT)"
+    cp "$(_DETERMINE_TEST_RESOURCE_PATH "${OPT:+"$OPT"}" "$@")" "resource"
+  fi
+}

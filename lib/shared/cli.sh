@@ -111,8 +111,8 @@ _cli.get_arg() {
   local EXPORT=false;[ "$1" = "-e" ] && { EXPORT=true; shift; }
   local _tmp_
   case "$2" in
-    ''|*[!0-9]*) _tmp_="${_CLI_ARGS_OPT[$2]}";;
-    *) _tmp_="${_CLI_ARGS_POS[$((_CLI_ARGS_POS_SHIFT+$2))]}";;
+    ''|*[!0-9]*) _tmp_="${_CLI_ARGS_OPT["$2"]}";;
+    *) _tmp_="${_CLI_ARGS_POS[$((_CLI_ARGS_POS_SHIFT+"$2"))]}";;
   esac
   _tmp_="${_tmp_:-$3}"
   [ -n "${_tmp_}" ] || { "$MANDATORY" && _sys.fatal -S 1 "No value or fallback available for mandatory param \"$2\" ($1)" ; }

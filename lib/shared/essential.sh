@@ -136,7 +136,8 @@ _ess.low_level_fatal() {
 }
 
 _ess.log() {
-  printf "➤ %-5s | %s | %s\n" "$1" "$(date +'%Y-%m-%d %H-%M-%S')" "$*" 1>&2
+  local level="$1";shift
+  printf "➤ %-5s | %s | %s\n" "$level" "$(date +'%Y-%m-%d %H-%M-%S')" "$*" 1>&2
   return 0
 }
 

@@ -2,14 +2,14 @@
 
 _require "lib/local/git.sh"
 
-#TEST:unit,lib,local,x
+#TEST:unit,lib,local
 git.test.full_clone() {
   
-  git.test.prepare.local-repo "test-repo" || _SOE
+  git.test.prepare-test-repo "test-repo" || _SOE
   local TEST_REPO_URL="file://$PWD/test-repo"
   
   ( _IT "should simply clone a repo"
-  
+
     git.full_clone "$TEST_REPO_URL" "local-clone"
     __cd "local-clone"
     local T="test-file"
@@ -20,7 +20,7 @@ git.test.full_clone() {
     __git reset --hard HEAD~1
     _ASSERT -v test_file_content "$(cat "$T")" = "test-file-C1"
   )
-  
+
   rm -rf "local-clone"
   
   ( _IT "should clone a specific branch of a repo"
@@ -67,14 +67,14 @@ git.test.full_clone() {
 #-----------------------------------------------------------------------------------------------------------------------
 # SUBORDINATE FUNCTIONS
 
-git.test.prepare.local-repo() {
+git.test.prepare-test-repo() {
   (
     mkdir "$1"
     __cd "$1"
     echo -n "test-file-C1" > "test-file"
     git init
     git checkout -b develop
-    git.set_commit_config "$TEST_GIT_USER_NAME" "$TEST_GIT_USER_EMAIL"
+    git.set_commit_config "$ENTANDO_OPT_GIT_USER_NAME" "$ENTANDO_OPT_GIT_USER_EMAIL"
     git add -A
     git commit -m "first commit"
     echo -n "test-file-C2" > "test-file"

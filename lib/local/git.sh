@@ -83,3 +83,18 @@ git.set_commit_config() {
   git config $OPT user.name "$1"
   git config $OPT user.email "$2"
 }
+
+
+# Sets the git commit config of the local repo
+# according with the information on the environment
+#
+# Expected Vars:
+# ENTANDO_OPT_GIT_USER_NAME: user name
+# ENTANDO_OPT_GIT_USER_EMAIL: user email
+#
+git.auto_setup_local_clone() {
+  _NONNULL ENTANDO_OPT_GIT_USER_NAME ENTANDO_OPT_GIT_USER_EMAIL
+  git.set_commit_config "$ENTANDO_OPT_GIT_USER_NAME" "$ENTANDO_OPT_GIT_USER_EMAIL"
+  git config pull.rebase false
+  return 0
+}

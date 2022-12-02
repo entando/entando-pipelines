@@ -88,3 +88,54 @@ _vars.test.array.contains() {
     _vars.array.contains "elem1" "elem1" "elem2" "elem3" "elem1" || _FAIL
   )
 }
+
+
+#TEST:unit,lib,vars
+_vars.test.load() {
+  
+  ( _IT "should load single-line settings from file"
+    # shellcheck disable=SC2034
+    local Z="_Z" K="_K"
+    _vars.load "X=XX;Y=YY;Z=ZZ;W=W\;W"
+    RES="$(bash -c 'echo "$X/$Y/$Z/$K/$W"')"
+    _ASSERT RES = "XX/YY/ZZ//W;W"
+  )
+  
+  ( _IT "should load multi-line settings from stdin"
+    # shellcheck disable=SC2034
+    local TESTENV="X=1"$'\n'$'\n'"Y=2"
+    _vars.load --var-sep $'\n' --stdin <<< "$TESTENV"
+    RES="$(bash -c 'echo "$X/$Y"')"
+    _ASSERT RES = "1/2"
+  )
+  
+  ( _IT "should load multi-line settings with sections from stdin"
+    # shellcheck disable=SC2034
+    { X=0;Y=0;LF=$'\n'; }
+    local TESTENV="[SECT 1.0]${LF}X=1${LF}Y=2"${LF}
+    TESTENV+="[SECT 1.1]${LF}X=11${LF}Y=22"${LF}
+    _vars.load --section "SECT 1.1" --stdin <<< "$TESTENV"
+    _ASSERT X = "11"
+    _ASSERT Y = "22"
+    
+    _vars.load --section "SECT 1.0" --stdin <<< "$TESTENV"
+    _ASSERT X = "1"
+    _ASSERT Y = "2"
+    TESTENV+="[SECT X]${LF}X=111"${LF}
+    
+    _vars.load --section "SECT 1.0" --stdin <<< "$TESTENV"
+    _vars.load --section "SECT X" --stdin <<< "$TESTENV"
+    _ASSERT X = "111"
+    _ASSERT Y = "2"
+    
+    TESTENV+="[SECT Y]${LF}[a]X=1"${LF}
+    _vars.load --section "SECT Y" --stdin <<< "$TESTENV"
+    _ASSERT X = "111,1"
+    _ASSERT Y = "2"
+    
+    TESTENV+="[SECT Z]${LF}[p]X=0"${LF}
+    _vars.load --section "SECT Z" --stdin <<< "$TESTENV"
+    _ASSERT X = "111,1"
+    _ASSERT Y = "2"
+  )
+}
