@@ -5,6 +5,9 @@
 
 _require "lib/local/macro.sh"
 _require "lib/local/project.sh"
+_require "lib/shared/vars.sh"
+
+_require "macro/agnostic/mvn.sh"
 
 # PROXY FUNCTION FOR MULTI-BUILD-SYSTEM MACRO OPERATIONS
 # 
@@ -17,9 +20,11 @@ macro.prj.run() {
     ppl.start_macro "${FUNCNAME[0]}" --enter-local-clone "$@"
     
     local MACRO_PRJ_RUN_AUTH=(
-      "macro.mvn.full-build" 
+      "macro.mvn.build" 
     )
     
+    _vars.str.lower PPL_ACTION "$PPL_ACTION"
+
     ppl.safe-dynamic-invokation MACRO_PRJ_RUN_AUTH "$PPL_PROJECT_TYPE" "$PPL_ACTION"
   )
 }

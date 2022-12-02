@@ -2,7 +2,7 @@
 
 _require "macro/agnostic/prj.sh"
 
-#TEST:unit,macro,prj,x
+#TEST:unit,macro,prj
 ppl.prj.test.run() {
   
   mkdir "local-clone"
@@ -10,14 +10,13 @@ ppl.prj.test.run() {
   touch "pom.xml"
   __cd -
   
-  macro.mvn.full-build() {
+  macro.mvn.build() {
     exit 101
   }
 
   ( _IT "shoud enter the local-clone and determine the project type and run the macro function"
     
-    (macro.prj.run FULL-BUILD --lcd "local-clone"; exit 0)
+    macro.prj.run full-build --lcd "local-clone"
     _ASSERT_RC 101
   )
-  
 }

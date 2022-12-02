@@ -139,3 +139,12 @@ _vars.test.load() {
     _ASSERT Y = "2"
   )
 }
+
+#TEST:unit,lib,vars
+_vars.test.str.last_pos() {
+  local RES
+  _vars.str.last_pos RES ",10,11,12,11,13" "11"
+  _ASSERT RES = 4
+  _vars.str.last_pos RES ",10,11,12,*,13" "*"
+  _ASSERT RES = 4
+}

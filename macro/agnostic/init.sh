@@ -27,7 +27,7 @@ macro.init.run() {
   type ppl.apply_context_overrides &>/dev/null && {
     ppl.apply_context_overrides
   }
-
+  
   _pp PPL_MACRO PPL_TYPE PPL_CLONE_URL PPL_CHECKOUT PPL_CHECKOUT_TOKEN PPL_LOCAL_CLONE_DIR PPL_BRANCH
   [ "$rv" != "0" ] && exit "$rv"
   
@@ -36,7 +36,6 @@ macro.init.run() {
   __cd "$PPL_LOCAL_CLONE_DIR"
   PPL_DETECTED_PROJECT_TYPE="$(prj.current.determine_type)"
   __cd -
-  
 }
 
 # ----------------------------------------------------------------------------------------------------------------------

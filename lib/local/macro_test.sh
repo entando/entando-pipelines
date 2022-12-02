@@ -23,15 +23,15 @@ ppl.test.enter_local_clone_dir() {
 #TEST:unit,macro.ppl
 ppl.test.safe-dynamic-invokation() {
 
-  macro.mvn.full-build() {
+  macro.mvn.build() {
     exit 101
   }
   
-  macro.mvn.full-build-ext() {
+  macro.mvn.build-ext() {
     exit 101
   }
   
-  local AUTH=( "macro.mvn.full-build" )
+  local AUTH=( "macro.mvn.build" )
 
   ( _IT "shoud run an allowed invocation"
     

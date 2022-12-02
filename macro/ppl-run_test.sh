@@ -43,8 +43,10 @@ ppl-run.test.build.run() {
   # macro.init.run
   _ppl-run.test.job.checkout
   
+  export ENTANDO_OPT_FULL_BUILD_PLAN="prj.full-build"
+  
   # macro\..*\.build
-  "$PPL_RUN" prj full-build \
+  "$PPL_RUN" prj build \
     --lcd="local-clone" \
     --checkout-with-token="TEST-TOKEN" \
   ;

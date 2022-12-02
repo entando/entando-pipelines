@@ -34,33 +34,45 @@ ppl.start_macro() {
 
 ppl.plan.run() {
   local AUTHVAR="$1"
-  local plan="$2"
+  local project_type
+  local plan="$3"
   
+  _vars.str.lower project_type "$2"
+
   while read -d ',' -r step; do
-    _log_i "> Running step: $step"
+    [ -z "$step" ] && continue
     
-    if ppl.is-project-action "$PPL_ACTION"; then
-      ppl.safe-dynamic-invokation "$AUTHVAR" "$PPL_PROJECT_TYPE" "$PPL_ACTION"
+    _log_i "> Running step: $step"
+
+    if ppl.is-project-action "$step"; then
+      IFS='.' read prefix action <<< "$step"
+      ppl.safe-dynamic-invokation "$AUTHVAR" "$project_type" "plan.$action"
     else
-      ppl.safe-dynamic-invokation "$AUTHVAR" "global" "$PPL_ACTION"
+      ppl.safe-dynamic-invokation "$AUTHVAR" "global" "$step"
     fi
-  done
+  done <<< "$plan,"
 }
 
 ppl.safe-dynamic-invokation() {
   local AUTHVAR="$1" MODULE="$2" FUNCTION="$3"
   shift 3 || _FATAL "Internal error"
-
+  
   local spec="$MODULE.$FUNCTION"
   local fn="$(tr [:upper:] [:lower:] <<< "macro.$spec")"
   
   local arrname="$AUTHVAR[@]"
   _vars.array.contains "$fn" "${!arrname}" || _FATAL -S 1 "Unautorized call \"$spec\""
   type "$fn" &>/dev/null || _FATAL -S 1 "Unable to find the implementation of call \"$spec\""
-
-  "$fn" "$@"
+  
+  [[ "$((++PPL_NESTING_LEVEL))" -gt 30 ]] && _FATAL "Nesting oveflow"
+  
+  ("$fn" "$@")
+  local rv="$?"
+  
+  ((--PPL_NESTING_LEVEL))
+  return "$?"
 }
 
 ppl.is-project-action() {
-  [ "${PPL_ACTION:0:4}" == "prj." ]
+  [ "${1:0:4}" = "prj." ]
 }
