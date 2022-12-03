@@ -2,20 +2,24 @@
 
 _require "$PROJECT_DIR/lib/local/macro.sh"
  
-#TEST:unit,lib,local,ppl
+#TEST:unit,lib,local,ppl,x
 ppl.test.enter_local_clone_dir() {
-
-  ( _IT "should properly enter if the dir exists"
-
+    
+  ( _IT "should properly enter the local clone dir if it exists"
+  
     PPL_LOCAL_CLONE_DIR="local_clone"
-    mkdir "$PPL_LOCAL_CLONE_DIR"
-    ppl.enter_local_clone_dir
-    _ASSERT PWD ends-with "local_clone" 
+    mkdir -p "$PPL_LOCAL_CLONE_DIR"
+    (
+      ppl.enter_local_clone_dir "$PPL_LOCAL_CLONE_DIR"
+      _ASSERT PWD ends-with "local_clone" 
+    ) || _FAIL "proper local clone dir but failed"
+    rm -r "$PPL_LOCAL_CLONE_DIR"
   )
 
-  ( _IT "should fatal if the dir doesn't exist" SILENCE-ERRORS
+  ( _IT "should fatal if the local clone dir doesn't exist" SILENCE-ERRORS
 
-    (PPL_LOCAL_CLONE_DIR="unexisting_dir" ppl.enter_local_clone_dir) && _FAIL
+    PPL_LOCAL_CLONE_DIR="unexisting_dir"
+    (ppl.enter_local_clone_dir) && _FAIL "unexisting clone dir but succeed"
   )
 }
 

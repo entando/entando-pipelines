@@ -38,7 +38,7 @@ ppl-run.test.init.run() {
   _ppl-run.test.job.checkout
 }
 
-#TEST:system,macro,ppl-run,ppl-run-build,x
+#TEST:system,macro,ppl-run,ppl-run-build,xx
 ppl-run.test.build.run() {
   # macro.init.run
   _ppl-run.test.job.checkout

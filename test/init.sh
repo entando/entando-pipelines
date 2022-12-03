@@ -61,6 +61,8 @@ _IT() {
     }
   }
   trap TEST_EXIT_TRAP EXIT
+  
+  return 0
 }
 
 _FAIL() {
