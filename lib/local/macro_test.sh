@@ -2,7 +2,7 @@
 
 _require "$PROJECT_DIR/lib/local/macro.sh"
  
-#TEST:unit,lib,local,ppl,x
+#TEST:unit,lib,local,ppl
 ppl.test.enter_local_clone_dir() {
     
   ( _IT "should properly enter the local clone dir if it exists"

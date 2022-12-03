@@ -33,6 +33,13 @@ ppl.start_macro() {
   }
 }
 
+# Runs a plan step by step
+#
+# Params:
+# $1: the authorized step implementations
+# $2: the project type if applicable
+# $3: the plan in the form of a CSV list
+#
 ppl.plan.run() {
   local AUTHVAR="$1"
   local project_type="$(_strings.lower "$2")"
@@ -43,11 +50,11 @@ ppl.plan.run() {
   while read -d ',' -r step; do
     [ -z "$step" ] && continue
     
-    _log_i "> Running step: $step"
+    _log_i "> Running plan step: $step"
 
     if ppl.is-project-action "$step"; then
       IFS='.' read prefix action <<< "$step"
-      ppl.safe-dynamic-invokation "$AUTHVAR" "$project_type" "plan.$action" || return "$?"
+      ppl.safe-dynamic-invokation "$AUTHVAR" "$project_type" "step.$action" || return "$?"
     else
       ppl.safe-dynamic-invokation "$AUTHVAR" "global" "$step" || return "$?"
     fi

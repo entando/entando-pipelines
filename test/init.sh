@@ -96,7 +96,9 @@ _ASSERT() {
 }
 
 _DETERMINE_TEST_RESOURCE_PATH() {
-  if [ "$1" = "--global" ]; then
+  if [ "$1" = "--relative" ]; then
+    local F="$XDEV_FILE_DIR/$2"
+  elif [ "$1" = "--global" ]; then
     local F="$PROJECT_DIR/test/resource/$2"
   else
     local F="$XDEV_FILE_DIR/resource/test/$1"
@@ -110,7 +112,7 @@ _PRINT_TEST_FILE() {
 }
 
 _LOAD_TEST_FILE() {
-  local OPT="";[ "$1" = "--global" ] && { OPT="$1"; shift; }
+  local OPT="";[[ "$1" = "--global" || "$1" = "--relative" ]] && { OPT="$1"; shift; }
   local VAR="$1";shift
   _vars.set_var "$VAR" "$(_PRINT_TEST_FILE ${OPT:+"$OPT"} "$@")"
 }
@@ -123,10 +125,23 @@ _IMPORT_TEST_RESOURCE() {
     (
       cd "resource"
       _log.d "Importing resource $* ($OPT)"
-      tar xfvz "$(_DETERMINE_TEST_RESOURCE_PATH ${OPT:+"$OPT"} "$@")" 1>/dev/null
+      tar xfz "$(_DETERMINE_TEST_RESOURCE_PATH ${OPT:+"$OPT"} "$@")" 1>/dev/null
     )
   else
     _log.d "Importing resource $* ($OPT)"
     cp "$(_DETERMINE_TEST_RESOURCE_PATH "${OPT:+"$OPT"}" "$@")" "resource"
   fi
 }
+
+_TEST_VAR() {
+  _xdev.var "$@"
+}
+
+_ASSERT_TEST_VAR() {
+  local varname="$1";shift
+  _ASSERT -v "$varname" "$(_TEST_VAR "$varname")" "$@"
+}
+
+export XDEV_TEST_SESSION_DIR
+export -f _xdev.var
+export -f _TEST_VAR

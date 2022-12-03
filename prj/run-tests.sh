@@ -7,7 +7,7 @@
 XDEV_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 . "$XDEV_SCRIPT_DIR/xdev-lib.sh"
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~s~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 RUN() {
   xdev.prepare_test_session
@@ -92,10 +92,10 @@ _xdev.list_files_with_matching_labels() {
   (
     if [ "$XDEV_PROJECT_TEST_DIR" = "." ]; then
       while read -r dir; do
-        grep -lr "TEST:\(.*,\)\?$1\(,.*\)\?\$" "$XDEV_PROJECT_SRC_DIR/$dir" -r
+        grep -lr "^#TEST:\(.*,\)\?$1\(,.*\)\?\$" "$XDEV_PROJECT_SRC_DIR/$dir" -r
       done < <(_xdev.list-src-files "$XDEV_SRC")
     else
-      grep -lr --exclude-dir='.[^.]*' "TEST:\(.*,\)\?$1\(,.*\)\?\$" .
+      grep -lr --exclude-dir='.[^.]*' "^#TEST:\(.*,\)\?$1\(,.*\)\?\$" .
     fi
   )
 }
@@ -113,7 +113,7 @@ _xdev.print_test_execution() {
 }
 
 _xdev.test_is_disabled() {
-  [[ "${1:0:6}" = "#TEST:" || "${1:0:2}" = "--" ]]
+  [[ "${1:0:1}" = "#" || "${1:0:2}" = "--" ]]
 }
 
 _xdev.test_already_executed() {
@@ -139,11 +139,16 @@ _xdev.load_test_script() {
 }
 
 _xdev.failures() {
-  local FF="$XDEV_TEST_SESSION_DIR/failures.log"
+  _xdev.var "failures" "$@"
+}
+
+_xdev.var() {
+  local VN="$1";shift
+  local FF="$XDEV_TEST_SESSION_DIR/$VN.var"
   
   if [ "$1" == "--inc" ]; then
-    local tmp="$(_xdev.failures)"
-    _xdev.failures "$((tmp+1))"
+    local tmp="$(_xdev.var "$VN")"
+    _xdev.var "$VN" "$((tmp+1))"
   elif [ -n "$1" ]; then
     echo "$1" > "$FF"
   else

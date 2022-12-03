@@ -2,7 +2,7 @@
   "token": "999999999",
   "job": "prepare",
   "ref": "refs/pull/312/merge",
-  "sha": "239d3c0153e609a84747e129c7bfd2f415743551",
+  "sha": "e9e838da27b13c44406852f7bd5efbc434aa951f",
   "repository": "entando/entando-engine",
   "repository_owner": "entando",
   "repositoryUrl": "git://github.com/entando/entando-engine.git",
@@ -11,13 +11,13 @@
   "retention_days": "90",
   "actor": "w-caffiero-entando",
   "workflow": "Build and Test",
-  "head_ref": "v7.2.0-ENG-4039-PR-312+KB-develop",
+  "head_ref": "v7.2.0-ENG-4183-PR-318+KB-develop",
   "base_ref": "develop",
   "event_name": "pull_request",
   "event": {
     "action": "synchronize",
-    "after": "21aa52f7f1adcadea778314255b528ec8c0c7a41",
-    "before": "7140bf6788f4680a708b3fe78ee5b2a36f9214db",
+    "after": "0dd14eeb3bd36b9850a4aa49e0d0ae9d47355a88",
+    "before": "66e7a163d8fccba875295f566929f2f691454ee4",
     "number": 312,
     "organization": {
       "avatar_url": "https://avatars.githubusercontent.com/u/673103?v=4",
@@ -57,7 +57,7 @@
           "href": "https://api.github.com/repos/entando/entando-engine/pulls/312"
         },
         "statuses": {
-          "href": "https://api.github.com/repos/entando/entando-engine/statuses/21aa52f7f1adcadea778314255b528ec8c0c7a41"
+          "href": "https://api.github.com/repos/entando/entando-engine/statuses/0dd14eeb3bd36b9850a4aa49e0d0ae9d47355a88"
         }
       },
       "active_lock_reason": null,
@@ -207,8 +207,8 @@
       "diff_url": "https://github.com/entando/entando-engine/pull/312.diff",
       "draft": true,
       "head": {
-        "label": "entando:v7.2.0-ENG-4039-PR-312+KB-develop",
-        "ref": "v7.2.0-ENG-4039-PR-312+KB-develop",
+        "label": "entando:v7.2.0-ENG-4183-PR-318+KB-develop",
+        "ref": "v7.2.0-ENG-4183-PR-318+KB-develop",
         "repo": {
           "allow_merge_commit": true,
           "allow_rebase_merge": true,
@@ -313,7 +313,7 @@
           "watchers": 8,
           "watchers_count": 8
         },
-        "sha": "21aa52f7f1adcadea778314255b528ec8c0c7a41",
+        "sha": "0dd14eeb3bd36b9850a4aa49e0d0ae9d47355a88",
         "user": {
           "avatar_url": "https://avatars.githubusercontent.com/u/673103?v=4",
           "events_url": "https://api.github.com/users/entando/events{/privacy}",
@@ -438,7 +438,7 @@
       "review_comments": 0,
       "review_comments_url": "https://api.github.com/repos/entando/entando-engine/pulls/312/comments",
       "state": "open",
-      "statuses_url": "https://api.github.com/repos/entando/entando-engine/statuses/21aa52f7f1adcadea778314255b528ec8c0c7a41",
+      "statuses_url": "https://api.github.com/repos/entando/entando-engine/statuses/0dd14eeb3bd36b9850a4aa49e0d0ae9d47355a88",
       "title": "ENG-2471 GitHub actions pipeline exp2",
       "updated_at": "2021-06-26T17:43:12Z",
       "url": "https://api.github.com/repos/entando/entando-engine/pulls/312",

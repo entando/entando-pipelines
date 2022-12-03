@@ -13,9 +13,11 @@ XDEV_TEST.BEFORE_FILE() {
   }
   export -f ppl.apply_context_overrides
   
-  _LOAD_TEST_FILE PPL_ENVIRONMENT "ppl-run/sample-plan.mvn.full-build.env"
+  _LOAD_TEST_FILE --relative PPL_ENVIRONMENT "resource/sample-plan.mvn.full-build.env"
   _vars.load --section 'TEST' --stdin <<< "$PPL_ENVIRONMENT"
   export ENTANDO_OPT_FULL_BUILD_PLAN
+  
+  #_pp ENTANDO_OPT_FULL_BUILD_PLAN PPL_ENVIRONMENT
   
   #git.test.prepare-test-repo "test-repo" || _SOE
   #export PPL_CLONE_URL="file://$PWD/test-repo"
@@ -32,33 +34,36 @@ XDEV_TEST.BEFORE_TEST() {
   rm -rf "local-clone"
 }
 
-#TEST:system,macro,ppl-run,ppl-run-init
-ppl-run.test.init.run() {
-  # macro.init.run
-  _ppl-run.test.job.checkout
-}
+#TEST:integration,macro,ppl-run,ppl-run-build,x
+ppl-run.test.pr-sync.run() {
+  
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  ( _IT "shold checkout the repo"
 
-#TEST:system,macro,ppl-run,ppl-run-build,xx
-ppl-run.test.build.run() {
-  # macro.init.run
-  _ppl-run.test.job.checkout
+    # macro.init.run
+    _ppl-run.test.job.checkout
+  )
   
-  export ENTANDO_OPT_FULL_BUILD_PLAN="prj.full-build"
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  ( _IT "shold build the local clone"
   
-  mvn() {
-    _pp "MAVEN: $*"
-    exit 101
-  }
-  export -f mvn
-  
-  # macro\..*\.build
-  "$PPL_RUN" prj build \
-    --lcd="local-clone" \
-    --checkout-with-token="TEST-TOKEN" \
-  ;
-  _ASSERT_RC 101
-}
+    _TEST_VAR "mvn-calls" 0
 
+    mvn() {
+      _pp "MAVEN: $*"
+      _TEST_VAR "mvn-calls" --inc
+      return 0
+    }
+    export -f mvn
+  
+    # macro\..*\.build
+    "$PPL_RUN" prj build \
+      --lcd="local-clone" \
+      --checkout-with-token="TEST-TOKEN" \
+    ;
+    _ASSERT_TEST_VAR "mvn-calls" = 1
+  )  
+}
 
 #-----------------------------------------------------------------------------------------------------------------------
 # SUBORDINATE FUNCTIONS

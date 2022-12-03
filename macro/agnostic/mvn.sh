@@ -19,7 +19,7 @@ macro.mvn.build() {
     _NONNULL ENTANDO_OPT_FULL_BUILD_PLAN
     
     local MACRO_MVN_FULLBUILD_AUTH=( 
-      "macro.mvn.plan.full-build" "macro.mvn.plan.publish-artifact" "macro.mvn.plan.publish-image"
+      "macro.mvn.step.full-build" "macro.mvn.step.publish-artifact" "macro.mvn.step.publish-image"
       "macro.global.docker-compose-up" "macro.global.docker-compose-down"
     )
     
@@ -28,7 +28,7 @@ macro.mvn.build() {
 }
 
 # 
-macro.mvn.plan.full-build() {
+macro.mvn.step.full-build() {
   local TESTS=false COVERAGE=false
   _flagslist.is_flag_enabled "" "BUILD-TESTS" true && TESTS=true
   _flagslist.is_flag_enabled "" "BUILD-TESTS-COVERAGE" true && COVERAGE=true

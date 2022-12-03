@@ -53,8 +53,8 @@ macro.init.checkout-repo() {
     __cd "$lcd"
     _log.on_level TRACE || exec 1>/dev/null
     git.auto_setup_local_clone
-    git -c "advice.detachedHead=false" checkout "$PPL_BRANCH"
-  ) || _FATAL "Git checkout of branch \"$PPL_BRANCH\" failed"
+    git -c "advice.detachedHead=false" checkout "$PPL_COMMIT_ID"
+  ) || _FATAL "Git checkout of commit \"$PPL_COMMIT_ID\" failed (branch \"$PPL_BRANCH\")"
   
   _log.i "Checkout of repo \"$PPL_CLONE_URL\"${branchToCheckout:+ and branch \"$branchToCheckout\"} completed"
 }
