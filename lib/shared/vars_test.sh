@@ -11,12 +11,12 @@ _vars.test.set_var() {
     _ASSERT VAR = VALUE
   )
 
-  ( _IT "should fatal if empty var name is provided" SUPPRESS-ERRORS
+  ( _IT "should fatal if empty var name is provided" SILENCE-ERRORS
   
     (_vars.set_var "" "VALUE"; exit 0) && _FAIL "was expected to fatal"
   )
   
-  ( _IT "should fatal is illegal var name is provided" SUPPRESS-ERRORS
+  ( _IT "should fatal is illegal var name is provided" SILENCE-ERRORS
   
     (_vars.set_var ILLEGAL-VAR-NAME "VALUE") && _FAIL "was expected to fatal"
   )
@@ -32,7 +32,7 @@ _vars.test.is_valid_var_name() {
     _vars.is_valid_var_name "a_var9"; _ASSERT_RC "0"
   )
   
-  ( _IT "should fatal if var name is illegal" SUPPRESS-ERRORS
+  ( _IT "should fatal if var name is illegal" SILENCE-ERRORS
   
     _vars.is_valid_var_name ""; _ASSERT_RC "1"
     _vars.is_valid_var_name "a.var"; _ASSERT_RC "1"
@@ -54,12 +54,12 @@ _vars.test.array.contains() {
     _vars.array.contains "e" "elem1" "elem2zz" "elem3" "e" || _FAIL
   )
   
-  ( _IT "should return with error if element is not present in array" SUPPRESS-ERRORS
+  ( _IT "should return with error if element is not present in array" SILENCE-ERRORS
     
     _vars.array.contains "elem4" "elem1" "elem2" "elem3" && _FAIL
   )
   
-  ( _IT "should not allow partial matches" SUPPRESS-ERRORS
+  ( _IT "should not allow partial matches" SILENCE-ERRORS
     
     _vars.array.contains "e" "elem1" "elem2" "elem3" && _FAIL
     _vars.array.contains "elem1" "elem1 " "elem2" "elem3" && _FAIL
@@ -67,7 +67,7 @@ _vars.test.array.contains() {
     _vars.array.contains "elem1" " elem1 " "elem2" "elem3" && _FAIL
   )
   
-  ( _IT "should not allow wildcards" SUPPRESS-ERRORS
+  ( _IT "should not allow wildcards" SILENCE-ERRORS
     
     _vars.array.contains "e*" "elem1" "elem2" "elem3" && _FAIL
     _vars.array.contains "elem1" "elem1*" "elem2" "elem3" && _FAIL
@@ -75,7 +75,7 @@ _vars.test.array.contains() {
     _vars.array.contains "elem1" "*elem1*" "elem2" "elem3" && _FAIL
   )
   
-  ( _IT "should not allow regexp" SUPPRESS-ERRORS
+  ( _IT "should not allow regexp" SILENCE-ERRORS
     
     _vars.array.contains "e.*" "elem1" "elem2" "elem3" && _FAIL
     _vars.array.contains "elem1" "elem1.*" "elem2" "elem3" && _FAIL
@@ -83,7 +83,7 @@ _vars.test.array.contains() {
     _vars.array.contains "elem1" ".*elem1.*" "elem2" "elem3" && _FAIL
   )
   
-  ( _IT "should work in case of dup entries" SUPPRESS-ERRORS
+  ( _IT "should work in case of dup entries" SILENCE-ERRORS
     
     _vars.array.contains "elem1" "elem1" "elem2" "elem3" "elem1" || _FAIL
   )
@@ -138,13 +138,4 @@ _vars.test.load() {
     _ASSERT X = "111,1"
     _ASSERT Y = "2"
   )
-}
-
-#TEST:unit,lib,vars
-_vars.test.str.last_pos() {
-  local RES
-  _vars.str.last_pos RES ",10,11,12,11,13" "11"
-  _ASSERT RES = 4
-  _vars.str.last_pos RES ",10,11,12,*,13" "*"
-  _ASSERT RES = 4
 }

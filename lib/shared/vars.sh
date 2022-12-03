@@ -1,5 +1,7 @@
 #/bin/bash
 
+_require "lib/shared/strings.sh"
+
 # Sets a variable given the name and the value
 #
 # WARNING:
@@ -125,7 +127,7 @@ _vars.load() {
       
         # shellcheck disable=SC2162
         IFS='=' read -r name value <<< "$line"
-        [[ "$(_vars.str.last_char_of "$name")" = "+" ]] && { name="$(_vars.str.chop "$name")"; append=true; }
+        [[ "$(_strings.last_char_of "$name")" = "+" ]] && { name="$(_strings.chop "$name")"; append=true; }
         
         _vars.is_valid_name "$name" || {
           _log.d "Invalid var name: \"$name\""
@@ -144,45 +146,7 @@ _vars.load() {
   }
 }
 
-_vars.str.last_char_of() {
-  local len="${#1}"
-  ((len--))
-  if [ "$len" -ge 0 ]; then
-    echo -n "${1:$len}"
-  else
-    echo -n ""
-  fi
-}
-
-_vars.str.chop() {
-  local len="${#1}"
-  ((len--))
-  if [ "$len" -ge 0 ]; then
-    echo -n "${1:0:$len}"
-  else
-    echo -n ""
-  fi
-}
-
 _vars.is_valid_name() {
   # shellcheck disable=SC2234
   ([[ "$1" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]])  # NOTE: the subshell restricts the side effects, don't remove it
-}
-
-# Converts a value to lowercase
-_vars.str.lower() {
-  _vars.set_var "$1" "$(echo "$2" | tr '[:upper:]' '[:lower:]')"
-}
-
-# Returns the position of the last occurrent of string in a comma separed list
-#
-_vars.str.last_pos() { 
-  local _slp_tmp1_ _slp_tmp2_="$2" _slp_tmp3_=0 _slp_tmp4_=-1
-  while IFS= read -r _slp_tmp1_; do
-    if [ "$_slp_tmp1_" = "$3" ]; then
-      _slp_tmp4_="$_slp_tmp3_"
-    fi
-    ((_slp_tmp3_++))
-  done <<<"${_slp_tmp2_//,/$'\n'}"  
-  _vars.set_var "$1" "$_slp_tmp4_"
 }

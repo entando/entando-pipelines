@@ -2,6 +2,7 @@
 
 _require "lib/shared/filesystem.sh"
 _require "lib/shared/vars.sh"
+_require "lib/shared/strings.sh"
 _require "lib/shared/cli.sh"
 
 
@@ -34,10 +35,10 @@ ppl.start_macro() {
 
 ppl.plan.run() {
   local AUTHVAR="$1"
-  local project_type
+  local project_type="$(_strings.lower "$2")"
   local plan="$3"
   
-  _vars.str.lower project_type "$2"
+  _NONNULL AUTHVAR project_type plan
 
   while read -d ',' -r step; do
     [ -z "$step" ] && continue
@@ -46,9 +47,9 @@ ppl.plan.run() {
 
     if ppl.is-project-action "$step"; then
       IFS='.' read prefix action <<< "$step"
-      ppl.safe-dynamic-invokation "$AUTHVAR" "$project_type" "plan.$action"
+      ppl.safe-dynamic-invokation "$AUTHVAR" "$project_type" "plan.$action" || return "$?"
     else
-      ppl.safe-dynamic-invokation "$AUTHVAR" "global" "$step"
+      ppl.safe-dynamic-invokation "$AUTHVAR" "global" "$step" || return "$?"
     fi
   done <<< "$plan,"
 }
@@ -65,12 +66,12 @@ ppl.safe-dynamic-invokation() {
   type "$fn" &>/dev/null || _FATAL -S 1 "Unable to find the implementation of call \"$spec\""
   
   [[ "$((++PPL_NESTING_LEVEL))" -gt 30 ]] && _FATAL "Nesting oveflow"
-  
+
   ("$fn" "$@")
   local rv="$?"
-  
+
   ((--PPL_NESTING_LEVEL))
-  return "$?"
+  return "$rv"
 }
 
 ppl.is-project-action() {

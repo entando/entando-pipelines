@@ -10,14 +10,14 @@ _require "$PROJECT_DIR/lib/shared/sys.sh"
 _sys.test.must.nn() {
   local A=1 B=""
   ( _IT "should accept non null value"; _sys.must.nn A)
-  ( _IT "shout fatal for a null/empty value" SUPPRESS-ERRORS; _sys.must.nn B 2>/dev/null)
-  ( _IT "shout fatal for at least one null/empty value" SUPPRESS-ERRORS; _sys.must.nn A B 2>/dev/null)
+  ( _IT "shout fatal for a null/empty value" SILENCE-ERRORS; _sys.must.nn B 2>/dev/null)
+  ( _IT "shout fatal for at least one null/empty value" SILENCE-ERRORS; _sys.must.nn A B 2>/dev/null)
 }
 
 #TEST:unit,lib,sys
 _sys.test.soe() {
   
-  ( _IT "should stop on error" SUPPRESS-ERRORS
+  ( _IT "should stop on error" SILENCE-ERRORS
     
     (false; _sys.soe) && _FAIL
   )
@@ -27,7 +27,7 @@ _sys.test.soe() {
     (true; _sys.soe) || _FAIL
   )
   
-  ( _IT "should stop on error in checked pipe segment" SUPPRESS-ERRORS
+  ( _IT "should stop on error in checked pipe segment" SILENCE-ERRORS
 
     # FALSE|FALSE
     (false | false; _sys.soe) && _FAIL

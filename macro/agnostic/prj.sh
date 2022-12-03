@@ -23,8 +23,6 @@ macro.prj.run() {
       "macro.mvn.build" 
     )
     
-    _vars.str.lower PPL_ACTION "$PPL_ACTION"
-
-    ppl.safe-dynamic-invokation MACRO_PRJ_RUN_AUTH "$PPL_PROJECT_TYPE" "$PPL_ACTION"
+    ppl.safe-dynamic-invokation MACRO_PRJ_RUN_AUTH "$PPL_PROJECT_TYPE" "$(_strings.lower "$PPL_ACTION")"
   )
 }

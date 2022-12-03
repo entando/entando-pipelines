@@ -7,13 +7,13 @@ prj.test.current.determine_type() {
 
   ( _IT "should be able to determine the type of project"
 
-    touch "pom.xml" && _ASSERT -v "PROJECT TYPE" "$(prj.current.determine_type)" = "MVN"
+    touch "pom.xml" && _ASSERT -v "PROJECT TYPE" "$(prj.current.determine_type)" = "mvn"
     rm "pom.xml"
 
-    touch "package.json" && _ASSERT -v "PROJECT TYPE" "$(prj.current.determine_type)" = "NPM"
+    touch "package.json" && _ASSERT -v "PROJECT TYPE" "$(prj.current.determine_type)" = "npm"
     rm "package.json"  
 
-    touch "entando-project" && _ASSERT -v "PROJECT TYPE" "$(prj.current.determine_type)" = "ENP"
+    touch "entando-project" && _ASSERT -v "PROJECT TYPE" "$(prj.current.determine_type)" = "enp"
     rm "entando-project"
   )
   
@@ -25,7 +25,7 @@ prj.test.current.determine_type() {
   )
 
 
-  ( _IT "should fatal if project type can't be determined" SUPPRESS-ERRORS
+  ( _IT "should fatal if project type can't be determined" SILENCE-ERRORS
 
     touch "entando-pipelines" "entando-project.json" "package" "package json" "pom" "pom.json" "pom_xml" "package.xml"
     (prj.current.determine_type) && _FAIL

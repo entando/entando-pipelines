@@ -16,7 +16,7 @@ ppl.prj.test.run() {
 
   ( _IT "shoud enter the local-clone and determine the project type and run the macro function"
     
-    macro.prj.run full-build --lcd "local-clone"
+    macro.prj.run build --lcd "local-clone"
     _ASSERT_RC 101
   )
 }

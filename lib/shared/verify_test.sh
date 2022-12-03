@@ -16,7 +16,7 @@ _verify.test.verify-expression.numeric() {
     exit 0
   )
 
-  ( _IT "should fatal in case of false numeric condition" SUPPRESS-ERRORS
+  ( _IT "should fatal in case of false numeric condition" SILENCE-ERRORS
   
     V=5
     (_verify.verify-expression "" V eq 9 2>/dev/null;exit 0) && _FAIL "eq"
@@ -42,7 +42,7 @@ _verify.test.verify-expression.string() {
     (_verify.verify-expression "" V contains "TEST")             || _FAIL "contains"
   )
 
-  ( _IT "should fatal in case of false string condition" SUPPRESS-ERRORS
+  ( _IT "should fatal in case of false string condition" SILENCE-ERRORS
   
     V="SOME TEST STRING"
     (_verify.verify-expression "" V = "SOME OTHER TEST STRING" 2>/dev/null;exit 0)  && _FAIL "="

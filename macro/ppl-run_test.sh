@@ -45,11 +45,18 @@ ppl-run.test.build.run() {
   
   export ENTANDO_OPT_FULL_BUILD_PLAN="prj.full-build"
   
+  mvn() {
+    _pp "MAVEN: $*"
+    exit 101
+  }
+  export -f mvn
+  
   # macro\..*\.build
   "$PPL_RUN" prj build \
     --lcd="local-clone" \
     --checkout-with-token="TEST-TOKEN" \
   ;
+  _ASSERT_RC 101
 }
 
 

@@ -10,7 +10,7 @@
 ppl-exit-proc() { 
   local RV="$1"; shift
   [ "$RV" != "0" ] && {
-    echo "~ pp-run terminated with ERROR CODE \"$RV\"; the last command was: \"$1\""
+    echo "~ pp-run terminated with ERROR CODE \"$RV\"; the last macro was: \"$1\""
   }
 }
 
@@ -68,7 +68,9 @@ if [ "$1" != "--source-only" ]; then
       if [ "$ELEM" = "--AND" ] || [ "$ELEM" = ".." ] || ! $LOOP; then
         LAST_CMD=("${CMD[@]}")
         if [ "${#CMD[@]}" != 0 ]; then
-          "${CMD[@]}" || $IE || { RV="$?"; break; }
+          "${CMD[@]}" 
+          RV="$?"
+          "$IE" || break
         fi
         CMD=()
         ELEM="${1:-}"

@@ -20,7 +20,7 @@ _cli.test.parse_args() {
     _cli.get_arg RES 8 FB || _FAIL; _ASSERT RES = FB
   )
   
-  ( _IT "should fatal if \"-m\" (mandatory) was provided and the argument was not found" SUPPRESS-ERRORS
+  ( _IT "should fatal if \"-m\" (mandatory) was provided and the argument was not found" SILENCE-ERRORS
 
     (_cli.get_arg -m RES 99;exit 0) && _FAIL
     (_cli.get_arg -m --non-existent-arg 99;exit 0) && _FAIL

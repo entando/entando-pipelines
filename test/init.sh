@@ -26,7 +26,7 @@ _IT() {
   _xdev.log "It $_ESS_TEST_IT"
   
   _ESS_SILENCE_ERRORS=false
-  _ESS_IGNORE_EXITCODE=false
+  _ESS_IGNORE_EXITCODE=true
   _ESS_TEST_FAIL_MESSAGE=""
   _ESS_TEST_FAIL_RC=0
   _ESS_IN_TEST_EXIT_TRAP=false
@@ -34,8 +34,7 @@ _IT() {
   while [ $# -gt 0 ]; do
     case "$1" in
       "SILENCE-ERRORS") _ESS_SILENCE_ERRORS=true;;
-      "IGNORE-EXITCODE") _ESS_IGNORE_EXITCODE=true;;
-      "SUPPRESS-ERRORS") _ESS_SILENCE_ERRORS=true;_ESS_IGNORE_EXITCODE=true;;
+      "CHECK-EXITCODE") _ESS_IGNORE_EXITCODE=false;;
     esac
     shift
   done

@@ -5,7 +5,7 @@
 
 _require "lib/shared/cli.sh"
 _require "lib/shared/vars.sh"
-_require "lib/shared/itmlst.sh"
+_require "lib/shared/flagslist.sh"
 _require "lib/local/macro.sh"
 _require "lib/local/project.sh"
 _require "lib/local/git.sh"
@@ -23,15 +23,15 @@ macro.mvn.build() {
       "macro.global.docker-compose-up" "macro.global.docker-compose-down"
     )
     
-    ppl.plan.run MACRO_MVN_FULLBUILD_AUTH "MVN" "$ENTANDO_OPT_FULL_BUILD_PLAN"
+    ppl.plan.run MACRO_MVN_FULLBUILD_AUTH "mvn" "$ENTANDO_OPT_FULL_BUILD_PLAN"
   )
 }
 
 # 
 macro.mvn.plan.full-build() {
   local TESTS=false COVERAGE=false
-  _itmlst.contains "" "BUILD-TESTS" true && TESTS=true
-  _itmlst.contains "" "BUILD-TESTS-COVERAGE" true && COVERAGE=true
+  _flagslist.is_flag_enabled "" "BUILD-TESTS" true && TESTS=true
+  _flagslist.is_flag_enabled "" "BUILD-TESTS-COVERAGE" true && COVERAGE=true
 
   mvn -B clean test \
     ${ENTANDO_OPT_SONAR_PROJECT_KEY:+-Dsonar.projectKey="$ENTANDO_OPT_SONAR_PROJECT_KEY"} \

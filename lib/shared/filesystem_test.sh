@@ -22,12 +22,12 @@ _fs.test.must.cd() {
     _ASSERT PWD ends-with "my-dir" 
   )
 
-  ( _IT "should fatal if the dir doesn't exists" SUPPRESS-ERRORS
+  ( _IT "should fatal if the dir doesn't exists" SILENCE-ERRORS
     
     (_fs.must.cd "not-my-dir") && _FAIL
   )
   
-  ( _IT 'should fatal if the dir name is null, or "."' SUPPRESS-ERRORS
+  ( _IT 'should fatal if the dir name is null, or "."' SILENCE-ERRORS
     
     (_fs.must.cd "";exit 0) && _FAIL "<null dir>"
     (_fs.must.cd ".";exit 0) && _FAIL "."
@@ -44,7 +44,7 @@ _fs.test.must.exist() {
     _fs.must.exist -d "my-dir"
   )
   
-  ( _IT "must fatal if dir exists but it's looking for files" SUPPRESS-ERRORS
+  ( _IT "must fatal if dir exists but it's looking for files" SILENCE-ERRORS
 
     mkdir -p "my-dir"
     (_fs.must.exist -f "my-dir";exit 0) && _FAIL "."
@@ -56,7 +56,7 @@ _fs.test.must.exist() {
     _fs.must.exist -f "my-file"
   )
   
-  ( _IT "must fatal if dir exists but it's looking for files" SUPPRESS-ERRORS
+  ( _IT "must fatal if dir exists but it's looking for files" SILENCE-ERRORS
 
     echo "my-file" > "my-file"
     (_fs.must.exist -d "my-file";exit 0) && _FAIL "."

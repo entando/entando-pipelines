@@ -9,7 +9,7 @@ prj.current.determine_type() {
   if [[ -f "entando-project" ]]; then
     _tmp_="enp"
     local _tmp_="$(prj.get_config_value "entando-project" "PROJECT_TYPE")"
-    [ -z "$_tmp_" ] && _tmp_="ENP"
+    [ -z "$_tmp_" ] && _tmp_="enp"
   elif [ -f "pom.xml" ]; then
     _tmp_="mvn"
   elif [ -f "package.json" ]; then
