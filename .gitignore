@@ -4,3 +4,5 @@ tmp/
 *.kate-swp
 *.kdev4
 .xdev
+.shpkg
+.shpkg.status
