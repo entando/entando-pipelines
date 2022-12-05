@@ -176,7 +176,7 @@ ASSUME_CONTEXT_OF_EVENT_ADD_RELEASE_TAG() {
   PPL_CONTEXT="$(cat "$PROJECT_DIR/test/resources/github-context-sample-05.json")"
 }
 
-#TEST:lib
+#TEST:x
 test_generate_build_cache_key() {
   print_current_function_name "RUNNING TEST> "  ".."
   
