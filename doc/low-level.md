@@ -214,7 +214,7 @@
 
 ### `_pom_get_project_artifact_id()`
 
-**Extacts the artifactId from a pom**
+**Extracts the artifactId from a pom**
 
 <details>
 
@@ -231,7 +231,7 @@
 
 ### `_pom_get_project_version()`
 
-**Extacts the version of a artifactId from a pom**
+**Extracts the version of a artifactId from a pom**
 
 <details>
 
@@ -265,7 +265,7 @@
 
 ### `_pom_get_project_property()`
 
-**Extacts a property from a pom**
+**Extracts a property from a pom**
 
 <details>
 
@@ -301,7 +301,7 @@
 
 ### `_pom_get_depman_artifact_version()`
 
-**Extacts the version of an artifact dependency of the dependency management section**
+**Extracts the version of an artifact dependency of the dependency management section**
 
 <details>
 
@@ -1308,7 +1308,7 @@
 
 ### `_pom_get_project_artifact_id()`
 
-**Extacts the artifactId from a pom**
+**Extracts the artifactId from a pom**
 
 <details>
 
@@ -1325,7 +1325,7 @@
 
 ### `_pom_get_project_version()`
 
-**Extacts the version of a artifactId from a pom**
+**Extracts the version of a artifactId from a pom**
 
 <details>
 
@@ -1359,7 +1359,7 @@
 
 ### `_pom_get_project_property()`
 
-**Extacts a property from a pom**
+**Extracts a property from a pom**
 
 <details>
 
@@ -1395,7 +1395,7 @@
 
 ### `_pom_get_depman_artifact_version()`
 
-**Extacts the version of an artifact dependency of the dependency management section**
+**Extracts the version of an artifact dependency of the dependency management section**
 
 <details>
 
