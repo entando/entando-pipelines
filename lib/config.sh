@@ -202,7 +202,10 @@ _read_entando_options_from_args() {
 
 _extract_entando_prj_pipeline_config() {
   (
-    cd "$1" &> /dev/null
+    cd "$1" 1> /dev/null || {
+      echo "???"
+      return 1
+    }
     __ppl_enter_local_clone_dir &> /dev/null
     _enp_load &> /dev/null
     _enp_load_pipeline_local_settings &>/dev/null

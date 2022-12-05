@@ -28,6 +28,7 @@ ppl--scan.exec() {
   if [ "$1" == "--no-parse" ] ; then
     shift
   else
+    # shellcheck disable=SC2034      
     ARGS_FLAGS=(--no-skip --no-repo)
     PARSE_ARGS "$@"
   fi
