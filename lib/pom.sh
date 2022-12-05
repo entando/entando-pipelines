@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Extacts the artifactId from a pom
+# Extracts the artifactId from a pom
 #
 # Params:
 # $1: dest var
@@ -10,7 +10,7 @@ _pom_get_project_artifact_id() {
   _pom_get "$1" "$2" "/pom:project" "./pom:artifactId"
 }
 
-# Extacts the version of a artifactId from a pom
+# Extracts the version of a artifactId from a pom
 #
 # Params:
 # $1: dest var
@@ -28,10 +28,10 @@ _pom_get_project_version() {
 # $2: pom file pathname
 #
 _pom_set_project_version() {
-  _pom_set "$1" "$2" "/pom:project" "./pom:version"
+  __mvn_exec versions:set -DnewVersion="$1" -f "$2"
 }
 
-# Extacts a property from a pom
+# Extracts a property from a pom
 #
 # Params:
 # $1: dest var
@@ -53,7 +53,7 @@ _pom_set_project_property() {
   _pom_set "$1" "$2" "/pom:project/pom:properties" "./pom:$3"
 }
 
-# Extacts the version of an artifact dependency of the dependency management section
+# Extracts the version of an artifact dependency of the dependency management section
 #
 # Params:
 # $1: dest var
