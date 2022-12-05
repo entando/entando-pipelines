@@ -68,10 +68,12 @@ ppl--npm.FULL-BUILD() {
     if ! $notagging; then
       if _ppl_is_feature_enabled "TAG-SNAPSHOT-AFTER-BUILD" true; then
         # Adds snapshot-tag to provide context data and trigger publication workflow
-        ppl--publication tag-git-version
+        ppl--publication.tag-git-version "v"
+        true
       else
         # Adds pseudo-snapshot-tag to provide the required context data, but it doesn't trigger the workflow
-        ppl--publication tag-git-pseudo-version
+        ppl--publication.tag-git-version "p"
+        true
       fi
     else
       true
