@@ -23,7 +23,7 @@ test_setup-features-flags() {
 
     # shellcheck disable=SC2034
     local RES="$(
-      ppl--setup-feature-flags "FEA-A" "FEA-B" "FEA-C" "FEA-D" "FEA-X" "FEA-X2" "FEA-Z" "FEA-S" "FEA-S2" "FEA-G"
+      ppl--setup-feature-flags "FEA-A" "FEA-B" "FEA-C" "FEA-D" "FEA-X" "FEA-X2" "FEA-Z" "FEA-S" "FEA-S2" "FEA-G" 2>&1
     )"
     
     ASSERT RES =~ "::set-output name=FEA_A::true"

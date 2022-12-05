@@ -517,7 +517,7 @@ _ppl-pr-remove-label() {
 }
 
 _github.parse_fqrepo() {
-  IFS=/ read "$1" "$1" <<<"$3"
+  IFS=/ read -r "$1" "$1" <<<"$3"
   __assert_valid_identifier "$4" ORG "${!1}" REPO "${!2}"
 }
 
@@ -535,11 +535,11 @@ _github.list-package-versions() {
 #
 _github.remove-package() {
   local FQREPO="$1" VERSION="$2"
-  local QUERY RES RESCOUNT RES_ID RES_VER
+  local RES RESCOUNT RES_ID RES_VER
   
   local VERSION_ESC="$(_str_quote -s "$VERSION")"
 
-  IFS=/ read OWNER REPO <<<"$FQREPO"
+  IFS=/ read -r OWNER REPO <<<"$FQREPO"
   __assert_valid_identifier "REMOVE PACKAGE VERSION / LOOKUP" OWNER "$OWNER" REPO "$REPO"
   
   github-request --set RES \
@@ -561,7 +561,7 @@ _github.remove-package() {
   [[ "$RESCOUNT" -eq 0 ]] && return 0
   [[ "$RESCOUNT" -gt 1 ]] && _FATAL "Multiple results found while trying to delete version \"$VERSION\" of package \"$FQREPO\" "
   
-  IFS=, read RES_ID RES_VER <<< "$RES"
+  IFS=, read -r RES_ID RES_VER <<< "$RES"
   
   RES_ID="$(_str_strip_quotes "$RES_ID")"
   RES_VER="$(_str_strip_quotes "$RES_VER")"
