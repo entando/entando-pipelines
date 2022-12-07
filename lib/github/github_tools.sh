@@ -139,6 +139,10 @@ github-request() {
   local URL="$1"; shift
   local DATA="$1"; shift
 
+  if [ -n "$PPL_TOKEN_OVERRIDE" ]; then
+    TOKEN="$PPL_TOKEN_OVERRIDE"
+  fi
+
   _tpl_set_var URL "$URL" "$@"
   
   CMD="\"$VERB\" to \"$URL\" with \"${DATA:+-d "$DATA"}\""
