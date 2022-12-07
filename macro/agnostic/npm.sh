@@ -86,6 +86,7 @@ ppl--npm.FULL-BUILD() {
 }
 
 ppl---npm.PUBLISH() {
+  _pp PPL_TOKEN
   case "$PPL_REF_NAME" in
     v*)
       # NOTE that npm pipelines atm doesn't actually publish to an npm registry,

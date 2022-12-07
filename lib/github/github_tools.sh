@@ -148,6 +148,8 @@ github-request() {
     
     local RESFILE STATUS
     RESFILE="$(mktemp)"
+
+    _pp PPL_TOKEN TOKEN
     
     STATUS="$(
       curl -sL -o "$RESFILE" -w "%{http_code}" "$URL" \
@@ -571,6 +573,5 @@ _github.remove-package() {
   __assert_valid_identifier "REMOVE PACKAGE VERSION / DELETE" OWNER "$OWNER" REPO "$REPO"
 
   github-request --set RES \
-    --accept "application/vnd.github+json" \
     DELETE "https://api.github.com/orgs/$OWNER/packages/npm/$REPO/versions/$RES_ID" "";
 }
