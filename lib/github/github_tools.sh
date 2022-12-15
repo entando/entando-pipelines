@@ -139,6 +139,10 @@ github-request() {
   local URL="$1"; shift
   local DATA="$1"; shift
 
+  if [ -n "$PPL_TOKEN_OVERRIDE" ]; then
+    TOKEN="$PPL_TOKEN_OVERRIDE"
+  fi
+
   _tpl_set_var URL "$URL" "$@"
   
   CMD="\"$VERB\" to \"$URL\" with \"${DATA:+-d "$DATA"}\""
@@ -149,8 +153,6 @@ github-request() {
     local RESFILE STATUS
     RESFILE="$(mktemp)"
 
-    _pp PPL_TOKEN TOKEN
-    
     STATUS="$(
       curl -sL -o "$RESFILE" -w "%{http_code}" "$URL" \
         -X "$VERB" \

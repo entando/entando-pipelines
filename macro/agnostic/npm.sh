@@ -114,7 +114,7 @@ ppl---npm.PUBLISH() {
           }
         fi
         _log_d "Actual publication"
-        __npm_exec publish
+        __npm_exec publish || _FATAL "Publication failed"
         _npm_clear_login_data
       else
         _log_d "Trying to login"
@@ -125,7 +125,7 @@ ppl---npm.PUBLISH() {
           }
         fi
         _log_d "Actual publication"
-        __npm_exec publish
+        __npm_exec publish || _FATAL "Publication failed"
       fi
       ;;
     *)
