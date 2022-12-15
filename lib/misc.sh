@@ -1117,3 +1117,9 @@ _ppl_run_custom_script() {
 _filter_empty_lines() {
   sed '/^\s*$/d'
 }
+
+# tells if a tag is related to a PR
+#
+_ppl_is_pr_tag() {
+  [[ "$1" == *"-PR-"* ]]
+}

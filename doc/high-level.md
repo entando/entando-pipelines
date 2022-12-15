@@ -598,6 +598,13 @@
 
 ---
 
+### `_ppl_is_pr_tag()`
+
+**tells if a tag is related to a PR**
+
+
+---
+
 ### `_ppl_clone_and_configure_data_repo()`
 
 **Load the pipeline configuration from the pipelines data repository**
