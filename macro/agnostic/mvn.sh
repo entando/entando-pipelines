@@ -115,6 +115,7 @@ ppl--mvn.run-plan() {
     
     case "$step" in
       "RUN-TESTS")
+        ppl--mvn.docker.LOGIN
         ppl--mvn.post-deloyment.run-test "$projectName" "$projectVersion" || _SOE
         ;;
       "FULL-BUILD")
@@ -416,4 +417,16 @@ ppl--mvn.generate-build-cache-key() {
   local VARIABLE_NAME="$1"
   _NONNULL VARIABLE_NAME
   echo "$VARIABLE_NAME=$( sha256sum "pom.xml" --zero | cut -d' ' -f1 )"
+}
+
+ppl--mvn.docker.LOGIN() {
+  if [ -n "$ENTANDO_OPT_DOCKER_ALT_LOGIN_URL" ]; then
+    _NONNULL ENTANDO_OPT_DOCKER_ALT_USERNAME ENTANDO_OPT_DOCKER_ALT_PASSWORD
+    __docker login "$ENTANDO_OPT_DOCKER_ALT_LOGIN_URL" \
+        --username "$ENTANDO_OPT_DOCKER_ALT_USERNAME" \
+        --password-stdin <<< "$ENTANDO_OPT_DOCKER_ALT_PASSWORD"
+  fi
+  
+  _NONNULL ENTANDO_OPT_DOCKER_USERNAME ENTANDO_OPT_DOCKER_PASSWORD
+  __docker login -u "$ENTANDO_OPT_DOCKER_USERNAME" --password-stdin <<<"$ENTANDO_OPT_DOCKER_PASSWORD"
 }
