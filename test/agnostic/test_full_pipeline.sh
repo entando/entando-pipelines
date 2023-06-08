@@ -94,7 +94,7 @@ test_flow_pr_check() {
     ppl--publication tag-git-version --lcd "local-clone" || _SOE
     
     cd local-clone
-    ASSERT -v SNAPSHOT-TAG "$(git tag | grep "ENG-")" = "v10.9.8.0-ENG-2471-PR-154+BB-develop"
+    ASSERT -v SNAPSHOT-TAG "$(git tag | grep "ENG-")" = "v10.9.8.0-ENG-2471-PR-154+BB-develop-merge"
   ) || _SOE
   
   #~
