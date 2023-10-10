@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 env:
-  PPL_TEMPLATE_VERSION: "v2.0.3"
+  PPL_TEMPLATE_VERSION: "v2.0.4"
   ENTANDO_BOT_TOKEN: ${{ secrets.ENTANDO_BOT_TOKEN }}
   PR_CHECKER_PATH: ".github/pr-title-checker-config.json"
   JDK_VERSION: 11
@@ -73,11 +73,11 @@ jobs:
           gpg_private_key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
           gpg_passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
 
-      - name: Check for Dockerfile.jvm
+      - name: Check for Dockerfile
         id: dockerfile
         uses: andstor/file-existence-action@v2
         with:
-          files: Dockerfile.jvm
+          files: Dockerfile*
 
       - name: Docker meta
         if: steps.dockerfile.outputs.files_exists == 'true'
