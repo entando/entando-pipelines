@@ -1,6 +1,57 @@
 
 ---
 
+### `_ppl_get_current_project_version()`
+
+**Extacts the version of a artifactId from a pom**
+
+<details>
+
+```
+ Params:
+ $1: dest var
+ $3: project file pathname
+```
+
+</details>
+
+
+---
+
+### `_ppl_set_current_project_version()`
+
+**Extacts the version of a artifactId from a pom**
+
+<details>
+
+```
+ Params:
+ $1:   the value to set
+ [$2]: the optional project file pathname
+```
+
+</details>
+
+
+---
+
+### `_ppl_get_current_project_name()`
+
+**Extacts the version of a artifactId from a pom**
+
+<details>
+
+```
+ Params:
+ $1: dest var
+ [$2]: the optional project file pathname
+```
+
+</details>
+
+
+---
+
 ### `_ppl_query_latest_bom_version()`
 
 **Extracts the latest bom version given the bom repository URL**
@@ -131,226 +182,6 @@
 ### `_ppl_determine_qualifier()`
 
 **Finds the artifact qualifier**
-
-
----
-
-### `_ppl-job-update-status()`
-
-**Updates the state of the current pipeline job**
-
-<details>
-
-```
- Params:
- $1: the STATUS ID
- $2: the new status
- $3: the state context
- $4: the state description
-
- Expected Env:
- - PPL_TOKEN
-```
-
-</details>
-
-
----
-
-### `_ppl-pr-add-label()`
-
-**Adds a label to a PR**
-
-<details>
-
-```
- Params:
- $1: the PR number
- $2: the label to add
-```
-
-</details>
-
-
----
-
-### `_ppl-pr-remove-label()`
-
-**Rempves a label frpm a PR**
-
-<details>
-
-```
- Params:
- $1: the PR number
- $2: the label to remove
-```
-
-</details>
-
-
----
-
-### `_ppl-set-persistent-var()`
-
-**Sets a persistent variable**
-
-<details>
-
-```
- Params:
- $1: var name
- $2: var value
-```
-
-</details>
-
-
----
-
-### `_ppl-set-return-var()`
-
-**Set the current macro error indicator and the current exit status with the value provided**
-
-
----
-
-### `_ppl-pr-has-label()`
-
-**Tells if the PR has a label given its number**
-
-
----
-
-### `_ppl-load-context()`
-
-**Parses the pipelines environment and loads accordingly**
-
-<details>
-
-```
- environment variables.
-
- Params:
- $1: the JSON environment provided by the "github" object
-```
-
-</details>
-
-
----
-
-### `_ppl-pr-request-change()`
-
-**Submits to the current PR/commit a review with a request for change**
-
-<details>
-
-```
- Params:
- $1  the request message
-
- ref:
- - https://docs.github.com/en/rest/reference/pulls#create-a-review-comment-for-a-pull-request
- - https://docs.github.com/en/rest/reference/pulls#submit-a-review-for-a-pull-request
-```
-
-</details>
-
-
----
-
-### `_ppl-pr-submit-comment()`
-
-**Submits to the given PR/commit a comment**
-
-<details>
-
-```
- Params:
- $1  the PR number
- $2  the comment text
-```
-
-</details>
-
-
----
-
-### `_ppl-stdout-group()`
-
-**Allows grouping togheter a set of lines in a collapsable element**
-
-<details>
-
-```
- Params:
- $1    action: "start" or "stop"
- [$2]  the group title title, only required if action is "start"
-```
-
-</details>
-
-
----
-
-### `_ppl-print-file-paginated()`
-
-**Prints a file content into a set of groups**
-
-<details>
-
-```
- Params:
- $1    file pathname
- $2    group max size
- $3    file description
-```
-
-</details>
-
-
----
-
-### `_ppl_create_pr()`
-
-**Create or starts the creation of the PR**
-
-<details>
-
-```
- Params:
- $1: PR title
- $2: base branch
- $3: PR branch
- [$4]  optional comma-delimited reviewers
-```
-
-</details>
-
-
----
-
-### `_ppl_determine_branch_info()`
-
-**Determine PPL_CURRENT_REPO_BRANCH, PPL_BRANCHING_TYPE and PPL_IN_PR_BRANCH**
-
-
----
-
-### `_ppl-pr-remove-label()`
-
-**Rempves a label frpm a PR**
-
-<details>
-
-```
- Params:
- $1: the PR number
- $2: the label to remove
-```
-
-</details>
 
 
 ---
@@ -605,23 +436,21 @@
 
 ---
 
-### `_ppl_clone_and_configure_data_repo()`
+### `_ppl-job-update-status()`
 
-**Load the pipeline configuration from the pipelines data repository**
-
-
----
-
-### `_ppl_get_current_project_version()`
-
-**Extacts the version of a artifactId from a pom**
+**Updates the state of the current pipeline job**
 
 <details>
 
 ```
  Params:
- $1: dest var
- $3: project file pathname
+ $1: the STATUS ID
+ $2: the new status
+ $3: the state context
+ $4: the state description
+
+ Expected Env:
+ - PPL_TOKEN
 ```
 
 </details>
@@ -629,16 +458,16 @@
 
 ---
 
-### `_ppl_set_current_project_version()`
+### `_ppl-pr-add-label()`
 
-**Extacts the version of a artifactId from a pom**
+**Adds a label to a PR**
 
 <details>
 
 ```
  Params:
- $1:   the value to set
- [$2]: the optional project file pathname
+ $1: the PR number
+ $2: the label to add
 ```
 
 </details>
@@ -646,17 +475,48 @@
 
 ---
 
-### `_ppl_get_current_project_name()`
+### `_ppl-pr-remove-label()`
 
-**Extacts the version of a artifactId from a pom**
+**Rempves a label frpm a PR**
 
 <details>
 
 ```
  Params:
- $1: dest var
- [$2]: the optional project file pathname
+ $1: the PR number
+ $2: the label to remove
 ```
 
 </details>
+
+
+---
+
+### `_ppl-set-persistent-var()`
+
+**Sets a persistent variable**
+
+<details>
+
+```
+ Params:
+ $1: var name
+ $2: var value
+```
+
+</details>
+
+
+---
+
+### `_ppl-set-return-var()`
+
+**Set the current macro error indicator and the current exit status with the value provided**
+
+
+---
+
+### `_ppl-pr-has-label()`
+
+**Tells if the PR has a label given its number**
 
