@@ -65,14 +65,17 @@ ppl--docker.publish.FOR_ALL_BUILDS() {
   export ENTANDO_OPT_LOG_LEVEL=TRACE
   # shellcheck disable=SC2163
   export -f "$FN"
-
+  
+  echo "##################################################################################################################################"
+  echo "#> ${builds}"
+  echo "##################################################################################################################################"
+  
   while IFS= read -r build; do
     ppl--docker.publish.DETERMINE_BUILD_INFO dockerFile imageAddress "$build" "$projectName" "$projectVersion"
     _log_i "$3 \"$build\" (\"$dockerFile\", \"$imageAddress\")"
     #_pp FN dockerFile imageAddress projectName projectVersion build
     __exist -f "$dockerFile"
     "$FN" "$dockerFile" "$imageAddress"
-    _SOE
   done <<< "${builds//,/$'\n'}"
 }
 
