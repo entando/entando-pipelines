@@ -197,7 +197,7 @@ ppl--mvn.full-build() {
         ${ENTANDO_OPT_SONAR_PROJECT_KEY:+-Dsonar.projectKey="$ENTANDO_OPT_SONAR_PROJECT_KEY"} \
         org.jacoco:jacoco-maven-plugin:prepare-agent \
         org.jacoco:jacoco-maven-plugin:report \
-        org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+        ${ENTANDO_OPT_SONAR_PROJECT_KEY:+org.sonarsource.scanner.maven:sonar-maven-plugin:sonar} \
         -Ppre-deployment-verification \
       ;
     )
