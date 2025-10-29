@@ -149,13 +149,13 @@ ppl--mvn.run-plan() {
         ;;
       "COMPOSE-UP")
         if [ -n "$ENTANDO_OPT_TEST_COMPOSE_FILE" ] && [ -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" ]; then
-          docker-compose -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" up -d 2>&1 | _summarize_stream --ppl-pg 500 "COMPOSE-UP"
+          docker compose -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" up -d 2>&1 | _summarize_stream --ppl-pg 500 "COMPOSE-UP"
           _SOE --pipe 0
         fi
         ;;
       "COMPOSE-DOWN")
         if [ -n "$ENTANDO_OPT_TEST_COMPOSE_FILE" ] && [ -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" ]; then
-          docker-compose -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" down -d 2>&1 | _summarize_stream --ppl-pg 500 "COMPOSE-DOWN"
+          docker compose -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" down -d 2>&1 | _summarize_stream --ppl-pg 500 "COMPOSE-DOWN"
         fi
         ;;
       "OKD-LOGIN")
@@ -205,7 +205,7 @@ ppl--mvn.full-build() {
   _SOE
   
   if [ -n "$ENTANDO_OPT_TEST_COMPOSE_FILE" ]; then
-    docker-compose -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" down 2>&1 | _summarize_stream --ppl-pg 500 "COMPOSE-DOWN"
+    docker compose -f "$ENTANDO_OPT_TEST_COMPOSE_FILE" down 2>&1 | _summarize_stream --ppl-pg 500 "COMPOSE-DOWN"
   else
     true
   fi

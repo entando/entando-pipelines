@@ -78,14 +78,14 @@ jobs:
           java-version: 11
       #~ MAVEN CACHE
       - name: "Cache Maven packages"
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2
           restore-keys: ${{ runner.os }}-m2
       #~ SONAR CACHE
       - name: Cache SonarCloud packages
-        uses: actions/cache@v1
+        uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
@@ -126,7 +126,7 @@ jobs:
       #~ MAVEN CACHE
       - name: "Cache Maven packages"
         id: maven-cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-matrix-${{ matrix.scan-type }}
