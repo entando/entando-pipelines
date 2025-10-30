@@ -62,6 +62,10 @@ ppl--publication.tag-git-version() {
            "may be you re-executed an old run?"
   }
   
+  if [ "${snapshotVersionTag:0:1}" = "v" ]; then
+    snapshotVersionTag="${snapshotVersionTag}-merge"
+  fi
+
   __git_add_tag -f "$snapshotVersionTag" "$PPL_RUN_ID" "$PPL_COMMIT_ID"
   __git push origin "$snapshotVersionTag" -f
   

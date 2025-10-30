@@ -483,6 +483,9 @@ test__ppl_extract_branch_name_from_ref() {
   ASSERT RES = "epic/an-epic-branch"
   _ppl_extract_branch_name_from_ref RES "refs/tags/TEST/v7.0.0-ENG-3002-PR-166"
   ASSERT RES = "TEST/v7.0.0-ENG-3002-PR-166"
+  _ppl_extract_branch_name_from_ref RES "refs/tags/v7.0.0-ENG-3002-PR-166+BB-develop"
+  ASSERT RES = "develop"
+
 }
 
 #TEST:lib
